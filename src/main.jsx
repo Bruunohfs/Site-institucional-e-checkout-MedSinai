@@ -7,7 +7,7 @@ import './index.css'
 // Importe seus componentes
 import MainLayout from './layouts/MainLayout.jsx'; // O layout principal com header/footer
 import App from './App.jsx'; // Sua página inicial
-import EmpresasPage from './pages/EmpresasPage.jsx'; // Sua página de empresas
+import EmpresasPage from './pages/EmpresasPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx'
 
 // Crie as rotas
