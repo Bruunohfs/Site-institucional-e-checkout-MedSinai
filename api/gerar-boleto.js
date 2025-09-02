@@ -1,6 +1,4 @@
-// api/gerar-boleto.js - VERSÃO CORRIGIDA
-
-import axios from 'axios';
+// api/gerar-boleto.js - VERSÃO FINAL COM NODE-FETCH
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,11 +16,15 @@ export default async function handler(req, res) {
     const { cliente, plano } = req.body;
     let customerId;
 
-    // Chamada 1: Buscar cliente
-    const { data: searchResult } = await axios.get(
+    // Chamada 1: Buscar cliente com fetch
+    const searchResponse = await fetch(
       `https://api.asaas.com/v3/customers?cpfCnpj=${cliente.cpf}`,
-      { headers: { Authorization: `Bearer ${ASAAS_API_KEY}` } }
-    );
+      {
+        method: 'GET',
+        headers: { 'access_token': ASAAS_API_KEY }
+      }
+     );
+    const searchResult = await searchResponse.json();
 
     if (searchResult.data && searchResult.data.length > 0) {
       customerId = searchResult.data[0].id;
@@ -33,12 +35,19 @@ export default async function handler(req, res) {
         email: cliente.email,
         mobilePhone: cliente.telefone,
       };
-      // Chamada 2: Criar cliente
-      const { data: newCustomer } = await axios.post(
+      // Chamada 2: Criar cliente com fetch
+      const createCustomerResponse = await fetch(
         'https://api.asaas.com/v3/customers',
-        customerData,
-        { headers: { Authorization: `Bearer ${ASAAS_API_KEY}` } }
+        {
+          method: 'POST',
+          headers: {
+            'access_token': ASAAS_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(customerData )
+        }
       );
+      const newCustomer = await createCustomerResponse.json();
       customerId = newCustomer.id;
     }
 
@@ -55,12 +64,25 @@ export default async function handler(req, res) {
       externalReference: `PLANO_${plano.nome.replace(/ /g, '_').toUpperCase()}_${cliente.cpf}`,
     };
 
-    // Chamada 3: Criar cobrança
-    const { data: paymentResponse } = await axios.post(
+    // Chamada 3: Criar cobrança com fetch
+    const createPaymentResponse = await fetch(
       'https://api.asaas.com/v3/payments',
-      dadosCobranca,
-      { headers: { Authorization: `Bearer ${ASAAS_API_KEY}` } }
+      {
+        method: 'POST',
+        headers: {
+          'access_token': ASAAS_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dadosCobranca )
+      }
     );
+    const paymentResponse = await createPaymentResponse.json();
+
+    // Tratamento de erro específico do Asaas após a chamada
+    if (!createPaymentResponse.ok) {
+        console.error("Erro retornado pela API do Asaas:", paymentResponse);
+        throw new Error(JSON.stringify(paymentResponse.errors || { message: 'Erro desconhecido do Asaas' }));
+    }
 
     res.status(200).json({
       success: true,
@@ -69,8 +91,8 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    const errorMessage = error.response ? JSON.stringify(error.response.data) : error.message;
-    console.error("Erro detalhado ao gerar boleto no Asaas:", errorMessage);
-    res.status(500).json({ success: false, error: 'Falha ao gerar cobrança.', details: errorMessage });
+    // O erro agora será mais informativo
+    console.error("Erro detalhado no bloco catch:", error.message);
+    res.status(500).json({ success: false, error: 'Falha ao gerar cobrança.', details: error.message });
   }
 }
