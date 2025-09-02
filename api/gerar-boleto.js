@@ -1,4 +1,4 @@
-// api/gerar-boleto.js - VERSÃO FINAL COM CORREÇÃO DE HEADER
+// api/gerar-boleto.js - VERSÃO FINAL EXPLÍCITA
 
 import axios from 'axios';
 
@@ -14,22 +14,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: 'Configuração interna do servidor incompleta.' });
   }
 
-  // Objeto de configuração do Axios para ser reutilizado
-  const axiosConfig = {
-    headers: {
-      'access_token': ASAAS_API_KEY,
-      'Content-Type': 'application/json'
-    }
-  };
-
   try {
     const { cliente, plano } = req.body;
     let customerId;
 
-    // Usando o config no axios.get
+    // Chamada 1: Buscar cliente
     const { data: searchResult } = await axios.get(
       `https://api.asaas.com/v3/customers?cpfCnpj=${cliente.cpf}`,
-      axiosConfig
+      { headers: { 'access_token': ASAAS_API_KEY } } // Objeto de header explícito
      );
 
     if (searchResult.data && searchResult.data.length > 0) {
@@ -41,11 +33,11 @@ export default async function handler(req, res) {
         email: cliente.email,
         mobilePhone: cliente.telefone,
       };
-      // Usando o config no axios.post
+      // Chamada 2: Criar cliente
       const { data: newCustomer } = await axios.post(
         'https://api.asaas.com/v3/customers',
         customerData,
-        axiosConfig
+        { headers: { 'access_token': ASAAS_API_KEY } } // Objeto de header explícito
        );
       customerId = newCustomer.id;
     }
@@ -63,11 +55,11 @@ export default async function handler(req, res) {
       externalReference: `PLANO_${plano.nome.replace(/ /g, '_').toUpperCase()}_${cliente.cpf}`,
     };
 
-    // Usando o config no axios.post final
+    // Chamada 3: Criar cobrança
     const { data: paymentResponse } = await axios.post(
       'https://api.asaas.com/v3/payments',
       dadosCobranca,
-      axiosConfig
+      { headers: { 'access_token': ASAAS_API_KEY } } // Objeto de header explícito
      );
 
     res.status(200).json({
