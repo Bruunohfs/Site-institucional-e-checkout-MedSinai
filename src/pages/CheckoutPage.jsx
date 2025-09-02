@@ -27,44 +27,55 @@ function CheckoutPage() {
 
   // --- FUNÇÃO DE SUBMIT ---
   const handleFormSubmit = async (data) => {
-    if (metodoPagamento !== 'boleto') {
-      alert(`Integração para ${metodoPagamento} ainda não implementada.`);
-      return;
-    }
+  if (metodoPagamento !== 'boleto') {
+    alert(`Integração para ${metodoPagamento} ainda não implementada.`);
+    return;
+  }
 
-    setIsProcessing(true);
-    setPaymentResult(null);
+  setIsProcessing(true);
+  setPaymentResult(null);
 
-    const dadosCompletos = {
-      plano: {
-        nome: planoSelecionado.nome,
-        preco: planoSelecionado.preco,
-      },
-      cliente: data,
-    };
-
-    try {
-      const response = await axios.post('/api/gerar-boleto', dadosCompletos);
-
-      if (response.data.success) {
-        setPaymentResult({
-          success: true,
-          url: response.data.boletoUrl,
-        });
-      } else {
-        throw new Error(response.data.error || 'Falha ao gerar boleto.');
-      }
-
-    } catch (error) {
-      console.error("Erro ao chamar a API de boleto:", error);
-      setPaymentResult({
-        success: false,
-        message: error.message || 'Não foi possível conectar ao servidor de pagamento.',
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+  const dadosCompletos = {
+    plano: {
+      nome: planoSelecionado.nome,
+      preco: planoSelecionado.preco,
+    },
+    cliente: data,
   };
+
+  try {
+    // USANDO FETCH, A FERRAMENTA NATIVA DO NAVEGADOR
+    const response = await fetch('/api/gerar-boleto', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(dadosCompletos),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      // Se a resposta da rede não for "ok" (ex: erro 500), lança um erro.
+      throw new Error(result.details || result.error || 'Falha na comunicação com a API.');
+    }
+
+    // Deu tudo certo! Guardamos o resultado.
+    setPaymentResult({
+      success: true,
+      url: result.boletoUrl,
+    });
+
+  } catch (error) {
+    console.error("Erro ao chamar a API de boleto:", error);
+    setPaymentResult({
+      success: false,
+      message: error.message || 'Não foi possível conectar ao servidor de pagamento.',
+    });
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   // --- RENDERIZAÇÃO DE ERRO ---
   if (!planoSelecionado) {
