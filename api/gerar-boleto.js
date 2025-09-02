@@ -1,4 +1,4 @@
-// api/gerar-boleto.js - VERSÃO FINAL EXPLÍCITA
+// api/gerar-boleto.js - VERSÃO CORRIGIDA
 
 import axios from 'axios';
 
@@ -21,8 +21,8 @@ export default async function handler(req, res) {
     // Chamada 1: Buscar cliente
     const { data: searchResult } = await axios.get(
       `https://api.asaas.com/v3/customers?cpfCnpj=${cliente.cpf}`,
-      { headers: { 'access_token': ASAAS_API_KEY } } // Objeto de header explícito
-     );
+      { headers: { Authorization: `Bearer ${ASAAS_API_KEY}` } }
+    );
 
     if (searchResult.data && searchResult.data.length > 0) {
       customerId = searchResult.data[0].id;
@@ -37,8 +37,8 @@ export default async function handler(req, res) {
       const { data: newCustomer } = await axios.post(
         'https://api.asaas.com/v3/customers',
         customerData,
-        { headers: { 'access_token': ASAAS_API_KEY } } // Objeto de header explícito
-       );
+        { headers: { Authorization: `Bearer ${ASAAS_API_KEY}` } }
+      );
       customerId = newCustomer.id;
     }
 
@@ -59,8 +59,8 @@ export default async function handler(req, res) {
     const { data: paymentResponse } = await axios.post(
       'https://api.asaas.com/v3/payments',
       dadosCobranca,
-      { headers: { 'access_token': ASAAS_API_KEY } } // Objeto de header explícito
-     );
+      { headers: { Authorization: `Bearer ${ASAAS_API_KEY}` } }
+    );
 
     res.status(200).json({
       success: true,
