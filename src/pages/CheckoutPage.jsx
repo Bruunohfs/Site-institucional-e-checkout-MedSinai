@@ -3,7 +3,6 @@ import { IMaskInput } from 'react-imask';
 import { useParams } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
-import axios from 'axios';
 
 // Ícone de cadeado
 const LockIcon = () => (
