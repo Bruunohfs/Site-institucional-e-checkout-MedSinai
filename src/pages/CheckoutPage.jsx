@@ -211,7 +211,8 @@ function CheckoutPage() {
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Aponte a câmera do seu celular ou use o código abaixo.</p>
                             <img src={paymentResult.qrCodeImage} alt="QR Code Pix" className="mx-auto my-4 border-4 border-white dark:border-gray-700 rounded-lg shadow-lg" />
                             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Pix Copia e Cola:</p>
-                            <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded-md text-xs break-all font-mono cursor-pointer" onClick={() => navigator.clipboard.writeText(paymentResult.payload)} title="Clique para copiar">
+                            <div className="bg-gray-100 dark:bg-gray-700 dark:text-gray-200 p-3 rounded-md text-xs break-all font-mono cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                              onClick={() => navigator.clipboard.writeText(paymentResult.payload)} title="Clique para copiar">
                               {paymentResult.payload}
                             </div>
                           </div>
