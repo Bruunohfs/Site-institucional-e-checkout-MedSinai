@@ -1,6 +1,6 @@
 // DENTRO DE: src/pages/CheckoutPage.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IMaskInput } from 'react-imask';
 import { useParams } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
@@ -29,73 +29,85 @@ function CheckoutPage() {
 
   // --- FUNÇÃO DE SUBMIT ---
 
-const handleFormSubmit = async (data) => {
-  setIsProcessing(true);
-  setPaymentResult(null);
+  useEffect(() => {
+    // Esta função carrega o script do Asaas dinamicamente
+    const script = document.createElement('script');
+    script.src = "https://www.asaas.com/js/creditcard.js";
+    script.async = true;
+    document.body.appendChild(script );
 
-  const dadosCompletos = {
-    plano: {
-      nome: planoSelecionado.nome,
-      preco: planoSelecionado.preco,
-    },
-    cliente: data,
+    // Esta função limpa o script quando o componente é "desmontado"
+    return () => {
+      document.body.removeChild(script);
+     }
+    }, 
+  []);
+
+  const handleFormSubmit = async (data) => {
+    setIsProcessing(true);
+    setPaymentResult(null);
+  
+    const dadosCompletos = {
+      plano: {
+        nome: planoSelecionado.nome,
+        preco: planoSelecionado.preco,
+      },
+      cliente: data,
+    };
+  
+    try {
+      if (metodoPagamento === 'cartao') {
+        if (typeof window.AsaasCC === 'undefined') {
+          throw new Error('Falha ao carregar o módulo de pagamento. Verifique sua conexão ou tente novamente.');
+        }
+  
+        const asaas = new window.AsaasCC();
+        
+        const cardData = {
+          number: data.cardNumber.replace(/ /g, ''),
+          cvv: data.cvv,
+          expiryMonth: data.expiryDate.split('/')[0],
+          expiryYear: `20${data.expiryDate.split('/')[1]}`,
+        };
+        asaas.setCreditCard(cardData);
+  
+        const token = await asaas.getCreditCardToken();
+  
+        const payload = { ...dadosCompletos, creditCardToken: token };
+        const apiResponse = await fetch('/api/pagar-com-cartao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await apiResponse.json();
+        if (!apiResponse.ok) throw new Error(result.details || result.error);
+        setPaymentResult({ success: true, type: 'cartao', status: result.status });
+  
+      } else {
+        // Lógica para Boleto e Pix
+        const endpoint = metodoPagamento === 'boleto' ? '/api/gerar-boleto' : '/api/gerar-pix';
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dadosCompletos),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.details || result.error);
+  
+        if (metodoPagamento === 'boleto') {
+          setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
+        } else if (metodoPagamento === 'pix') {
+          setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
+        }
+      }
+    } catch (error) {
+      console.error(`Erro ao processar pagamento:`, error);
+      setPaymentResult({ success: false, message: error.message || 'Ocorreu um erro inesperado.' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  try {
-    if (metodoPagamento === 'cartao') {
-      // AQUI ESTÁ A MÁGICA: Verificamos se o AsaasCC está disponível na 'window'
-      if (typeof window.AsaasCC === 'undefined') {
-        throw new Error('Falha ao carregar o módulo de pagamento. Tente novamente em alguns segundos.');
-      }
-
-      // Usamos o AsaasCC que vem do script, agora com segurança
-      const asaas = new window.AsaasCC();
-      
-      // O Asaas espera os nomes dos campos em inglês
-      const cardData = {
-        number: data.cardNumber.replace(/ /g, ''),
-        cvv: data.cvv,
-        expiryMonth: data.expiryDate.split('/')[0],
-        expiryYear: `20${data.expiryDate.split('/')[1]}`,
-      };
-      asaas.setCreditCard(cardData);
-
-      const token = await asaas.getCreditCardToken();
-
-      const payload = { ...dadosCompletos, creditCardToken: token };
-      const apiResponse = await fetch('/api/pagar-com-cartao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const result = await apiResponse.json();
-      if (!apiResponse.ok) throw new Error(result.details || result.error);
-      setPaymentResult({ success: true, type: 'cartao', status: result.status });
-
-    } else {
-      // Lógica para Boleto e Pix (permanece a mesma)
-      const endpoint = metodoPagamento === 'boleto' ? '/api/gerar-boleto' : '/api/gerar-pix';
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosCompletos),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.details || result.error);
-
-      if (metodoPagamento === 'boleto') {
-        setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
-      } else if (metodoPagamento === 'pix') {
-        setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
-      }
-    }
-  } catch (error) {
-    console.error(`Erro ao processar pagamento:`, error);
-    setPaymentResult({ success: false, message: error.message || 'Ocorreu um erro inesperado.' });
-  } finally {
-    setIsProcessing(false);
-  }
-};
 
 
 
