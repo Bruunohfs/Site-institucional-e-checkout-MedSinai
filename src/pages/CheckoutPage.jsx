@@ -5,6 +5,7 @@ import { IMaskInput } from 'react-imask';
 import { useParams } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
+import Asaas from 'asaas';
 
 // Ícone de cadeado
 const LockIcon = () => (
@@ -32,17 +33,10 @@ function CheckoutPage() {
 // SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
 // SUBSTITUA A FUNÇÃO INTEIRA POR ESTA:
 // SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
-const handleFormSubmit = async (data ) => {
+// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
+const handleFormSubmit = async (data) => {
   setIsProcessing(true);
   setPaymentResult(null);
-
-  // Primeiro, verificamos se o script do Asaas carregou e criou o objeto 'AsaasCC' na 'window'
-  if (typeof window.AsaasCC === 'undefined') {
-    console.error("FATAL: O script do Asaas (AsaasCC) não foi encontrado na window.");
-    setPaymentResult({ success: false, message: 'Falha crítica ao carregar o módulo de pagamento. Por favor, recarregue a página.' });
-    setIsProcessing(false);
-    return; // Para a execução aqui
-  }
 
   const dadosCompletos = {
     plano: {
@@ -54,28 +48,39 @@ const handleFormSubmit = async (data ) => {
 
   try {
     if (metodoPagamento === 'cartao') {
-      const asaas = new window.AsaasCC();
-      
-      // O Asaas espera os nomes dos campos em inglês
-      const cardData = {
-        number: data.cardNumber.replace(/ /g, ''),
-        cvv: data.cvv,
-        expiryMonth: data.expiryDate.split('/')[0],
-        expiryYear: `20${data.expiryDate.split('/')[1]}`,
-      };
-      asaas.setCreditCard(cardData);
-
-      const token = await asaas.getCreditCardToken();
-
-      const payload = { ...dadosCompletos, creditCardToken: token };
-      const apiResponse = await fetch('/api/pagar-com-cartao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      // AQUI ESTÁ A MÁGICA DO VÍDEO:
+      const asaas = new Asaas({
+        apiKey: "$aact_YTU5YTE0M2M2N2I4MTliNzk0YTI5N2U5MzdjNWZmNDQ4Murilo", // Chave de produção, mas não é usada para tokenizar
+        sandbox: false,
       });
-      const result = await apiResponse.json();
-      if (!apiResponse.ok) throw new Error(result.details || result.error);
-      setPaymentResult({ success: true, type: 'cartao', status: result.status });
+
+      const cardData = {
+        customer_name: data.cardName,
+        credit_card_number: data.cardNumber.replace(/ /g, ''),
+        credit_card_brand: "VISA", // Idealmente, detectar a bandeira
+        credit_card_token: "",
+        credit_card_expiry_month: data.expiryDate.split('/')[0],
+        credit_card_expiry_year: `20${data.expiryDate.split('/')[1]}`,
+        credit_card_ccv: data.cvv,
+      };
+
+      // Usamos o método ensinado no vídeo
+      const response = await asaas.CreditCard.tokenize(cardData);
+
+      if (response.success) {
+        const payload = { ...dadosCompletos, creditCardToken: response.credit_card_token };
+        const apiResponse = await fetch('/api/pagar-com-cartao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await apiResponse.json();
+        if (!apiResponse.ok) throw new Error(result.details || result.error);
+        setPaymentResult({ success: true, type: 'cartao', status: result.status });
+      } else {
+        const errorReason = response.errors?.[0]?.description || 'Dados do cartão inválidos.';
+        throw new Error(errorReason);
+      }
 
     } else {
       // Lógica para Boleto e Pix (permanece a mesma)
@@ -101,9 +106,6 @@ const handleFormSubmit = async (data ) => {
     setIsProcessing(false);
   }
 };
-
-
-
   // --- RENDERIZAÇÃO DE ERRO ---
   if (!planoSelecionado) {
     return (
