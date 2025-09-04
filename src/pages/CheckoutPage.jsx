@@ -30,6 +30,7 @@ function CheckoutPage() {
   // --- FUNÇÃO DE SUBMIT ---
 
 // SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
+// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA:
 const handleFormSubmit = async (data ) => {
   setIsProcessing(true);
   setPaymentResult(null);
@@ -44,16 +45,9 @@ const handleFormSubmit = async (data ) => {
 
   try {
     if (metodoPagamento === 'cartao') {
-      // Confia que o script no index.html carregou o AsaasCC
-      const asaas = new window.AsaasCC();
-      
-      const cardData = {
-        number: data.cardNumber.replace(/ /g, ''),
-        cvv: data.cvv,
-        expiryMonth: data.expiryDate.split('/')[0],
-        expiryYear: `20${data.expiryDate.split('/')[1]}`,
-      };
-      asaas.setCreditCard(cardData);
+      // AQUI ESTÁ A MUDANÇA: Usamos o AsaasCC que vem do script
+      const asaas = new AsaasCC();
+      asaas.setCreditCard(data); // Passa os dados do formulário
 
       const token = await asaas.getCreditCardToken();
 
@@ -91,6 +85,7 @@ const handleFormSubmit = async (data ) => {
     setIsProcessing(false);
   }
 };
+
 
   // --- RENDERIZAÇÃO DE ERRO ---
   if (!planoSelecionado) {
