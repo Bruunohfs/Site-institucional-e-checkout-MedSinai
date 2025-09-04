@@ -28,8 +28,8 @@ function CheckoutPage() {
   const [paymentResult, setPaymentResult] = useState(null);
 
   // --- FUNÇÃO DE SUBMIT ---
-// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA:
-const handleFormSubmit = async (data ) => {
+
+const handleFormSubmit = async (data) => {
   setIsProcessing(true);
   setPaymentResult(null);
 
@@ -43,9 +43,22 @@ const handleFormSubmit = async (data ) => {
 
   try {
     if (metodoPagamento === 'cartao') {
-      // AQUI ESTÁ A MUDANÇA: Usamos o AsaasCC que vem do script
-      const asaas = new AsaasCC();
-      asaas.setCreditCard(data); // Passa os dados do formulário
+      // AQUI ESTÁ A MÁGICA: Verificamos se o AsaasCC está disponível na 'window'
+      if (typeof window.AsaasCC === 'undefined') {
+        throw new Error('Falha ao carregar o módulo de pagamento. Tente novamente em alguns segundos.');
+      }
+
+      // Usamos o AsaasCC que vem do script, agora com segurança
+      const asaas = new window.AsaasCC();
+      
+      // O Asaas espera os nomes dos campos em inglês
+      const cardData = {
+        number: data.cardNumber.replace(/ /g, ''),
+        cvv: data.cvv,
+        expiryMonth: data.expiryDate.split('/')[0],
+        expiryYear: `20${data.expiryDate.split('/')[1]}`,
+      };
+      asaas.setCreditCard(cardData);
 
       const token = await asaas.getCreditCardToken();
 
@@ -83,6 +96,7 @@ const handleFormSubmit = async (data ) => {
     setIsProcessing(false);
   }
 };
+
 
 
   // --- RENDERIZAÇÃO DE ERRO ---
