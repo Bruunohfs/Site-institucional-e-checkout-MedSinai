@@ -3,6 +3,7 @@ import { IMaskInput } from 'react-imask';
 import { useParams } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
+import Asaas from 'asaas';
 
 // Ícone de cadeado
 const LockIcon = () => (
@@ -26,63 +27,99 @@ function CheckoutPage() {
   const [paymentResult, setPaymentResult] = useState(null);
 
   // --- FUNÇÃO DE SUBMIT ---
-  const handleFormSubmit = async (data) => {
+// DENTRO DE: function CheckoutPage() { ... }
+// SUBSTITUA A FUNÇÃO ANTIGA POR ESTA VERSÃO FINAL:
+
+const handleFormSubmit = async (data) => {
+  setIsProcessing(true);
+  setPaymentResult(null);
+
+  const dadosCompletos = {
+    plano: {
+      nome: planoSelecionado.nome,
+      preco: planoSelecionado.preco,
+    },
+    cliente: data,
+  };
+
+  try {
+    let endpoint = '';
+    let payload = {};
+
+    // LÓGICA PARA CADA MÉTODO DE PAGAMENTO
     if (metodoPagamento === 'cartao') {
-      alert('Integração para Cartão de Crédito ainda não implementada.');
-      return;
-    }
+      // 1. TOKENIZAÇÃO DO CARTÃO
+      Asaas.CreditCard.tokenize({
+        customer_name: data.cardName,
+        credit_card_number: data.cardNumber.replace(/ /g, ''),
+        credit_card_brand: "VISA", // Pode ser melhorado para detectar a bandeira
+        credit_card_token: "", // Este campo é necessário pela SDK
+        credit_card_expiry_month: data.expiryDate.split('/')[0],
+        credit_card_expiry_year: `20${data.expiryDate.split('/')[1]}`,
+        credit_card_ccv: data.cvv,
+      }, async (response) => {
+        if (response.success) {
+          // 2. TOKEN GERADO! AGORA CHAMA NOSSA API
+          endpoint = '/api/pagar-com-cartao';
+          payload = { ...dadosCompletos, creditCardToken: response.credit_card_token };
+          
+          try {
+            const apiResponse = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const result = await apiResponse.json();
+            if (!apiResponse.ok) throw new Error(result.details || result.error);
 
-    setIsProcessing(true);
-    setPaymentResult(null);
+            setPaymentResult({ success: true, type: 'cartao', status: result.status });
+          } catch (error) {
+            setPaymentResult({ success: false, message: error.message });
+          } finally {
+            setIsProcessing(false);
+          }
 
-    const dadosCompletos = {
-      plano: {
-        nome: planoSelecionado.nome,
-        preco: planoSelecionado.preco,
-      },
-      cliente: data,
-    };
+        } else {
+          // Falha na tokenização
+          const errorReason = response.errors?.[0]?.description || 'Dados do cartão inválidos.';
+          setPaymentResult({ success: false, message: errorReason });
+          setIsProcessing(false);
+        }
+      });
+      // Como a tokenização é assíncrona, a função principal termina aqui para o cartão
+      return; 
+    } 
+    
+    // LÓGICA PARA BOLETO E PIX (permanece a mesma)
+    else {
+      endpoint = metodoPagamento === 'boleto' ? '/api/gerar-boleto' : '/api/gerar-pix';
+      payload = dadosCompletos;
 
-    const endpoint = metodoPagamento === 'boleto' ? '/api/gerar-boleto' : '/api/gerar-pix';
-
-    try {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosCompletos),
+        body: JSON.stringify(payload),
       });
-
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.details || result.error || 'Falha na comunicação com a API.');
-      }
+      if (!response.ok) throw new Error(result.details || result.error);
 
       if (metodoPagamento === 'boleto') {
-        setPaymentResult({
-          success: true,
-          type: 'boleto',
-          url: result.boletoUrl,
-        });
+        setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
       } else if (metodoPagamento === 'pix') {
-        setPaymentResult({
-          success: true,
-          type: 'pix',
-          payload: result.payload,
-          qrCodeImage: `data:image/png;base64,${result.encodedImage}`,
-        });
+        setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
       }
-
-    } catch (error) {
-      console.error(`Erro ao chamar a API de ${metodoPagamento}:`, error);
-      setPaymentResult({
-        success: false,
-        message: error.message || 'Não foi possível conectar ao servidor de pagamento.',
-      });
-    } finally {
+    }
+  } catch (error) {
+    console.error(`Erro ao chamar a API de ${metodoPagamento}:`, error);
+    setPaymentResult({ success: false, message: error.message || 'Não foi possível conectar ao servidor de pagamento.' });
+  } finally {
+    // Apenas para boleto e pix, o do cartão é tratado dentro do callback
+    if (metodoPagamento !== 'cartao') {
       setIsProcessing(false);
     }
-  };
+  }
+};
+
 
   // --- RENDERIZAÇÃO DE ERRO ---
   if (!planoSelecionado) {
@@ -246,32 +283,44 @@ function CheckoutPage() {
             </form>
 
             {/* Área de Resultado do Pagamento */}
-            {paymentResult && paymentResult.success && paymentResult.type === 'boleto' && (
-              <div className="mt-6 p-4 rounded-lg text-center bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                <h4 className="font-bold mb-2">Boleto Gerado com Sucesso!</h4>
-                <a href={paymentResult.url} target="_blank" rel="noopener noreferrer" className="inline-block bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700">
-                  Clique aqui para visualizar o Boleto
-                </a>
-                <p className="text-xs mt-2">O boleto também foi enviado para o seu e-mail.</p>
-              </div>
-            )}
+// NO FINAL DO ARQUIVO, SUBSTITUA A ÁREA DE RESULTADO ANTIGA POR ESTA:
 
-            {/* Caixa de Erro */}
-            {paymentResult && !paymentResult.success && (
-              <div className="mt-6 p-4 rounded-lg text-center bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                <h4 className="font-bold">Ocorreu um Erro</h4>
-                <p>{paymentResult.message}</p>
-              </div>
-            )}
-
+{/* Área de Resultado do Pagamento (Unificada) */}
+{paymentResult && (
+  <div className={`mt-6 p-4 rounded-lg text-center ${
+    paymentResult.success ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+  }`}>
+    
+    {/* --- MENSAGENS DE SUCESSO --- */}
+    {paymentResult.success && (
+      <>
+        {paymentResult.type === 'boleto' && (
+          <div>
+            <h4 className="font-bold mb-2">Boleto Gerado com Sucesso!</h4>
+            <a href={paymentResult.url} target="_blank" rel="noopener noreferrer" className="inline-block bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700">
+              Clique aqui para visualizar o Boleto
+            </a>
+            <p className="text-xs mt-2">O boleto também foi enviado para o seu e-mail.</p>
           </div>
-        </div>
-        <p className="text-center text-xs text-gray-500 mt-4">
-          Pagamentos processados com segurança. Seus dados são criptografados.
-        </p>
+        )}
+        {paymentResult.type === 'cartao' && (
+          <div>
+            <h4 className="font-bold text-lg">Pagamento Aprovado!</h4>
+            <p className="text-sm">Seja bem-vindo(a)! Enviamos os detalhes da sua assinatura para o seu e-mail.</p>
+          </div>
+        )}
+      </>
+    )}
+
+    {/* --- MENSAGEM DE ERRO --- */}
+    {!paymentResult.success && (
+      <div>
+        <h4 className="font-bold">Ocorreu um Erro</h4>
+        <p>{paymentResult.message}</p>
       </div>
-    </div>
-  );
-}
+    )}
+  </div>
+)}
+
 
 export default CheckoutPage;
