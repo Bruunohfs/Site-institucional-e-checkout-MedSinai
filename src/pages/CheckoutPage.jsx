@@ -47,7 +47,7 @@ function CheckoutPage() {
       // LÓGICA PARA CADA MÉTODO DE PAGAMENTO
       if (metodoPagamento === 'cartao') {
         // 1. TOKENIZAÇÃO DO CARTÃO
-        window.Asaas.CreditCard.tokenize({
+        AsaasCC.tokenize({
           customer_name: data.cardName,
           credit_card_number: data.cardNumber.replace(/ /g, ''),
           credit_card_brand: "VISA", // Pode ser melhorado para detectar a bandeira
