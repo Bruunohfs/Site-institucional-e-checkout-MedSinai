@@ -39,28 +39,63 @@ export default async function handler(req, res) {
     }
 
     // 2. Montar o Payload de Pagamento Completo
-    const dadosCobranca = {
-      customer: customerId,
-      billingType: 'CREDIT_CARD',
-      dueDate: new Date().toISOString().split('T')[0],
-      value: parseFloat(plano.preco.replace(',', '.')),
-      description: `Assinatura do Plano: ${plano.nome}`,
-      creditCard: {
-        holderName: cliente.cardName,
-        number: cliente.cardNumber.replace(/ /g, ''),
-        expiryMonth: cliente.expiryDate.split('/')[0],
-        expiryYear: `20${cliente.expiryDate.split('/')[1]}`,
-        ccv: cliente.cvv,
-      },
-      creditCardHolderInfo: {
-        name: cliente.nomeCompleto,
-        email: cliente.email,
-        cpfCnpj: cliente.cpf,
-        postalCode: '00000-000', // CEP genérico, o Asaas exige
-        addressNumber: 'S/N', // Número genérico
-        phone: cliente.telefone.replace(/\D/g, ''),
-      },
-    };
+let dadosCobranca;
+
+if (plano.tipo === 'anual') {
+  // Lógica para cobrança parcelada
+  const precoNumerico = parseFloat(plano.preco.replace(',', '.'));
+  dadosCobranca = {
+    customer: customerId,
+    billingType: 'CREDIT_CARD',
+    dueDate: new Date().toISOString().split('T')[0],
+    // --- CAMPOS DE PARCELAMENTO ---
+    installmentCount: 12,
+    totalValue: precoNumerico * 12, // O valor total é o preço da mensalidade x 12
+    // -----------------------------
+    description: `Assinatura do Plano Anual: ${plano.nome} (12x)`,
+    creditCard: {
+      holderName: cliente.cardName,
+      number: cliente.cardNumber.replace(/ /g, ''),
+      expiryMonth: cliente.expiryDate.split('/')[0],
+      expiryYear: `20${cliente.expiryDate.split('/')[1]}`,
+      ccv: cliente.cvv,
+    },
+    creditCardHolderInfo: {
+      name: cliente.nomeCompleto,
+      email: cliente.email,
+      cpfCnpj: cliente.cpf,
+      postalCode: '00000-000',
+      addressNumber: 'S/N',
+      phone: cliente.telefone.replace(/\D/g, ''),
+    },
+  };
+} else {
+  // Lógica para cobrança única (mensal)
+  dadosCobranca = {
+    customer: customerId,
+    billingType: 'CREDIT_CARD',
+    dueDate: new Date().toISOString().split('T')[0],
+    // --- CAMPO DE VALOR ÚNICO ---
+    value: parseFloat(plano.preco.replace(',', '.')),
+    // -----------------------------
+    description: `Assinatura do Plano Mensal: ${plano.nome}`,
+    creditCard: {
+      holderName: cliente.cardName,
+      number: cliente.cardNumber.replace(/ /g, ''),
+      expiryMonth: cliente.expiryDate.split('/')[0],
+      expiryYear: `20${cliente.expiryDate.split('/')[1]}`,
+      ccv: cliente.cvv,
+    },
+    creditCardHolderInfo: {
+      name: cliente.nomeCompleto,
+      email: cliente.email,
+      cpfCnpj: cliente.cpf,
+      postalCode: '00000-000',
+      addressNumber: 'S/N',
+      phone: cliente.telefone.replace(/\D/g, ''),
+    },
+  };
+}
 
     // 3. Enviar a Cobrança para o Asaas
     const paymentResponse = await fetch('https://api.asaas.com/v3/payments', {

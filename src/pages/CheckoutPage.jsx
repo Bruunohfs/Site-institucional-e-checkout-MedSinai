@@ -36,6 +36,7 @@ const handleFormSubmit = async (data) => {
     plano: {
       nome: planoSelecionado.nome,
       preco: planoSelecionado.preco,
+      tipo: tipoPlano, // 'anual' ou 'mensal'
     },
     cliente: data,
   };
@@ -248,11 +249,17 @@ const handleFormSubmit = async (data) => {
                       </div>
                     )}
                     {paymentResult.type === 'cartao' && (
-                      <div>
-                        <h4 className="font-bold text-lg">Pagamento Aprovado!</h4>
-                        <p className="text-sm">Seja bem-vindo(a)! Enviamos os detalhes da sua assinatura para o seu e-mail.</p>
-                      </div>
-                    )}
+               <div>
+                <h4 className="font-bold text-lg">Pagamento Aprovado!</h4>
+               {/* Mensagem condicional baseada no tipo de plano */}
+               {tipoPlano === 'anual' ? (
+               <p className="text-sm">Sua assinatura anual foi confirmada em 12x. Seja bem-vindo(a)!</p>
+               ) : (
+               <p className="text-sm">Sua assinatura mensal foi confirmada. Seja bem-vindo(a)!</p>
+               )}
+              <p className="text-xs mt-2">Enviamos os detalhes para o seu e-mail.</p>
+              </div>
+              )}
                   </>
                 )}
 

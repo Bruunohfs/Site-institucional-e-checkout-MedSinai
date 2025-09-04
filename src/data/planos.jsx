@@ -5,7 +5,7 @@ export const planosMensais = [
       id: 1, 
       nome: "Individual", 
       descricao: "Perfeito para você",
-      preco: "5,00",
+      preco: "34,90",
       economia: "",
       beneficios: [
         "Todas as especialidades",
