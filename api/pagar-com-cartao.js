@@ -1,4 +1,5 @@
-// DENTRO DE: api/pagar-com-cartao.js
+// SUBSTITUA O ARQUIVO INTEIRO POR ESTE CÓDIGO:
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,80 +7,162 @@ export default async function handler(req, res) {
   }
 
   const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
-
   if (!ASAAS_API_KEY) {
     return res.status(500).json({ success: false, error: 'Configuração interna do servidor incompleta.' });
   }
 
   try {
-    // 1. Recebemos os dados do cliente, do plano E o token do cartão
-    const { cliente, plano, creditCardToken } = req.body;
+    const { plano, cliente } = req.body;
 
-    if (!creditCardToken) {
-      throw new Error('Token do cartão de crédito não foi fornecido.');
-    }
-
-    // 2. Lógica para buscar ou criar o cliente (a mesma que já conhecemos)
-    let customerId;
-    const searchResponse = await fetch(`https://api.asaas.com/v3/customers?cpfCnpj=${cliente.cpf}`, {
-      method: 'GET',
+    // 1. Encontrar ou Criar o Cliente (lógica que já tínhamos)
+    const searchCustomerResponse = await fetch(`https://api.asaas.com/v3/customers?cpfCnpj=${cliente.cpf}`, {
       headers: { 'access_token': ASAAS_API_KEY }
     } );
-    const searchResult = await searchResponse.json();
+    const searchResult = await searchCustomerResponse.json();
+    let customerId;
 
     if (searchResult.data && searchResult.data.length > 0) {
       customerId = searchResult.data[0].id;
     } else {
-      const customerData = { name: cliente.nomeCompleto, cpfCnpj: cliente.cpf, email: cliente.email, mobilePhone: cliente.telefone };
-      const createCustomerResponse = await fetch('https://api.asaas.com/v3/customers', {
+      const newCustomerResponse = await fetch('https://api.asaas.com/v3/customers', {
         method: 'POST',
-        headers: { 'access_token': ASAAS_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify(customerData )
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+        body: JSON.stringify({
+          name: cliente.nomeCompleto,
+          cpfCnpj: cliente.cpf,
+          email: cliente.email,
+          mobilePhone: cliente.telefone,
+        } ),
       });
-      const newCustomer = await createCustomerResponse.json();
+      const newCustomer = await newCustomerResponse.json();
+      if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
       customerId = newCustomer.id;
     }
 
-    if (!customerId) {
-      throw new Error('Não foi possível obter ou criar o cliente no Asaas.');
-    }
-
-    // 3. A MÁGICA: Criar a cobrança usando o TOKEN do cartão
+    // 2. Montar o Payload de Pagamento Completo (como sua pesquisa mostrou)
     const dadosCobranca = {
       customer: customerId,
-      billingType: 'CREDIT_CARD', // Mágica 1
+      billingType: 'CREDIT_CARD',
       dueDate: new Date().toISOString().split('T')[0],
       value: parseFloat(plano.preco.replace(',', '.')),
-      description: `Assinatura do Plano (Cartão): ${plano.nome}`,
-      externalReference: `CARD_${plano.nome.replace(/ /g, '_').toUpperCase()}_${cliente.cpf}`,
-      creditCardToken: creditCardToken, // Mágica 2: Usamos o token seguro
+      description: `Assinatura do Plano: ${plano.nome}`,
+      creditCard: {
+        holderName: cliente.cardName,
+        number: cliente.cardNumber.replace(/ /g, ''),
+        expiryMonth: cliente.expiryDate.split('/')[0],
+        expiryYear: `20${cliente.expiryDate.split('/')[1]}`,
+        ccv: cliente.cvv,
+      },
+      creditCardHolderInfo: {
+        name: cliente.nomeCompleto,
+        email: cliente.email,
+        cpfCnpj: cliente.cpf,
+        postalCode: '00000-000', // CEP genérico, o Asaas exige
+        addressNumber: 'S/N', // Número genérico
+        phone: cliente.telefone.replace(/\D/g, ''),
+      },
     };
 
-    const createPaymentResponse = await fetch('https://api.asaas.com/v3/payments', {
+    // 3. Enviar a Cobrança para o Asaas
+    const paymentResponse = await fetch('https://api.asaas.com/v3/payments', {
       method: 'POST',
-      headers: { 'access_token': ASAAS_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify(dadosCobranca )
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+      body: JSON.stringify(dadosCobranca ),
     });
 
-    const paymentResult = await createPaymentResponse.json();
-
-    // 4. Tratamento de Sucesso ou Falha
-    if (!createPaymentResponse.ok || paymentResult.status === 'PAYMENT_REFUSED') {
-      console.error("Pagamento com cartão recusado ou falhou:", paymentResult);
-      // A API do Asaas retorna erros dentro de um array 'errors'
-      const errorReason = paymentResult.errors?.[0]?.description || 'Pagamento recusado pela operadora.';
-      throw new Error(errorReason);
+    const paymentResult = await paymentResponse.json();
+    if (!paymentResponse.ok) {
+      throw new Error(paymentResult.errors?.[0]?.description || 'Falha na transação.');
     }
 
-    // 5. Enviar a resposta de SUCESSO para o front-end
-    res.status(200).json({
-      success: true,
-      status: paymentResult.status, // Ex: CONFIRMED, RECEIVED, etc.
-      cobrancaId: paymentResult.id
-    });
+    res.status(200).json({ success: true, status: paymentResult.status });
 
   } catch (error) {
-    console.error("Erro detalhado no bloco catch (Cartão):", error.message);
+    console.error("Erro detalhado ao pagar com cartão:", error.message);
+    res.status(500).json({ success: false, error: 'Falha ao processar pagamento com cartão.', details: error.message });
+  }
+}
+// SUBSTITUA O ARQUIVO INTEIRO POR ESTE CÓDIGO:
+import fetch from 'node-fetch';
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método não permitido' });
+  }
+
+  const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+  if (!ASAAS_API_KEY) {
+    return res.status(500).json({ success: false, error: 'Configuração interna do servidor incompleta.' });
+  }
+
+  try {
+    const { plano, cliente } = req.body;
+
+    // 1. Encontrar ou Criar o Cliente (lógica que já tínhamos)
+    const searchCustomerResponse = await fetch(`https://api.asaas.com/v3/customers?cpfCnpj=${cliente.cpf}`, {
+      headers: { 'access_token': ASAAS_API_KEY }
+    } );
+    const searchResult = await searchCustomerResponse.json();
+    let customerId;
+
+    if (searchResult.data && searchResult.data.length > 0) {
+      customerId = searchResult.data[0].id;
+    } else {
+      const newCustomerResponse = await fetch('https://api.asaas.com/v3/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+        body: JSON.stringify({
+          name: cliente.nomeCompleto,
+          cpfCnpj: cliente.cpf,
+          email: cliente.email,
+          mobilePhone: cliente.telefone,
+        } ),
+      });
+      const newCustomer = await newCustomerResponse.json();
+      if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
+      customerId = newCustomer.id;
+    }
+
+    // 2. Montar o Payload de Pagamento Completo (como sua pesquisa mostrou)
+    const dadosCobranca = {
+      customer: customerId,
+      billingType: 'CREDIT_CARD',
+      dueDate: new Date().toISOString().split('T')[0],
+      value: parseFloat(plano.preco.replace(',', '.')),
+      description: `Assinatura do Plano: ${plano.nome}`,
+      creditCard: {
+        holderName: cliente.cardName,
+        number: cliente.cardNumber.replace(/ /g, ''),
+        expiryMonth: cliente.expiryDate.split('/')[0],
+        expiryYear: `20${cliente.expiryDate.split('/')[1]}`,
+        ccv: cliente.cvv,
+      },
+      creditCardHolderInfo: {
+        name: cliente.nomeCompleto,
+        email: cliente.email,
+        cpfCnpj: cliente.cpf,
+        postalCode: '00000-000', // CEP genérico, o Asaas exige
+        addressNumber: 'S/N', // Número genérico
+        phone: cliente.telefone.replace(/\D/g, ''),
+      },
+    };
+
+    // 3. Enviar a Cobrança para o Asaas
+    const paymentResponse = await fetch('https://api.asaas.com/v3/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+      body: JSON.stringify(dadosCobranca ),
+    });
+
+    const paymentResult = await paymentResponse.json();
+    if (!paymentResponse.ok) {
+      throw new Error(paymentResult.errors?.[0]?.description || 'Falha na transação.');
+    }
+
+    res.status(200).json({ success: true, status: paymentResult.status });
+
+  } catch (error) {
+    console.error("Erro detalhado ao pagar com cartão:", error.message);
     res.status(500).json({ success: false, error: 'Falha ao processar pagamento com cartão.', details: error.message });
   }
 }

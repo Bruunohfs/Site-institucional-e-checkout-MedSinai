@@ -29,11 +29,6 @@ function CheckoutPage() {
   const [paymentResult, setPaymentResult] = useState(null);
 
   // --- FUNÇÃO DE SUBMIT ---
-
-// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
-// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA:
-// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
-// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
 const handleFormSubmit = async (data) => {
   setIsProcessing(true);
   setPaymentResult(null);
@@ -47,58 +42,28 @@ const handleFormSubmit = async (data) => {
   };
 
   try {
-    if (metodoPagamento === 'cartao') {
-      // AQUI ESTÁ A MÁGICA DO VÍDEO:
-      const asaas = new Asaas({
-        apiKey: "$aact_YTU5YTE0M2M2N2I4MTliNzk0YTI5N2U5MzdjNWZmNDQ4Murilo", // Chave de produção, mas não é usada para tokenizar
-        sandbox: false,
-      });
+    const endpoint = 
+      metodoPagamento === 'boleto' ? '/api/gerar-boleto' :
+      metodoPagamento === 'pix' ? '/api/gerar-pix' :
+      '/api/pagar-com-cartao';
 
-      const cardData = {
-        customer_name: data.cardName,
-        credit_card_number: data.cardNumber.replace(/ /g, ''),
-        credit_card_brand: "VISA", // Idealmente, detectar a bandeira
-        credit_card_token: "",
-        credit_card_expiry_month: data.expiryDate.split('/')[0],
-        credit_card_expiry_year: `20${data.expiryDate.split('/')[1]}`,
-        credit_card_ccv: data.cvv,
-      };
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dadosCompletos),
+    });
 
-      // Usamos o método ensinado no vídeo
-      const response = await asaas.CreditCard.tokenize(cardData);
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.details || result.error);
 
-      if (response.success) {
-        const payload = { ...dadosCompletos, creditCardToken: response.credit_card_token };
-        const apiResponse = await fetch('/api/pagar-com-cartao', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const result = await apiResponse.json();
-        if (!apiResponse.ok) throw new Error(result.details || result.error);
-        setPaymentResult({ success: true, type: 'cartao', status: result.status });
-      } else {
-        const errorReason = response.errors?.[0]?.description || 'Dados do cartão inválidos.';
-        throw new Error(errorReason);
-      }
-
-    } else {
-      // Lógica para Boleto e Pix (permanece a mesma)
-      const endpoint = metodoPagamento === 'boleto' ? '/api/gerar-boleto' : '/api/gerar-pix';
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosCompletos),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.details || result.error);
-
-      if (metodoPagamento === 'boleto') {
-        setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
-      } else if (metodoPagamento === 'pix') {
-        setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
-      }
+    if (metodoPagamento === 'boleto') {
+      setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
+    } else if (metodoPagamento === 'pix') {
+      setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
+    } else if (metodoPagamento === 'cartao') {
+      setPaymentResult({ success: true, type: 'cartao', status: result.status });
     }
+
   } catch (error) {
     console.error(`Erro ao processar pagamento:`, error);
     setPaymentResult({ success: false, message: error.message || 'Ocorreu um erro inesperado.' });
@@ -106,6 +71,7 @@ const handleFormSubmit = async (data) => {
     setIsProcessing(false);
   }
 };
+
   // --- RENDERIZAÇÃO DE ERRO ---
   if (!planoSelecionado) {
     return (
