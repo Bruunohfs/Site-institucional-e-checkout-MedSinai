@@ -5,6 +5,7 @@ import { IMaskInput } from 'react-imask';
 import { useParams } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
+import Asaas from 'asaas';
 
 // Ícone de cadeado
 const LockIcon = () => (
@@ -32,6 +33,13 @@ function CheckoutPage() {
     setIsProcessing(true);
     setPaymentResult(null);
 
+    // Inicializamos o Asaas SDK aqui.
+    // A chave de API não é usada na tokenização do lado do cliente, mas a SDK exige um valor.
+    const asaas = new Asaas({
+      apiKey: "DEFINED_ON_BACKEND",
+      sandbox: false
+    });
+
     const dadosCompletos = {
       plano: {
         nome: planoSelecionado.nome,
@@ -41,61 +49,40 @@ function CheckoutPage() {
     };
 
     try {
-      let endpoint = '';
-      let payload = {};
-
-      // LÓGICA PARA CADA MÉTODO DE PAGAMENTO
       if (metodoPagamento === 'cartao') {
-        // 1. TOKENIZAÇÃO DO CARTÃO
-        AsaasCC.tokenize({
+        const cardData = {
           customer_name: data.cardName,
           credit_card_number: data.cardNumber.replace(/ /g, ''),
-          credit_card_brand: "VISA", // Pode ser melhorado para detectar a bandeira
-          credit_card_token: "", // Este campo é necessário pela SDK
+          credit_card_brand: "VISA", // Idealmente, detectar a bandeira
+          credit_card_token: "",
           credit_card_expiry_month: data.expiryDate.split('/')[0],
           credit_card_expiry_year: `20${data.expiryDate.split('/')[1]}`,
           credit_card_ccv: data.cvv,
-        }, async (response) => {
-          if (response.success) {
-            // 2. TOKEN GERADO! AGORA CHAMA NOSSA API
-            endpoint = '/api/pagar-com-cartao';
-            payload = { ...dadosCompletos, creditCardToken: response.credit_card_token };
-            
-            try {
-              const apiResponse = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-              });
-              const result = await apiResponse.json();
-              if (!apiResponse.ok) throw new Error(result.details || result.error);
+        };
 
-              setPaymentResult({ success: true, type: 'cartao', status: result.status });
-            } catch (error) {
-              setPaymentResult({ success: false, message: error.message });
-            } finally {
-              setIsProcessing(false);
-            }
+        const response = await asaas.CreditCard.tokenize(cardData);
 
-          } else {
-            // Falha na tokenização
-            const errorReason = response.errors?.[0]?.description || 'Dados do cartão inválidos.';
-            setPaymentResult({ success: false, message: errorReason });
-            setIsProcessing(false);
-          }
-        });
-        return; 
-      } 
-      
-      // LÓGICA PARA BOLETO E PIX
-      else {
-        endpoint = metodoPagamento === 'boleto' ? '/api/gerar-boleto' : '/api/gerar-pix';
-        payload = dadosCompletos;
-
+        if (response.success) {
+          const payload = { ...dadosCompletos, creditCardToken: response.credit_card_token };
+          const apiResponse = await fetch('/api/pagar-com-cartao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const result = await apiResponse.json();
+          if (!apiResponse.ok) throw new Error(result.details || result.error);
+          setPaymentResult({ success: true, type: 'cartao', status: result.status });
+        } else {
+          const errorReason = response.errors?.[0]?.description || 'Dados do cartão inválidos.';
+          throw new Error(errorReason);
+        }
+      } else {
+        // Lógica para Boleto e Pix
+        const endpoint = metodoPagamento === 'boleto' ? '/api/gerar-boleto' : '/api/gerar-pix';
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(dadosCompletos),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.details || result.error);
@@ -107,12 +94,10 @@ function CheckoutPage() {
         }
       }
     } catch (error) {
-      console.error(`Erro ao chamar a API de ${metodoPagamento}:`, error);
-      setPaymentResult({ success: false, message: error.message || 'Não foi possível conectar ao servidor de pagamento.' });
+      console.error(`Erro ao processar pagamento:`, error);
+      setPaymentResult({ success: false, message: error.message || 'Ocorreu um erro inesperado.' });
     } finally {
-      if (metodoPagamento !== 'cartao') {
-        setIsProcessing(false);
-      }
+      setIsProcessing(false);
     }
   };
 
@@ -298,7 +283,6 @@ function CheckoutPage() {
                         <p className="text-sm">Seja bem-vindo(a)! Enviamos os detalhes da sua assinatura para o seu e-mail.</p>
                       </div>
                     )}
-                    {/* A mensagem de sucesso do Pix não é necessária aqui, pois o QR Code já é o sucesso */}
                   </>
                 )}
 
