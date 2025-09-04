@@ -31,9 +31,18 @@ function CheckoutPage() {
 
 // SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
 // SUBSTITUA A FUNÇÃO INTEIRA POR ESTA:
+// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL E CORRETA:
 const handleFormSubmit = async (data ) => {
   setIsProcessing(true);
   setPaymentResult(null);
+
+  // Primeiro, verificamos se o script do Asaas carregou e criou o objeto 'AsaasCC' na 'window'
+  if (typeof window.AsaasCC === 'undefined') {
+    console.error("FATAL: O script do Asaas (AsaasCC) não foi encontrado na window.");
+    setPaymentResult({ success: false, message: 'Falha crítica ao carregar o módulo de pagamento. Por favor, recarregue a página.' });
+    setIsProcessing(false);
+    return; // Para a execução aqui
+  }
 
   const dadosCompletos = {
     plano: {
@@ -45,9 +54,16 @@ const handleFormSubmit = async (data ) => {
 
   try {
     if (metodoPagamento === 'cartao') {
-      // AQUI ESTÁ A MUDANÇA: Usamos o AsaasCC que vem do script
-      const asaas = new AsaasCC();
-      asaas.setCreditCard(data); // Passa os dados do formulário
+      const asaas = new window.AsaasCC();
+      
+      // O Asaas espera os nomes dos campos em inglês
+      const cardData = {
+        number: data.cardNumber.replace(/ /g, ''),
+        cvv: data.cvv,
+        expiryMonth: data.expiryDate.split('/')[0],
+        expiryYear: `20${data.expiryDate.split('/')[1]}`,
+      };
+      asaas.setCreditCard(cardData);
 
       const token = await asaas.getCreditCardToken();
 
@@ -85,6 +101,7 @@ const handleFormSubmit = async (data ) => {
     setIsProcessing(false);
   }
 };
+
 
 
   // --- RENDERIZAÇÃO DE ERRO ---
