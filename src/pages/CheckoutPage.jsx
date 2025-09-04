@@ -27,55 +27,62 @@ function CheckoutPage() {
 
   // --- FUNÇÃO DE SUBMIT ---
   const handleFormSubmit = async (data) => {
-  if (metodoPagamento !== 'boleto') {
-    alert(`Integração para ${metodoPagamento} ainda não implementada.`);
-    return;
-  }
-
-  setIsProcessing(true);
-  setPaymentResult(null);
-
-  const dadosCompletos = {
-    plano: {
-      nome: planoSelecionado.nome,
-      preco: planoSelecionado.preco,
-    },
-    cliente: data,
-  };
-
-  try {
-    // USANDO FETCH, A FERRAMENTA NATIVA DO NAVEGADOR
-    const response = await fetch('/api/gerar-boleto', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(dadosCompletos),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      // Se a resposta da rede não for "ok" (ex: erro 500), lança um erro.
-      throw new Error(result.details || result.error || 'Falha na comunicação com a API.');
+    if (metodoPagamento === 'cartao') {
+      alert('Integração para Cartão de Crédito ainda não implementada.');
+      return;
     }
 
-    // Deu tudo certo! Guardamos o resultado.
-    setPaymentResult({
-      success: true,
-      url: result.boletoUrl,
-    });
+    setIsProcessing(true);
+    setPaymentResult(null);
 
-  } catch (error) {
-    console.error("Erro ao chamar a API de boleto:", error);
-    setPaymentResult({
-      success: false,
-      message: error.message || 'Não foi possível conectar ao servidor de pagamento.',
-    });
-  } finally {
-    setIsProcessing(false);
-  }
-};
+    const dadosCompletos = {
+      plano: {
+        nome: planoSelecionado.nome,
+        preco: planoSelecionado.preco,
+      },
+      cliente: data,
+    };
+
+    const endpoint = metodoPagamento === 'boleto' ? '/api/gerar-boleto' : '/api/gerar-pix';
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dadosCompletos),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.details || result.error || 'Falha na comunicação com a API.');
+      }
+
+      if (metodoPagamento === 'boleto') {
+        setPaymentResult({
+          success: true,
+          type: 'boleto',
+          url: result.boletoUrl,
+        });
+      } else if (metodoPagamento === 'pix') {
+        setPaymentResult({
+          success: true,
+          type: 'pix',
+          payload: result.payload,
+          qrCodeImage: `data:image/png;base64,${result.encodedImage}`,
+        });
+      }
+
+    } catch (error) {
+      console.error(`Erro ao chamar a API de ${metodoPagamento}:`, error);
+      setPaymentResult({
+        success: false,
+        message: error.message || 'Não foi possível conectar ao servidor de pagamento.',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // --- RENDERIZAÇÃO DE ERRO ---
   if (!planoSelecionado) {
@@ -120,91 +127,30 @@ function CheckoutPage() {
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">Seus Dados</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    {/* --- Campo Nome --- */}
+                    {/* --- Campos do Cliente (Nome, CPF, etc.) --- */}
                     <div>
                       <label htmlFor="nomeCompleto" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
-                      <input
-                        type="text"
-                        id="nomeCompleto"
-                        placeholder="Seu nome completo"
-                        {...register("nomeCompleto", { required: "O nome é obrigatório" })}
-                        className={`w-full mt-1 p-3 rounded-lg border ${errors.nomeCompleto ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                      />
+                      <input type="text" id="nomeCompleto" placeholder="Seu nome completo" {...register("nomeCompleto", { required: "O nome é obrigatório" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.nomeCompleto ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
                       {errors.nomeCompleto && <p className="text-red-500 text-xs mt-1">{errors.nomeCompleto.message}</p>}
                     </div>
-                    {/* --- Campo CPF --- */}
                     <div>
                       <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CPF</label>
-                      <Controller
-                        name="cpf"
-                        control={control}
-                        rules={{ required: "O CPF é obrigatório" }}
-                        render={({ field }) => (
-                          <IMaskInput
-                            {...field}
-                            mask="000.000.000-00"
-                            id="cpf"
-                            placeholder="000.000.000-00"
-                            className={`w-full mt-1 p-3 rounded-lg border ${errors.cpf ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                          />
-                        )}
-                      />
+                      <Controller name="cpf" control={control} rules={{ required: "O CPF é obrigatório" }} render={({ field }) => (<IMaskInput {...field} mask="000.000.000-00" id="cpf" placeholder="000.000.000-00" className={`w-full mt-1 p-3 rounded-lg border ${errors.cpf ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
                       {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf.message}</p>}
                     </div>
-                    {/* --- Campo Data de Nascimento --- */}
                     <div>
                       <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Nascimento</label>
-                      <Controller
-                        name="dataNascimento"
-                        control={control}
-                        rules={{ required: "A data é obrigatória" }}
-                        render={({ field }) => (
-                          <IMaskInput
-                            {...field}
-                            mask="00/00/0000"
-                            id="dataNascimento"
-                            placeholder="DD/MM/AAAA"
-                            className={`w-full mt-1 p-3 rounded-lg border ${errors.dataNascimento ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                          />
-                        )}
-                      />
+                      <Controller name="dataNascimento" control={control} rules={{ required: "A data é obrigatória" }} render={({ field }) => (<IMaskInput {...field} mask="00/00/0000" id="dataNascimento" placeholder="DD/MM/AAAA" className={`w-full mt-1 p-3 rounded-lg border ${errors.dataNascimento ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
                       {errors.dataNascimento && <p className="text-red-500 text-xs mt-1">{errors.dataNascimento.message}</p>}
                     </div>
-                    {/* --- Campo E-mail --- */}
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">E-mail</label>
-                      <input
-                        type="email"
-                        id="email"
-                        placeholder="seu@email.com"
-                        {...register("email", {
-                          required: "O e-mail é obrigatório",
-                          pattern: {
-                            value: /^\S+@\S+$/i,
-                            message: "Formato de e-mail inválido"
-                          }
-                        })}
-                        className={`w-full mt-1 p-3 rounded-lg border ${errors.email ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                      />
+                      <input type="email" id="email" placeholder="seu@email.com" {...register("email", { required: "O e-mail é obrigatório", pattern: { value: /^\S+@\S+$/i, message: "Formato de e-mail inválido" } })} className={`w-full mt-1 p-3 rounded-lg border ${errors.email ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
                       {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                     </div>
-                    {/* --- Campo Telefone --- */}
                     <div>
                       <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Telefone</label>
-                      <Controller
-                        name="telefone"
-                        control={control}
-                        rules={{ required: "O telefone é obrigatório" }}
-                        render={({ field }) => (
-                          <IMaskInput
-                            {...field}
-                            mask="(00) 00000-0000"
-                            id="telefone"
-                            placeholder="(00) 00000-0000"
-                            className={`w-full mt-1 p-3 rounded-lg border ${errors.telefone ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                          />
-                        )}
-                      />
+                      <Controller name="telefone" control={control} rules={{ required: "O telefone é obrigatório" }} render={({ field }) => (<IMaskInput {...field} mask="(00) 00000-0000" id="telefone" placeholder="(00) 00000-0000" className={`w-full mt-1 p-3 rounded-lg border ${errors.telefone ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
                       {errors.telefone && <p className="text-red-500 text-xs mt-1">{errors.telefone.message}</p>}
                     </div>
                   </div>
@@ -221,91 +167,58 @@ function CheckoutPage() {
                     <button type="button" onClick={() => setMetodoPagamento('pix')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'pix' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}>Pix</button>
                     <button type="button" onClick={() => setMetodoPagamento('boleto')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'boleto' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}>Boleto</button>
                   </div>
+                  
+                  {/* ÁREA DE EXIBIÇÃO DO MÉTODO DE PAGAMENTO */}
                   <div>
                     {metodoPagamento === 'cartao' && (
                       <div className="space-y-6">
-                        {/* --- Campo Número do Cartão --- */}
+                        {/* --- Campos do Cartão (Número, Validade, etc.) --- */}
                         <div>
                           <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número do Cartão</label>
-                          <Controller
-                            name="cardNumber"
-                            control={control}
-                            rules={{ required: "O número do cartão é obrigatório" }}
-                            render={({ field }) => (
-                              <IMaskInput
-                                {...field}
-                                mask="0000 0000 0000 0000"
-                                id="cardNumber"
-                                placeholder="0000 0000 0000 0000"
-                                className={`w-full mt-1 p-3 rounded-lg border ${errors.cardNumber ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                              />
-                            )}
-                          />
+                          <Controller name="cardNumber" control={control} rules={{ required: "O número do cartão é obrigatório" }} render={({ field }) => (<IMaskInput {...field} mask="0000 0000 0000 0000" id="cardNumber" placeholder="0000 0000 0000 0000" className={`w-full mt-1 p-3 rounded-lg border ${errors.cardNumber ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
                           {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber.message}</p>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* --- Campo Validade --- */}
                           <div>
                             <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Validade</label>
-                            <Controller
-                              name="expiryDate"
-                              control={control}
-                              rules={{ required: "A validade é obrigatória" }}
-                              render={({ field }) => (
-                                <IMaskInput
-                                  {...field}
-                                  mask="MM/YY"
-                                  blocks={{ MM: { mask: IMask.MaskedRange, from: 1, to: 12 }, YY: { mask: IMask.MaskedRange, from: 24, to: 99 } }}
-                                  id="expiryDate"
-                                  placeholder="MM/AA"
-                                  className={`w-full mt-1 p-3 rounded-lg border ${errors.expiryDate ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                                />
-                              )}
-                            />
+                            <Controller name="expiryDate" control={control} rules={{ required: "A validade é obrigatória" }} render={({ field }) => (<IMaskInput {...field} mask="MM/YY" blocks={{ MM: { mask: IMask.MaskedRange, from: 1, to: 12 }, YY: { mask: IMask.MaskedRange, from: 24, to: 99 } }} id="expiryDate" placeholder="MM/AA" className={`w-full mt-1 p-3 rounded-lg border ${errors.expiryDate ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
                             {errors.expiryDate && <p className="text-red-500 text-xs mt-1">{errors.expiryDate.message}</p>}
                           </div>
-                          {/* --- Campo CVV --- */}
                           <div>
                             <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CVV</label>
-                            <Controller
-                              name="cvv"
-                              control={control}
-                              rules={{ required: "O CVV é obrigatório" }}
-                              render={({ field }) => (
-                                <IMaskInput
-                                  {...field}
-                                  mask="0000"
-                                  id="cvv"
-                                  placeholder="123"
-                                  className={`w-full mt-1 p-3 rounded-lg border ${errors.cvv ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                                />
-                              )}
-                            />
+                            <Controller name="cvv" control={control} rules={{ required: "O CVV é obrigatório" }} render={({ field }) => (<IMaskInput {...field} mask="0000" id="cvv" placeholder="123" className={`w-full mt-1 p-3 rounded-lg border ${errors.cvv ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
                             {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv.message}</p>}
                           </div>
                         </div>
-                        {/* --- Campo Nome no Cartão --- */}
                         <div>
                           <label htmlFor="cardName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome no Cartão</label>
-                          <input
-                            type="text"
-                            id="cardName"
-                            placeholder="Nome completo como no cartão"
-                            {...register("cardName", { required: "O nome no cartão é obrigatório" })}
-                            className={`w-full mt-1 p-3 rounded-lg border ${errors.cardName ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-                          />
+                          <input type="text" id="cardName" placeholder="Nome completo como no cartão" {...register("cardName", { required: "O nome no cartão é obrigatório" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.cardName ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
                           {errors.cardName && <p className="text-red-500 text-xs mt-1">{errors.cardName.message}</p>}
                         </div>
                       </div>
                     )}
+
                     {metodoPagamento === 'pix' && (
-                      <div className="text-center p-4 border-dashed border-2 border-gray-300 rounded-lg">
-                        <p className="font-semibold mb-2">Pague com Pix para liberação imediata!</p>
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=FuturoCodigoPixAsaas" alt="QR Code Pix" className="mx-auto my-4" />
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Ou use o Pix Copia e Cola:</p>
-                        <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-md text-xs break-all">FuturoCodigoCopiaEColaGeradoPelaApiDoAsaas...</div>
+                      <div className="text-center p-4 border-dashed border-2 border-gray-300 dark:border-gray-600 rounded-lg">
+                        {!paymentResult || !paymentResult.success || paymentResult.type !== 'pix' ? (
+                          <>
+                            <p className="font-semibold mb-2">Pague com Pix para liberação imediata!</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Clique no botão de pagamento abaixo para gerar seu QR Code.</p>
+                          </>
+                        ) : (
+                          <div>
+                            <h4 className="font-bold text-lg mb-2 text-green-600 dark:text-green-400">QR Code Gerado!</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Aponte a câmera do seu celular ou use o código abaixo.</p>
+                            <img src={paymentResult.qrCodeImage} alt="QR Code Pix" className="mx-auto my-4 border-4 border-white dark:border-gray-700 rounded-lg shadow-lg" />
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Pix Copia e Cola:</p>
+                            <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded-md text-xs break-all font-mono cursor-pointer" onClick={() => navigator.clipboard.writeText(paymentResult.payload)} title="Clique para copiar">
+                              {paymentResult.payload}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                     )}
+                    )}
+
                     {metodoPagamento === 'boleto' && (
                       <div className="text-center p-4 border-dashed border-2 border-gray-300 rounded-lg">
                         <p className="font-semibold mb-4">O boleto será enviado para o seu e-mail e pode levar até 3 dias úteis para ser compensado.</p>
@@ -314,20 +227,11 @@ function CheckoutPage() {
                     )}
                   </div>
                 </div>
-
               </div>
 
               {/* Botão de Pagamento */}
               <div className="mt-8">
-                <button
-                  type="submit"
-                  disabled={!isValid || isProcessing}
-                  className={`w-full px-8 py-4 text-lg rounded-lg font-semibold transition-colors flex items-center justify-center ${
-                    !isValid || isProcessing
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
-                >
+                <button type="submit" disabled={!isValid || isProcessing} className={`w-full px-8 py-4 text-lg rounded-lg font-semibold transition-colors flex items-center justify-center ${!isValid || isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}>
                   <LockIcon />
                   {isProcessing ? ' Processando...' : (
                     <>
@@ -341,29 +245,21 @@ function CheckoutPage() {
             </form>
 
             {/* Área de Resultado do Pagamento */}
-            {paymentResult && (
-              <div className={`mt-6 p-4 rounded-lg text-center ${
-                paymentResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {paymentResult.success ? (
-                  <div>
-                    <h4 className="font-bold mb-2">Boleto Gerado com Sucesso!</h4>
-                    <a
-                      href={paymentResult.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700"
-                    >
-                      Clique aqui para visualizar o Boleto
-                    </a>
-                    <p className="text-xs mt-2">O boleto também foi enviado para o seu e-mail.</p>
-                  </div>
-                ) : (
-                  <div>
-                    <h4 className="font-bold">Ocorreu um Erro</h4>
-                    <p>{paymentResult.message}</p>
-                  </div>
-                )}
+            {paymentResult && paymentResult.success && paymentResult.type === 'boleto' && (
+              <div className="mt-6 p-4 rounded-lg text-center bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <h4 className="font-bold mb-2">Boleto Gerado com Sucesso!</h4>
+                <a href={paymentResult.url} target="_blank" rel="noopener noreferrer" className="inline-block bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700">
+                  Clique aqui para visualizar o Boleto
+                </a>
+                <p className="text-xs mt-2">O boleto também foi enviado para o seu e-mail.</p>
+              </div>
+            )}
+
+            {/* Caixa de Erro */}
+            {paymentResult && !paymentResult.success && (
+              <div className="mt-6 p-4 rounded-lg text-center bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                <h4 className="font-bold">Ocorreu um Erro</h4>
+                <p>{paymentResult.message}</p>
               </div>
             )}
 
