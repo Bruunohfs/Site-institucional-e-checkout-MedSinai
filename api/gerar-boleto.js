@@ -1,4 +1,3 @@
-// api/gerar-boleto.js - VERSÃO FINAL COM NODE-FETCH
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

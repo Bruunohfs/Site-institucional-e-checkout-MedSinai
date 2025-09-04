@@ -1,4 +1,3 @@
-// DENTRO DE: api/gerar-pix.js
 
 export default async function handler(req, res) {
   // 1. Validação inicial (igual ao boleto)
