@@ -131,41 +131,24 @@ function CheckoutPage() {
   )}
 
             {/* --- LÓGICA PARA PLANO ANUAL --- */}
-{tipoPlano === 'anual' && (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div className="md:col-span-2">
-      <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CEP</label>
-      <Controller
-        name="postalCode"
-        control={control}
-        rules={{ required: "O CEP é obrigatório", minLength: { value: 9, message: "CEP incompleto" } }}
-        render={({ field: { onChange, name, value } }) => (
-          <IMaskInput
-            mask="00000-000"
-            id={name}
-            name={name}
-            value={value}
-            placeholder="00000-000"
-            className={`w-full mt-1 p-3 rounded-lg border ${errors.postalCode ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-            onAccept={(val) => onChange(val)}
-          />
-        )}
-      />
-      {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode.message}</p>}
-    </div>
-    <div>
-      <label htmlFor="addressNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número</label>
-      <input
-        type="text"
-        id="addressNumber"
-        placeholder="123"
-        {...register("addressNumber", { required: "O número é obrigatório" })}
-        className={`w-full mt-1 p-3 rounded-lg border ${errors.addressNumber ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-      />
-      {errors.addressNumber && <p className="text-red-500 text-xs mt-1">{errors.addressNumber.message}</p>}
-    </div>
-  </div>
-)}
+  {tipoPlano === 'anual' && (
+    <>
+      <div className="flex justify-between items-center">
+        <p className="font-semibold text-gray-800 dark:text-gray-200">Plano Selecionado:</p>
+        <p className="font-bold text-lg text-gray-900 dark:text-white">{planoSelecionado.nome} (Anual)</p>
+      </div>
+      <hr className="my-2 border-gray-200 dark:border-gray-600" />
+      <div className="flex justify-between items-center">
+        <p className="font-semibold text-gray-800 dark:text-gray-200">Valor da Cobrança:</p>
+        <div className="text-right">
+          <p className="font-bold text-lg text-green-600 dark:text-green-400">12x de R$ {planoSelecionado.preco}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Total: R$ {(parseFloat(planoSelecionado.preco.replace(',', '.')) * 12).toFixed(2).replace('.', ',')}
+          </p>
+        </div>
+      </div>
+    </>
+  )}
 </div>
 
             {/* Formulário de Pagamento */}
@@ -361,6 +344,41 @@ function CheckoutPage() {
                   <div>
                     {metodoPagamento === 'cartao' && (
                       <div className="space-y-6">
+                        {tipoPlano === 'anual' && (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="md:col-span-2">
+      <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CEP</label>
+      <Controller
+        name="postalCode"
+        control={control}
+        rules={{ required: "O CEP é obrigatório", minLength: { value: 9, message: "CEP incompleto" } }}
+        render={({ field: { onChange, name, value } }) => (
+          <IMaskInput
+            mask="00000-000"
+            id={name}
+            name={name}
+            value={value}
+            placeholder="00000-000"
+            className={`w-full mt-1 p-3 rounded-lg border ${errors.postalCode ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
+            onAccept={(val) => onChange(val)}
+          />
+        )}
+      />
+      {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode.message}</p>}
+    </div>
+    <div>
+      <label htmlFor="addressNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número</label>
+      <input
+        type="text"
+        id="addressNumber"
+        placeholder="123"
+        {...register("addressNumber", { required: "O número é obrigatório" })}
+        className={`w-full mt-1 p-3 rounded-lg border ${errors.addressNumber ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
+      />
+      {errors.addressNumber && <p className="text-red-500 text-xs mt-1">{errors.addressNumber.message}</p>}
+    </div>
+  </div>
+)}
                         <div>
   <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número do Cartão</label>
   <Controller
