@@ -1,9 +1,6 @@
-// /api/gerar-pix.js - VERSÃO FINAL COM POLLING
+// /api/gerar-pix.js - VERSÃO FINAL E SIMPLIFICADA
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
-
-// Função auxiliar para esperar um pouco
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -19,7 +16,6 @@ export default async function handler(req, res) {
     const { cliente, plano } = req.body;
 
     // --- Lógica do Cliente (sem alterações) ---
-    // (código para buscar ou criar cliente permanece o mesmo)
     const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
@@ -34,18 +30,16 @@ export default async function handler(req, res) {
 
     // --- LÓGICA DA ASSINATURA ---
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 2); // Adiciona 2 dias à data atual
+    dueDate.setDate(dueDate.getDate() + 2); // Prazo de 2 dias
 
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'PIX',
       value: parseFloat(plano.preco.replace(',', '.')),
-      // Usamos a nova data com o prazo de 2 dias.
       nextDueDate: dueDate.toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
-
 
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, {
       method: 'POST',
@@ -59,26 +53,11 @@ export default async function handler(req, res) {
       throw new Error(errorMessage);
     }
 
-    // ✨--- INÍCIO DA LÓGICA DE POLLING ---✨
-    let primeiroPagamentoId = null;
-    const subscriptionId = subscriptionResult.id;
-
-    for (let i = 0; i < 5; i++) {
-      const checkResponse = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionId}`, {
-        headers: { 'access_token': ASAAS_API_KEY }
-      });
-      const checkResult = await checkResponse.json();
-      
-      if (checkResult.payments && checkResult.payments.length > 0) {
-        primeiroPagamentoId = checkResult.payments[0].id;
-        break; // Encontramos! Saia do loop.
-      }
-      
-      await sleep(1000); // Espere 1 segundo antes de tentar de novo.
-    }
-    // ✨--- FIM DA LÓGICA DE POLLING ---✨
+    // ✨--- A MUDANÇA CRÍTICA ---✨
+    const primeiroPagamentoId = subscriptionResult.payments?.[0]?.id;
 
     if (!primeiroPagamentoId) {
+      console.error("Resposta da Asaas não continha o ID do primeiro pagamento:", subscriptionResult);
       throw new Error("Assinatura criada, mas não foi possível obter o ID do primeiro pagamento Pix.");
     }
 
@@ -88,6 +67,10 @@ export default async function handler(req, res) {
       headers: { 'access_token': ASAAS_API_KEY }
     });
     const qrCodeData = await qrCodeResponse.json();
+
+    if (!qrCodeResponse.ok) {
+        throw new Error("Não foi possível gerar o QR Code para o pagamento inicial.");
+    }
 
     res.status(200).json({
       success: true,

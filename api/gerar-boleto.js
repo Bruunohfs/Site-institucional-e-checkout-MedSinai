@@ -1,9 +1,6 @@
-// /api/gerar-boleto.js - VERSÃO FINAL COM POLLING
+// /api/gerar-boleto.js - VERSÃO FINAL E SIMPLIFICADA
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
-
-// Função auxiliar para esperar um pouco
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -19,7 +16,6 @@ export default async function handler(req, res) {
     const { cliente, plano } = req.body;
 
     // --- Lógica do Cliente (sem alterações) ---
-    // (código para buscar ou criar cliente permanece o mesmo)
     const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
@@ -33,14 +29,13 @@ export default async function handler(req, res) {
     }
 
     // --- LÓGICA DA ASSINATURA ---
-   const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 2); // Adiciona 2 dias à data atual
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 2); // Prazo de 2 dias para o primeiro pagamento
 
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'BOLETO',
       value: parseFloat(plano.preco.replace(',', '.')),
-      // Usamos a nova data com o prazo de 2 dias.
       nextDueDate: dueDate.toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
@@ -58,36 +53,21 @@ export default async function handler(req, res) {
       throw new Error(errorMessage);
     }
 
-    // ✨--- INÍCIO DA LÓGICA DE POLLING ---✨
-    let primeiroBoletoUrl = null;
-    let cobrancaId = null;
-    const subscriptionId = subscriptionResult.id;
-
-    // Vamos tentar buscar os dados do pagamento por até 5 segundos.
-    for (let i = 0; i < 5; i++) {
-      const checkResponse = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionId}`, {
-        headers: { 'access_token': ASAAS_API_KEY }
-      });
-      const checkResult = await checkResponse.json();
-      
-      if (checkResult.payments && checkResult.payments.length > 0) {
-        primeiroBoletoUrl = checkResult.payments[0].bankSlipUrl;
-        cobrancaId = checkResult.payments[0].id;
-        break; // Encontramos! Saia do loop.
-      }
-      
-      await sleep(1000); // Espere 1 segundo antes de tentar de novo.
-    }
-    // ✨--- FIM DA LÓGICA DE POLLING ---✨
+    // ✨--- A MUDANÇA CRÍTICA ---✨
+    // Vamos confiar que a resposta da criação JÁ CONTÉM os dados do primeiro pagamento.
+    const primeiroPagamento = subscriptionResult.payments?.[0];
+    const primeiroBoletoUrl = primeiroPagamento?.bankSlipUrl;
 
     if (!primeiroBoletoUrl) {
+      // Se não veio, o erro é imediato.
+      console.error("Resposta da Asaas não continha os dados do primeiro boleto:", subscriptionResult);
       throw new Error("Assinatura criada, mas não foi possível obter a URL do primeiro boleto.");
     }
 
     res.status(200).json({
       success: true,
       boletoUrl: primeiroBoletoUrl,
-      cobrancaId: cobrancaId
+      cobrancaId: primeiroPagamento.id
     });
 
   } catch (error) {
