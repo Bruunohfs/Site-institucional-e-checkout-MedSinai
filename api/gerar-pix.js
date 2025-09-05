@@ -1,6 +1,9 @@
-// /api/gerar-pix.js - COM CAPTURA DE ERRO DETALHADA
+// /api/gerar-pix.js - VERSÃO FINAL COM LÓGICA DE BUSCA
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
+
+// Função para esperar um pouco
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -33,7 +36,7 @@ export default async function handler(req, res) {
       customer: customerId,
       billingType: 'PIX',
       value: parseFloat(plano.preco.replace(',', '.')),
-      nextDueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+      nextDueDate: new Date().toISOString().split('T')[0], // Primeira cobrança hoje!
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
@@ -44,35 +47,31 @@ export default async function handler(req, res) {
     }
     const subscriptionResult = await subscriptionResponse.json();
 
-    // --- PASSO 2: CRIAR O PAGAMENTO AVULSO ---
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 2);
-    const paymentPayload = {
-      customer: customerId,
-      billingType: 'PIX',
-      dueDate: dueDate.toISOString().split('T')[0],
-      value: parseFloat(plano.preco.replace(',', '.')),
-      description: `Primeira cobrança do Plano: ${plano.nome}`,
-      subscription: subscriptionResult.id,
-    };
-    const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(paymentPayload) });
-    
-    // ✨✨ A GRANDE MUDANÇA ESTÁ AQUI ✨✨
-    if (!paymentResponse.ok) {
-      const errorText = await paymentResponse.text();
-      throw new Error(`Falha ao gerar a primeira cobrança: ${errorText}`);
-    }
-    const paymentResult = await paymentResponse.json();
+    // --- PASSO 2: BUSCAR O PRIMEIRO PAGAMENTO GERADO PELA ASSINATURA ---
+    await sleep(2000); // Espera 2 segundos para a Asaas processar
 
-    // --- PASSO 3: GERAR O QR CODE ---
-    const qrCodeResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentResult.id}/pixQrCode`, { method: 'GET', headers: { 'access_token': ASAAS_API_KEY } });
+    const paymentsResponse = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionResult.id}/payments`, { headers: { 'access_token': ASAAS_API_KEY } });
+    if (!paymentsResponse.ok) {
+        const errorText = await paymentsResponse.text();
+        throw new Error(`Falha ao buscar pagamentos da assinatura: ${errorText}`);
+    }
+    const paymentsResult = await paymentsResponse.json();
+
+    if (!paymentsResult.data || paymentsResult.data.length === 0) {
+        throw new Error("A Asaas criou a assinatura, mas o primeiro pagamento ainda não foi encontrado.");
+    }
+
+    const firstPayment = paymentsResult.data[0];
+
+    // --- PASSO 3: GERAR O QR CODE PARA O PAGAMENTO ENCONTRADO ---
+    const qrCodeResponse = await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}/pixQrCode`, { method: 'GET', headers: { 'access_token': ASAAS_API_KEY } });
     if (!qrCodeResponse.ok) {
       const errorText = await qrCodeResponse.text();
       throw new Error(`Não foi possível gerar o QR Code: ${errorText}`);
     }
     const qrCodeData = await qrCodeResponse.json();
 
-    res.status(200).json({ success: true, payload: qrCodeData.payload, encodedImage: qrCodeData.encodedImage, cobrancaId: paymentResult.id });
+    res.status(200).json({ success: true, payload: qrCodeData.payload, encodedImage: qrCodeData.encodedImage, cobrancaId: firstPayment.id });
 
   } catch (error) {
     console.error("Erro detalhado no fluxo de assinatura de Pix:", error.message);
