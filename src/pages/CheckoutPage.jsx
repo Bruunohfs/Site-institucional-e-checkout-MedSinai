@@ -185,13 +185,17 @@ function CheckoutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                     <div>
                       <label htmlFor="nomeCompleto" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
-                      <input 
-                        type="text" 
-                        id="nomeCompleto" 
-                        placeholder="Seu nome completo" 
-                        {...register("nomeCompleto", { required: "O nome é obrigatório" })} 
-                        className={`w-full mt-1 p-3 rounded-lg border ${errors.nomeCompleto ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'} text-gray-900 dark:text-white`} 
-                      />
+                     <input 
+  type="text" 
+  id="nomeCompleto" 
+  {...register("nomeCompleto", { required: "O nome é obrigatório" })} 
+  className={`
+    w-full mt-1 p-3 rounded-lg border 
+    bg-gray-50 dark:bg-gray-700 
+    text-gray-900 dark:text-white 
+    ${errors.nomeCompleto ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
+  `} 
+/>
                       {errors.nomeCompleto && <p className="text-red-500 text-xs mt-1">{errors.nomeCompleto.message}</p>}
                     </div>
 
