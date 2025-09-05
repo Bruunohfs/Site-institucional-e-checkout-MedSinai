@@ -1,4 +1,4 @@
-// /api/gerar-boleto.js - VERSÃO FINAL E SIMPLIFICADA
+// /api/gerar-boleto.js - VERSÃO FINAL SEGUINDO A DOCUMENTAÇÃO OFICIAL
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
@@ -28,15 +28,13 @@ export default async function handler(req, res) {
       customerId = newCustomer.id;
     }
 
-    // --- LÓGICA DA ASSINATURA ---
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 2); // Prazo de 2 dias para o primeiro pagamento
-
+    // --- PASSO 1: CRIAR A ASSINATURA (O "CONTRATO") ---
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'BOLETO',
       value: parseFloat(plano.preco.replace(',', '.')),
-      nextDueDate: dueDate.toISOString().split('T')[0],
+      // A próxima cobrança AUTOMÁTICA será daqui a 1 mês.
+      nextDueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
@@ -49,29 +47,42 @@ export default async function handler(req, res) {
 
     const subscriptionResult = await subscriptionResponse.json();
     if (!subscriptionResponse.ok) {
-      const errorMessage = subscriptionResult.errors?.[0]?.description || 'Falha ao criar assinatura.';
-      throw new Error(errorMessage);
+      throw new Error(subscriptionResult.errors?.[0]?.description || 'Falha ao criar a assinatura.');
     }
 
-    // ✨--- A MUDANÇA CRÍTICA ---✨
-    // Vamos confiar que a resposta da criação JÁ CONTÉM os dados do primeiro pagamento.
-    const primeiroPagamento = subscriptionResult.payments?.[0];
-    const primeiroBoletoUrl = primeiroPagamento?.bankSlipUrl;
+    // --- PASSO 2: CRIAR O PAGAMENTO AVULSO (A "PRIMEIRA PARCELA") ---
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 2); // Prazo de 2 dias para pagar
 
-    if (!primeiroBoletoUrl) {
-      // Se não veio, o erro é imediato.
-      console.error("Resposta da Asaas não continha os dados do primeiro boleto:", subscriptionResult);
-      throw new Error("Assinatura criada, mas não foi possível obter a URL do primeiro boleto.");
+    const paymentPayload = {
+      customer: customerId,
+      billingType: 'BOLETO',
+      dueDate: dueDate.toISOString().split('T')[0],
+      value: parseFloat(plano.preco.replace(',', '.')),
+      description: `Primeira cobrança do Plano: ${plano.nome}`,
+      // ✨ A MÁGICA: Vinculamos este pagamento à assinatura criada.
+      subscription: subscriptionResult.id,
+    };
+
+    const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+      body: JSON.stringify(paymentPayload),
+    });
+
+    const paymentResult = await paymentResponse.json();
+    if (!paymentResponse.ok) {
+      throw new Error(paymentResult.errors?.[0]?.description || 'Falha ao gerar a primeira cobrança.');
     }
 
     res.status(200).json({
       success: true,
-      boletoUrl: primeiroBoletoUrl,
-      cobrancaId: primeiroPagamento.id
+      boletoUrl: paymentResult.bankSlipUrl,
+      cobrancaId: paymentResult.id
     });
 
   } catch (error) {
-    console.error("Erro detalhado ao gerar assinatura de boleto:", error.message);
-    res.status(500).json({ success: false, error: 'Falha ao gerar assinatura.', details: error.message });
+    console.error("Erro detalhado no fluxo de assinatura de boleto:", error.message);
+    res.status(500).json({ success: false, error: 'Falha no processo de assinatura.', details: error.message });
   }
 }

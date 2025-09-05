@@ -1,4 +1,4 @@
-// /api/gerar-pix.js - VERSÃO FINAL E SIMPLIFICADA
+// /api/gerar-pix.js - VERSÃO FINAL SEGUINDO A DOCUMENTAÇÃO OFICIAL
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
@@ -28,15 +28,12 @@ export default async function handler(req, res) {
       customerId = newCustomer.id;
     }
 
-    // --- LÓGICA DA ASSINATURA ---
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 2); // Prazo de 2 dias
-
+    // --- PASSO 1: CRIAR A ASSINATURA (O "CONTRATO") ---
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'PIX',
       value: parseFloat(plano.preco.replace(',', '.')),
-      nextDueDate: dueDate.toISOString().split('T')[0],
+      nextDueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
@@ -49,38 +46,53 @@ export default async function handler(req, res) {
 
     const subscriptionResult = await subscriptionResponse.json();
     if (!subscriptionResponse.ok) {
-      const errorMessage = subscriptionResult.errors?.[0]?.description || 'Falha ao criar assinatura.';
-      throw new Error(errorMessage);
+      throw new Error(subscriptionResult.errors?.[0]?.description || 'Falha ao criar a assinatura.');
     }
 
-    // ✨--- A MUDANÇA CRÍTICA ---✨
-    const primeiroPagamentoId = subscriptionResult.payments?.[0]?.id;
+    // --- PASSO 2: CRIAR O PAGAMENTO AVULSO (A "PRIMEIRA PARCELA") ---
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 2); // Prazo de 2 dias
 
-    if (!primeiroPagamentoId) {
-      console.error("Resposta da Asaas não continha o ID do primeiro pagamento:", subscriptionResult);
-      throw new Error("Assinatura criada, mas não foi possível obter o ID do primeiro pagamento Pix.");
+    const paymentPayload = {
+      customer: customerId,
+      billingType: 'PIX',
+      dueDate: dueDate.toISOString().split('T')[0],
+      value: parseFloat(plano.preco.replace(',', '.')),
+      description: `Primeira cobrança do Plano: ${plano.nome}`,
+      subscription: subscriptionResult.id,
+    };
+
+    const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+      body: JSON.stringify(paymentPayload),
+    });
+
+    const paymentResult = await paymentResponse.json();
+    if (!paymentResponse.ok) {
+      throw new Error(paymentResult.errors?.[0]?.description || 'Falha ao gerar a primeira cobrança.');
     }
 
-    // Agora, buscamos o QR Code para este primeiro pagamento.
-    const qrCodeResponse = await fetch(`${ASAAS_API_URL}/payments/${primeiroPagamentoId}/pixQrCode`, {
+    // --- PASSO 3: GERAR O QR CODE PARA O PAGAMENTO AVULSO ---
+    const qrCodeResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentResult.id}/pixQrCode`, {
       method: 'GET',
       headers: { 'access_token': ASAAS_API_KEY }
     });
     const qrCodeData = await qrCodeResponse.json();
 
     if (!qrCodeResponse.ok) {
-        throw new Error("Não foi possível gerar o QR Code para o pagamento inicial.");
+      throw new Error("Não foi possível gerar o QR Code para o pagamento inicial.");
     }
 
     res.status(200).json({
       success: true,
       payload: qrCodeData.payload,
       encodedImage: qrCodeData.encodedImage,
-      cobrancaId: primeiroPagamentoId
+      cobrancaId: paymentResult.id
     });
 
   } catch (error) {
-    console.error("Erro detalhado ao gerar assinatura de Pix:", error.message);
-    res.status(500).json({ success: false, error: 'Falha ao gerar assinatura.', details: error.message });
+    console.error("Erro detalhado no fluxo de assinatura de Pix:", error.message);
+    res.status(500).json({ success: false, error: 'Falha no processo de assinatura.', details: error.message });
   }
 }
