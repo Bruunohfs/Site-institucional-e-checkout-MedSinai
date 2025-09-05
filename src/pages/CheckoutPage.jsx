@@ -173,12 +173,65 @@ function CheckoutPage() {
   />
   {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf.message}</p>}
 </div>
+<div>
+  <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Nascimento</label>
+  <Controller
+    name="dataNascimento"
+    control={control}
+    rules={{
+      required: "A data é obrigatória",
+      // A MÁGICA ESTÁ AQUI: UMA FUNÇÃO DE VALIDAÇÃO PERSONALIZADA
+      validate: (value) => {
+        // 1. Verifica se a data tem o formato completo (DD/MM/AAAA)
+        if (value.length < 10) {
+          return "Data incompleta";
+        }
 
-                    <div>
-                      <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Nascimento</label>
-                      <Controller name="dataNascimento" control={control} rules={{ required: "A data é obrigatória" }} render={({ field }) => (<IMaskInput {...field} mask="00/00/0000" id="dataNascimento" placeholder="DD/MM/AAAA" className={`w-full mt-1 p-3 rounded-lg border ${errors.dataNascimento ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
-                      {errors.dataNascimento && <p className="text-red-500 text-xs mt-1">{errors.dataNascimento.message}</p>}
-                    </div>
+        // 2. Tenta converter o texto em uma data real
+        const parts = value.split('/');
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const year = parseInt(parts[2], 10);
+
+        const date = new Date(year, month - 1, day); // Mês no JavaScript é 0-11
+
+        // 3. Verifica se a data é logicamente válida
+        // Se o usuário digita 32/01/2000, o new Date() vira 01/02/2000.
+        // Esta checagem pega essa inconsistência.
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+          return "Data inválida";
+        }
+
+        // 4. Verifica se a pessoa tem uma idade razoável (entre 1 e 120 anos)
+        const today = new Date();
+        const age = today.getFullYear() - date.getFullYear();
+        const m = today.getMonth() - date.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < date.getDate())) {
+            // Ainda não fez aniversário este ano
+        }
+        
+        if (age < 1 || age > 120) {
+            return "Data de nascimento inválida";
+        }
+
+        // 5. Se passou por tudo, a data é válida!
+        return true;
+      }
+    }}
+    render={({ field: { onChange, name, value } }) => (
+      <IMaskInput
+        mask="00/00/0000"
+        id={name}
+        name={name}
+        value={value}
+        placeholder="DD/MM/AAAA"
+        className={`w-full mt-1 p-3 rounded-lg border ${errors.dataNascimento ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
+        onAccept={(val) => onChange(val)}
+      />
+    )}
+  />
+  {errors.dataNascimento && <p className="text-red-500 text-xs mt-1">{errors.dataNascimento.message}</p>}
+</div>
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">E-mail</label>
                       <input type="email" id="email" placeholder="seu@email.com" {...register("email", { required: "O e-mail é obrigatório", pattern: { value: /^\S+@\S+$/i, message: "Formato de e-mail inválido" } })} className={`w-full mt-1 p-3 rounded-lg border ${errors.email ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
