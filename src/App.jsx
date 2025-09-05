@@ -181,7 +181,7 @@ function App() {
         { icon: "👶", title: "Pediatras", desc: "Cuidado especializado para a saúde de bebês, crianças e adolescentes." },
         { icon: "♀️", title: "Ginecologistas", desc: "Atenção completa à saúde da mulher em todas as fases da vida." },
         { icon: "✨", title: "Dermatologistas", desc: "Tratamento e prevenção para a saúde da sua pele, cabelos e unhas." },
-        { icon: "🐕", title: "Médicos Veterinários", desc: "Cuidado completo para seus pets, garantindo a saúde de toda a família." },
+        { icon: "🐕", title: "Médicos Veterinários", desc: "Cuidado completo para seus cães e gatos, garantindo a saúde de toda a família." },
         { icon: "💪", title: "Treinadores Físicos", desc: "Exercícios e orientações para manter seu corpo saudável e ativo." },
         { icon: "👨‍👩‍👧‍👦", title: "Dependentes Inclusos", desc: "Filhos menores de 18 anos inclusos sem custo adicional." },
       ].map((service, index ) => (
