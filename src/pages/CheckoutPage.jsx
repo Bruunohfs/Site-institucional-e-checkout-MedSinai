@@ -147,11 +147,33 @@ function CheckoutPage() {
                       <input type="text" id="nomeCompleto" placeholder="Seu nome completo" {...register("nomeCompleto", { required: "O nome é obrigatório" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.nomeCompleto ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
                       {errors.nomeCompleto && <p className="text-red-500 text-xs mt-1">{errors.nomeCompleto.message}</p>}
                     </div>
-                    <div>
-                      <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CPF</label>
-                      <Controller name="cpf" control={control} rules={{ required: "O CPF é obrigatório" }} render={({ field }) => (<IMaskInput {...field} mask="000.000.000-00" id="cpf" placeholder="000.000.000-00" className={`w-full mt-1 p-3 rounded-lg border ${errors.cpf ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
-                      {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf.message}</p>}
-                    </div>
+<div>
+  <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CPF</label>
+  <Controller
+    name="cpf"
+    control={control}
+    rules={{
+      required: "O CPF é obrigatório",
+      minLength: {
+        value: 14, // 11 dígitos + 2 pontos + 1 hífen
+        message: "CPF incompleto"
+      }
+    }}
+    render={({ field: { onChange, name, value } }) => (
+      <IMaskInput
+        mask="000.000.000-00"
+        id={name}
+        name={name}
+        value={value}
+        placeholder="000.000.000-00"
+        className={`w-full mt-1 p-3 rounded-lg border ${errors.cpf ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
+        onAccept={(val) => onChange(val)}
+      />
+    )}
+  />
+  {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf.message}</p>}
+</div>
+
                     <div>
                       <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Nascimento</label>
                       <Controller name="dataNascimento" control={control} rules={{ required: "A data é obrigatória" }} render={({ field }) => (<IMaskInput {...field} mask="00/00/0000" id="dataNascimento" placeholder="DD/MM/AAAA" className={`w-full mt-1 p-3 rounded-lg border ${errors.dataNascimento ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
@@ -162,35 +184,33 @@ function CheckoutPage() {
                       <input type="email" id="email" placeholder="seu@email.com" {...register("email", { required: "O e-mail é obrigatório", pattern: { value: /^\S+@\S+$/i, message: "Formato de e-mail inválido" } })} className={`w-full mt-1 p-3 rounded-lg border ${errors.email ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
                       {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                     </div>
-                   <div>
+<div>
   <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Telefone</label>
   <Controller
     name="telefone"
     control={control}
-    rules={{ 
+    rules={{
       required: "O telefone é obrigatório",
-      minLength: { // Adiciona uma validação de comprimento mínimo
-        value: 15, // Ex: (16) 99108-4300 tem 15 caracteres
+      minLength: {
+        value: 14, // ✨ ALTERADO PARA 14, como você sugeriu!
         message: "Telefone incompleto"
       }
     }}
-    render={({ field: { onChange, name, value } }) => ( // Desestruturamos o 'field'
+    render={({ field: { onChange, name, value } }) => (
       <IMaskInput
-        mask="(00) 00000-0000"
+        mask={[{ mask: '(00) 0000-0000' }, { mask: '(00) 00000-0000' }]} // Máscara dinâmica
         id={name}
         name={name}
         value={value}
         placeholder="(00) 00000-0000"
         className={`w-full mt-1 p-3 rounded-lg border ${errors.telefone ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
-        // A MÁGICA ESTÁ AQUI:
-        // onAccept notifica o react-hook-form com o valor correto.
-        // Isso funciona para digitação manual E para o autofill.
         onAccept={(val) => onChange(val)}
       />
     )}
   />
   {errors.telefone && <p className="text-red-500 text-xs mt-1">{errors.telefone.message}</p>}
 </div>
+
                   </div>
                 </div>
 
