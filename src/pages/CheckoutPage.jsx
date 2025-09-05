@@ -1,12 +1,13 @@
 // DENTRO DE: src/pages/CheckoutPage.jsx
+// COPIE E COLE ESTE CÓDIGO INTEIRO NO SEU ARQUIVO
 
-import React, { useState, } from 'react';
+import React, { useState, useEffect } from 'react'; // ✨ 1. IMPORTEI O useEffect
 import { IMaskInput } from 'react-imask';
 import { useParams } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
 
-// Ícone de cadeado
+// Ícone de cadeado (sem alterações)
 const LockIcon = () => (
   <svg className="w-4 h-4 inline-block mr-1" fill="currentColor" viewBox="0 0 20 20">
     <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2V7a5 5 0 00-5-5zm0 2a3 3 0 013 3v2H7V7a3 3 0 013-3z" />
@@ -16,7 +17,7 @@ const LockIcon = () => (
 function CheckoutPage() {
   // --- LÓGICA DO REACT HOOK FORM ---
   const { register, handleSubmit, control, formState: { errors, isValid } } = useForm({
-    mode: 'onTouched'
+    mode: 'all' // Mudei para 'all' para uma validação mais reativa com autofill
   });
 
   // --- LÓGICA DO COMPONENTE ---
@@ -27,52 +28,78 @@ function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
 
-  // --- FUNÇÃO DE SUBMIT ---
-const handleFormSubmit = async (data) => {
-  setIsProcessing(true);
-  setPaymentResult(null);
+  // ✨ 2. NOVO ESTADO PARA CONTROLAR O BOTÃO
+  const [isButtonDisabled, setIsButtonDisabled] = useState(true);
 
-  const dadosCompletos = {
-    plano: {
-      nome: planoSelecionado.nome,
-      preco: planoSelecionado.preco,
-      tipo: tipoPlano, // 'anual' ou 'mensal'
-    },
-    cliente: data,
-  };
+  // ✨ 3. O USEEFFECT QUE RESOLVE TUDO
+  useEffect(() => {
+    // A validação dos campos de dados pessoais é feita pelo `isValid` do react-hook-form.
+    const isPersonalDataValid = isValid;
 
-  try {
-    const endpoint = 
-      metodoPagamento === 'boleto' ? '/api/gerar-boleto' :
-      metodoPagamento === 'pix' ? '/api/gerar-pix' :
-      '/api/pagar-com-cartao';
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dadosCompletos),
-    });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.details || result.error);
-
-    if (metodoPagamento === 'boleto') {
-      setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
-    } else if (metodoPagamento === 'pix') {
-      setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
+    // Adicionamos a validação para os campos de cartão, que só são necessários se o método for 'cartao'.
+    let isPaymentDataValid = false;
+    if (metodoPagamento === 'pix' || metodoPagamento === 'boleto') {
+      isPaymentDataValid = true; // Para Pix e Boleto, não há campos a validar nesta etapa.
     } else if (metodoPagamento === 'cartao') {
-      setPaymentResult({ success: true, type: 'cartao', status: result.status });
+      // Se for cartão, a validação geral do react-hook-form já cobre os campos do cartão.
+      isPaymentDataValid = isValid;
     }
 
-  } catch (error) {
-    console.error(`Erro ao processar pagamento:`, error);
-    setPaymentResult({ success: false, message: error.message || 'Ocorreu um erro inesperado.' });
-  } finally {
-    setIsProcessing(false);
-  }
-};
+    // O botão será desabilitado se:
+    // - Os dados pessoais forem inválidos, OU
+    // - Os dados de pagamento forem inválidos, OU
+    // - O pagamento estiver em processamento.
+    setIsButtonDisabled(!isPersonalDataValid || !isPaymentDataValid || isProcessing);
 
-  // --- RENDERIZAÇÃO DE ERRO ---
+  }, [isValid, metodoPagamento, isProcessing]); // Dependências: reavalia sempre que um desses mudar.
+
+
+  // --- FUNÇÃO DE SUBMIT (sem alterações) ---
+  const handleFormSubmit = async (data) => {
+    setIsProcessing(true);
+    setPaymentResult(null);
+
+    const dadosCompletos = {
+      plano: {
+        nome: planoSelecionado.nome,
+        preco: planoSelecionado.preco,
+        tipo: tipoPlano,
+      },
+      cliente: data,
+    };
+
+    try {
+      const endpoint =
+        metodoPagamento === 'boleto' ? '/api/gerar-boleto' :
+        metodoPagamento === 'pix' ? '/api/gerar-pix' :
+        '/api/pagar-com-cartao';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dadosCompletos),
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.details || result.error);
+
+      if (metodoPagamento === 'boleto') {
+        setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
+      } else if (metodoPagamento === 'pix') {
+        setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
+      } else if (metodoPagamento === 'cartao') {
+        setPaymentResult({ success: true, type: 'cartao', status: result.status });
+      }
+
+    } catch (error) {
+      console.error(`Erro ao processar pagamento:`, error);
+      setPaymentResult({ success: false, message: error.message || 'Ocorreu um erro inesperado.' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // --- RENDERIZAÇÃO DE ERRO (sem alterações) ---
   if (!planoSelecionado) {
     return (
       <div className="text-center p-10">
@@ -166,7 +193,7 @@ const handleFormSubmit = async (data) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
                             <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Validade</label>
-                            <Controller name="expiryDate" control={control} rules={{ required: "A validade é obrigatória" }} render={({ field }) => (<IMaskInput {...field} mask="MM/YY" blocks={{ MM: { mask: IMask.MaskedRange, from: 1, to: 12 }, YY: { mask: IMask.MaskedRange, from: 24, to: 99 } }} id="expiryDate" placeholder="MM/AA" className={`w-full mt-1 p-3 rounded-lg border ${errors.expiryDate ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
+                            <Controller name="expiryDate" control={control} rules={{ required: "A validade é obrigatória" }} render={({ field }) => (<IMaskInput {...field} mask="MM/YY" blocks={{ MM: { mask: IMask.MaskedRange, from: 1, to: 12 }, YY: { mask: IMask.MaskedRange, from: new Date().getFullYear() % 100, to: 99 } }} id="expiryDate" placeholder="MM/AA" className={`w-full mt-1 p-3 rounded-lg border ${errors.expiryDate ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
                             {errors.expiryDate && <p className="text-red-500 text-xs mt-1">{errors.expiryDate.message}</p>}
                           </div>
                           <div>
@@ -217,7 +244,8 @@ const handleFormSubmit = async (data) => {
 
               {/* Botão de Pagamento */}
               <div className="mt-8">
-                <button type="submit" disabled={!isValid || isProcessing} className={`w-full px-8 py-4 text-lg rounded-lg font-semibold transition-colors flex items-center justify-center ${!isValid || isProcessing ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}>
+                {/* ✨ 4. BOTÃO ATUALIZADO */}
+                <button type="submit" disabled={isButtonDisabled} className={`w-full px-8 py-4 text-lg rounded-lg font-semibold transition-colors flex items-center justify-center ${isButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
                   <LockIcon />
                   {isProcessing ? ' Processando...' : (
                     <>
@@ -251,7 +279,6 @@ const handleFormSubmit = async (data) => {
                     {paymentResult.type === 'cartao' && (
                <div>
                 <h4 className="font-bold text-lg">Pagamento Aprovado!</h4>
-               {/* Mensagem condicional baseada no tipo de plano */}
                {tipoPlano === 'anual' ? (
                <p className="text-sm">Sua assinatura anual foi confirmada em 12x. Seja bem-vindo(a)!</p>
                ) : (
