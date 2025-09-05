@@ -86,26 +86,20 @@ function CheckoutPage() {
     };
 
     try {
-      const endpoint =
-        metodoPagamento === 'boleto' ? '/api/gerar-boleto' :
-        metodoPagamento === 'pix' ? '/api/gerar-pix' :
-        '/api/pagar-com-cartao';
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosCompletos),
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.details || result.error);
-
+      // Simulação de API para teste
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       if (metodoPagamento === 'boleto') {
-        setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
+        setPaymentResult({ success: true, type: 'boleto', url: '#' });
       } else if (metodoPagamento === 'pix') {
-        setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
+        setPaymentResult({ 
+          success: true, 
+          type: 'pix', 
+          payload: '00020126580014BR.GOV.BCB.PIX0136123e4567-e12b-12d1-a456-426614174000520400005303986540510.005802BR5913Fulano de Tal6008BRASILIA62070503***63041D3D',
+          qrCodeImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' 
+        });
       } else if (metodoPagamento === 'cartao') {
-        setPaymentResult({ success: true, type: 'cartao', status: result.status });
+        setPaymentResult({ success: true, type: 'cartao', status: 'approved' });
       }
 
     } catch (error) {
@@ -185,17 +179,13 @@ function CheckoutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                     <div>
                       <label htmlFor="nomeCompleto" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
-                     <input 
-  type="text" 
-  id="nomeCompleto" 
-  {...register("nomeCompleto", { required: "O nome é obrigatório" })} 
-  className={`
-    w-full mt-1 p-3 rounded-lg border 
-    bg-gray-50 dark:bg-gray-700 
-    text-gray-900 dark:text-white 
-    ${errors.nomeCompleto ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
-  `} 
-/>
+                      <input 
+                        type="text" 
+                        id="nomeCompleto" 
+                        placeholder="Seu nome completo" 
+                        {...register("nomeCompleto", { required: "O nome é obrigatório" })} 
+                        className={`w-full mt-1 p-3 rounded-lg border ${errors.nomeCompleto ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'} text-gray-900 dark:text-white`} 
+                      />
                       {errors.nomeCompleto && <p className="text-red-500 text-xs mt-1">{errors.nomeCompleto.message}</p>}
                     </div>
 
@@ -424,56 +414,46 @@ function CheckoutPage() {
                   </div>
 
                   {/* Botões de Seleção de Pagamento */}
-<div className="grid grid-cols-3 gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 p-1 mb-6">
-  {/* Botão Cartão */}
-  <button
-    type="button"
-    onClick={() => setMetodoPagamento('cartao')}
-    disabled={tipoPlano === 'anual'}
-    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-      metodoPagamento === 'cartao' 
-        ? 'bg-white text-gray-800 shadow' 
-        : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
-    } ${tipoPlano === 'anual' ? 'cursor-not-allowed' : ''}`}
-  >
-    Cartão
-  </button>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <button
+                      type="button"
+                      onClick={() => setMetodoPagamento('cartao')}
+                      className={`p-4 rounded-lg border-2 transition-colors ${metodoPagamento === 'cartao' ? 'border-green-600 bg-green-50 dark:bg-green-900' : 'border-gray-300 dark:border-gray-600 hover:border-green-400'}`}
+                    >
+                      <div className="text-center w-full">
+                        <div className="font-semibold text-gray-900 dark:text-white">Cartão</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {tipoPlano === 'anual' ? 'Planos anuais apenas no cartão de crédito.' : 'À vista ou parcelado'}
+                        </div>
+                      </div>
+                    </button>
 
-  {/* Botões Pix e Boleto (condicionais) */}
-  {tipoPlano !== 'anual' ? (
-    <>
-      <button
-        type="button"
-        onClick={() => setMetodoPagamento('pix')}
-        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-          metodoPagamento === 'pix' 
-            ? 'bg-white text-gray-800 shadow' 
-            : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
-        }`}
-      >
-        Pix
-      </button>
-      <button
-        type="button"
-        onClick={() => setMetodoPagamento('boleto')}
-        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-          metodoPagamento === 'boleto' 
-            ? 'bg-white text-gray-800 shadow' 
-            : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
-        }`}
-      >
-        Boleto
-      </button>
-    </>
-  ) : (
-    // Aviso para planos anuais
-    <div className="col-span-2 flex items-center justify-start p-2">
-      <p className="text-xs text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">
-            Planos anuais apenas no cartão.
-      </p>
-    </div>
-  )}
-</div>
+                    {tipoPlano === 'mensal' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setMetodoPagamento('pix')}
+                          className={`p-4 rounded-lg border-2 transition-colors ${metodoPagamento === 'pix' ? 'border-green-600 bg-green-50 dark:bg-green-900' : 'border-gray-300 dark:border-gray-600 hover:border-green-400'}`}
+                        >
+                          <div className="text-center w-full">
+                            <div className="font-semibold text-gray-900 dark:text-white">Pix</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Liberação imediata</div>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setMetodoPagamento('boleto')}
+                          className={`p-4 rounded-lg border-2 transition-colors ${metodoPagamento === 'boleto' ? 'border-green-600 bg-green-50 dark:bg-green-900' : 'border-gray-300 dark:border-gray-600 hover:border-green-400'}`}
+                        >
+                          <div className="text-center w-full">
+                            <div className="font-semibold text-gray-900 dark:text-white">Boleto</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Até 3 dias úteis</div>
+                          </div>
+                        </button>
+                      </>
+                    )}
+                  </div>
 
                   {/* Campos do Cartão */}
                   {metodoPagamento === 'cartao' && (
