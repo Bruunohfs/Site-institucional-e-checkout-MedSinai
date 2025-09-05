@@ -1,6 +1,3 @@
-// DENTRO DE: src/pages/CheckoutPage.jsx
-// COPIE E COLE ESTE CÓDIGO INTEIRO NO SEU ARQUIVO
-
 import React, { useState, useEffect } from 'react'; // ✨ 1. IMPORTEI O useEffect
 import { IMaskInput } from 'react-imask';
 import { useParams } from 'react-router-dom';
@@ -16,45 +13,39 @@ const LockIcon = () => (
 
 function CheckoutPage() {
   // --- LÓGICA DO REACT HOOK FORM ---
-  const { register, handleSubmit, control, formState: { errors, isValid } } = useForm({
-    mode: 'all' // Mudei para 'all' para uma validação mais reativa com autofill
+  const { register, handleSubmit, control, formState: { errors, isValid }, unregister } = useForm({
+    mode: 'all',
+    shouldUnregister: true,
   });
 
-  // --- LÓGICA DO COMPONENTE ---
   const [metodoPagamento, setMetodoPagamento] = useState('cartao');
   const { tipoPlano, idDoPlano } = useParams();
   const arrayDeBusca = tipoPlano === 'anual' ? planosAnuais : planosMensais;
   const planoSelecionado = arrayDeBusca.find(p => p.nome.toLowerCase().replace(/ /g, '-') === idDoPlano);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
-
-  // ✨ 2. NOVO ESTADO PARA CONTROLAR O BOTÃO
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
 
-  // ✨ 3. O USEEFFECT QUE RESOLVE TUDO
   useEffect(() => {
-    // A validação dos campos de dados pessoais é feita pelo `isValid` do react-hook-form.
+        if (metodoPagamento !== 'cartao') {
+      unregister("cardNumber");
+      unregister("expiryDate");
+      unregister("cvv");
+      unregister("cardName");
+    }
+  }, [metodoPagamento, unregister]);
+  
+  useEffect(() => {
     const isPersonalDataValid = isValid;
-
-    // Adicionamos a validação para os campos de cartão, que só são necessários se o método for 'cartao'.
     let isPaymentDataValid = false;
     if (metodoPagamento === 'pix' || metodoPagamento === 'boleto') {
-      isPaymentDataValid = true; // Para Pix e Boleto, não há campos a validar nesta etapa.
+      isPaymentDataValid = true;
     } else if (metodoPagamento === 'cartao') {
-      // Se for cartão, a validação geral do react-hook-form já cobre os campos do cartão.
       isPaymentDataValid = isValid;
     }
-
-    // O botão será desabilitado se:
-    // - Os dados pessoais forem inválidos, OU
-    // - Os dados de pagamento forem inválidos, OU
-    // - O pagamento estiver em processamento.
     setIsButtonDisabled(!isPersonalDataValid || !isPaymentDataValid || isProcessing);
+  }, [isValid, metodoPagamento, isProcessing]);
 
-  }, [isValid, metodoPagamento, isProcessing]); // Dependências: reavalia sempre que um desses mudar.
-
-
-  // --- FUNÇÃO DE SUBMIT (sem alterações) ---
   const handleFormSubmit = async (data) => {
     setIsProcessing(true);
     setPaymentResult(null);
