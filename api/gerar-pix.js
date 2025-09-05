@@ -1,6 +1,9 @@
-// /api/gerar-pix.js - VERSÃO FINAL COM ASSINATURAS
+// /api/gerar-pix.js - VERSÃO FINAL COM POLLING
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
+
+// Função auxiliar para esperar um pouco
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,37 +19,25 @@ export default async function handler(req, res) {
     const { cliente, plano } = req.body;
 
     // --- Lógica do Cliente (sem alterações) ---
-    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, {
-      headers: { 'access_token': ASAAS_API_KEY }
-    });
+    // (código para buscar ou criar cliente permanece o mesmo)
+    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
-
     if (searchResult.data && searchResult.data.length > 0) {
       customerId = searchResult.data[0].id;
     } else {
-      // ... código para criar cliente ...
-      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-        body: JSON.stringify({
-          name: cliente.nomeCompleto,
-          cpfCnpj: cliente.cpf,
-          email: cliente.email,
-          mobilePhone: cliente.telefone,
-        }),
-      });
+      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify({ name: cliente.nomeCompleto, cpfCnpj: cliente.cpf, email: cliente.email, mobilePhone: cliente.telefone }) });
       const newCustomer = await newCustomerResponse.json();
       if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
       customerId = newCustomer.id;
     }
 
     // --- LÓGICA DA ASSINATURA ---
-    const payload = {
+    const subscriptionPayload = {
       customer: customerId,
-      billingType: 'PIX', // A forma de pagamento da assinatura
+      billingType: 'PIX',
       value: parseFloat(plano.preco.replace(',', '.')),
-      nextDueDate: new Date().toISOString().split('T')[0], // A primeira cobrança é hoje
+      nextDueDate: new Date().toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
@@ -54,7 +45,7 @@ export default async function handler(req, res) {
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(subscriptionPayload),
     });
 
     const subscriptionResult = await subscriptionResponse.json();
@@ -63,8 +54,24 @@ export default async function handler(req, res) {
       throw new Error(errorMessage);
     }
 
-    // A API de assinatura retorna o ID do primeiro pagamento.
-    const primeiroPagamentoId = subscriptionResult.payments?.[0]?.id;
+    // ✨--- INÍCIO DA LÓGICA DE POLLING ---✨
+    let primeiroPagamentoId = null;
+    const subscriptionId = subscriptionResult.id;
+
+    for (let i = 0; i < 5; i++) {
+      const checkResponse = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionId}`, {
+        headers: { 'access_token': ASAAS_API_KEY }
+      });
+      const checkResult = await checkResponse.json();
+      
+      if (checkResult.payments && checkResult.payments.length > 0) {
+        primeiroPagamentoId = checkResult.payments[0].id;
+        break; // Encontramos! Saia do loop.
+      }
+      
+      await sleep(1000); // Espere 1 segundo antes de tentar de novo.
+    }
+    // ✨--- FIM DA LÓGICA DE POLLING ---✨
 
     if (!primeiroPagamentoId) {
       throw new Error("Assinatura criada, mas não foi possível obter o ID do primeiro pagamento Pix.");

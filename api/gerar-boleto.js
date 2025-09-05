@@ -1,6 +1,9 @@
-// /api/gerar-boleto.js - VERSÃO FINAL COM ASSINATURAS
+// /api/gerar-boleto.js - VERSÃO FINAL COM POLLING
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
+
+// Função auxiliar para esperar um pouco
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,56 +19,62 @@ export default async function handler(req, res) {
     const { cliente, plano } = req.body;
 
     // --- Lógica do Cliente (sem alterações) ---
-    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, {
-      headers: { 'access_token': ASAAS_API_KEY }
-    });
+    // (código para buscar ou criar cliente permanece o mesmo)
+    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
-
     if (searchResult.data && searchResult.data.length > 0) {
       customerId = searchResult.data[0].id;
     } else {
-      // ... código para criar cliente ...
-      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-        body: JSON.stringify({
-          name: cliente.nomeCompleto,
-          cpfCnpj: cliente.cpf,
-          email: cliente.email,
-          mobilePhone: cliente.telefone,
-        }),
-      });
+      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify({ name: cliente.nomeCompleto, cpfCnpj: cliente.cpf, email: cliente.email, mobilePhone: cliente.telefone }) });
       const newCustomer = await newCustomerResponse.json();
       if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
       customerId = newCustomer.id;
     }
 
     // --- LÓGICA DA ASSINATURA ---
-    const payload = {
+    const subscriptionPayload = {
       customer: customerId,
-      billingType: 'BOLETO', // A forma de pagamento da assinatura
+      billingType: 'BOLETO',
       value: parseFloat(plano.preco.replace(',', '.')),
-      nextDueDate: new Date().toISOString().split('T')[0], // A primeira cobrança é hoje
+      nextDueDate: new Date().toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
 
-    const response = await fetch(`${ASAAS_API_URL}/subscriptions`, {
+    const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(subscriptionPayload),
     });
 
-    const result = await response.json();
-    if (!response.ok) {
-      const errorMessage = result.errors?.[0]?.description || 'Falha ao criar assinatura.';
+    const subscriptionResult = await subscriptionResponse.json();
+    if (!subscriptionResponse.ok) {
+      const errorMessage = subscriptionResult.errors?.[0]?.description || 'Falha ao criar assinatura.';
       throw new Error(errorMessage);
     }
 
-    // A API de assinatura retorna os dados da primeira cobrança.
-    // Vamos pegar a URL do boleto dessa primeira cobrança.
-    const primeiroBoletoUrl = result.payments?.[0]?.bankSlipUrl;
+    // ✨--- INÍCIO DA LÓGICA DE POLLING ---✨
+    let primeiroBoletoUrl = null;
+    let cobrancaId = null;
+    const subscriptionId = subscriptionResult.id;
+
+    // Vamos tentar buscar os dados do pagamento por até 5 segundos.
+    for (let i = 0; i < 5; i++) {
+      const checkResponse = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionId}`, {
+        headers: { 'access_token': ASAAS_API_KEY }
+      });
+      const checkResult = await checkResponse.json();
+      
+      if (checkResult.payments && checkResult.payments.length > 0) {
+        primeiroBoletoUrl = checkResult.payments[0].bankSlipUrl;
+        cobrancaId = checkResult.payments[0].id;
+        break; // Encontramos! Saia do loop.
+      }
+      
+      await sleep(1000); // Espere 1 segundo antes de tentar de novo.
+    }
+    // ✨--- FIM DA LÓGICA DE POLLING ---✨
 
     if (!primeiroBoletoUrl) {
       throw new Error("Assinatura criada, mas não foi possível obter a URL do primeiro boleto.");
@@ -73,8 +82,8 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       success: true,
-      boletoUrl: primeiroBoletoUrl, // Retornamos para o front-end
-      cobrancaId: result.payments?.[0]?.id
+      boletoUrl: primeiroBoletoUrl,
+      cobrancaId: cobrancaId
     });
 
   } catch (error) {

@@ -89,7 +89,7 @@ export default async function handler(req, res) {
         // O valor da mensalidade
         value: parseFloat(plano.preco.replace(',', '.')),
         // A data da próxima cobrança (geralmente 1 mês a partir de hoje)
-        nextDueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+        nextDueDate: new Date().toISOString().split('T')[0],
         // O ciclo da cobrança
         cycle: 'MONTHLY',
         description: `Assinatura Mensal do Plano: ${plano.nome}`,
