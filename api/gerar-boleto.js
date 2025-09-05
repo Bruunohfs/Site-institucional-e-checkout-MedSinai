@@ -1,4 +1,4 @@
-// /api/gerar-boleto.js - VERSÃO CORRIGIDA
+// /api/gerar-boleto.js - VERSÃO FINAL EXPLÍCITA
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
@@ -15,30 +15,20 @@ export default async function handler(req, res) {
   try {
     const { cliente, plano } = req.body;
 
-    // --- Lógica do Cliente (AGORA CORRETA E COMPLETA) ---
+    // --- Lógica do Cliente (sem alterações) ---
     const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
     if (searchResult.data && searchResult.data.length > 0) {
       customerId = searchResult.data[0].id;
     } else {
-      // ✨ BLOCO RESTAURADO ✨
-      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, 
-        body: JSON.stringify({ 
-          name: cliente.nomeCompleto, 
-          cpfCnpj: cliente.cpf, 
-          email: cliente.email, 
-          mobilePhone: cliente.telefone 
-        }) 
-      });
+      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify({ name: cliente.nomeCompleto, cpfCnpj: cliente.cpf, email: cliente.email, mobilePhone: cliente.telefone }) });
       const newCustomer = await newCustomerResponse.json();
       if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
       customerId = newCustomer.id;
     }
 
-    // ... (o resto do código para criar assinatura e pagamento permanece o mesmo) ...
+    // --- PASSO 1: CRIAR A ASSINATURA ---
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'BOLETO',
@@ -51,6 +41,7 @@ export default async function handler(req, res) {
     const subscriptionResult = await subscriptionResponse.json();
     if (!subscriptionResponse.ok) { throw new Error(subscriptionResult.errors?.[0]?.description || 'Falha ao criar a assinatura.'); }
 
+    // --- PASSO 2: CRIAR O PAGAMENTO AVULSO ---
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 2);
     const paymentPayload = {
@@ -59,7 +50,7 @@ export default async function handler(req, res) {
       dueDate: dueDate.toISOString().split('T')[0],
       value: parseFloat(plano.preco.replace(',', '.')),
       description: `Primeira cobrança do Plano: ${plano.nome}`,
-      subscription: subscriptionResult.id,
+      subscription: subscriptionResult.id, // Vinculando à assinatura
     };
     const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(paymentPayload) });
     const paymentResult = await paymentResponse.json();
