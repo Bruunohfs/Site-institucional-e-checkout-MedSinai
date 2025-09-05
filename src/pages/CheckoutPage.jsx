@@ -274,21 +274,94 @@ function CheckoutPage() {
                     {metodoPagamento === 'cartao' && (
                       <div className="space-y-6">
                         <div>
-                          <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número do Cartão</label>
-                          <Controller name="cardNumber" control={control} rules={{ required: "O número do cartão é obrigatório" }} render={({ field }) => (<IMaskInput {...field} mask="0000 0000 0000 0000" id="cardNumber" placeholder="0000 0000 0000 0000" className={`w-full mt-1 p-3 rounded-lg border ${errors.cardNumber ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
-                          {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber.message}</p>}
-                        </div>
+  <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número do Cartão</label>
+  <Controller
+    name="cardNumber"
+    control={control}
+    rules={{
+      required: "O número do cartão é obrigatório",
+      minLength: {
+        value: 19, // 16 dígitos + 3 espaços
+        message: "Número do cartão incompleto"
+      }
+    }}
+    render={({ field: { onChange, name, value } }) => (
+      <IMaskInput
+        {...{ // Passando props individualmente
+          mask: "0000 0000 0000 0000",
+          id: name,
+          name: name,
+          value: value,
+          placeholder: "0000 0000 0000 0000",
+          className: `w-full mt-1 p-3 rounded-lg border ${errors.cardNumber ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`,
+          onAccept: (val) => onChange(val) // A chave para o autofill
+        }}
+      />
+    )}
+  />
+  {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber.message}</p>}
+</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Validade</label>
-                            <Controller name="expiryDate" control={control} rules={{ required: "A validade é obrigatória" }} render={({ field }) => (<IMaskInput {...field} mask="MM/YY" blocks={{ MM: { mask: IMask.MaskedRange, from: 1, to: 12 }, YY: { mask: IMask.MaskedRange, from: new Date().getFullYear() % 100, to: 99 } }} id="expiryDate" placeholder="MM/AA" className={`w-full mt-1 p-3 rounded-lg border ${errors.expiryDate ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
-                            {errors.expiryDate && <p className="text-red-500 text-xs mt-1">{errors.expiryDate.message}</p>}
-                          </div>
-                          <div>
-                            <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CVV</label>
-                            <Controller name="cvv" control={control} rules={{ required: "O CVV é obrigatório" }} render={({ field }) => (<IMaskInput {...field} mask="0000" id="cvv" placeholder="123" className={`w-full mt-1 p-3 rounded-lg border ${errors.cvv ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
-                            {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv.message}</p>}
-                          </div>
+                        <div>
+  <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Validade</label>
+  <Controller
+    name="expiryDate"
+    control={control}
+    rules={{
+      required: "A validade é obrigatória",
+      minLength: {
+        value: 5, // MM/AA
+        message: "Data de validade incompleta"
+      }
+    }}
+    render={({ field: { onChange, name, value } }) => (
+      <IMaskInput
+        {...{
+          mask: "MM/YY",
+          blocks: {
+            MM: { mask: IMask.MaskedRange, from: 1, to: 12 },
+            YY: { mask: IMask.MaskedRange, from: new Date().getFullYear() % 100, to: 99 }
+          },
+          id: name,
+          name: name,
+          value: value,
+          placeholder: "MM/AA",
+          className: `w-full mt-1 p-3 rounded-lg border ${errors.expiryDate ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`,
+          onAccept: (val) => onChange(val)
+        }}
+      />
+    )}
+  />
+  {errors.expiryDate && <p className="text-red-500 text-xs mt-1">{errors.expiryDate.message}</p>}
+</div>
+                         <div>
+  <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CVV</label>
+  <Controller
+    name="cvv"
+    control={control}
+    rules={{
+      required: "O CVV é obrigatório",
+      minLength: {
+        value: 3,
+        message: "CVV incompleto"
+      }
+    }}
+    render={({ field: { onChange, name, value } }) => (
+      <IMaskInput
+        {...{
+          mask: "000[0]", // Aceita 3 ou 4 dígitos
+          id: name,
+          name: name,
+          value: value,
+          placeholder: "123",
+          className: `w-full mt-1 p-3 rounded-lg border ${errors.cvv ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`,
+          onAccept: (val) => onChange(val)
+        }}
+      />
+    )}
+  />
+  {errors.cvv && <p className="text-red-500 text-xs mt-1">{errors.cvv.message}</p>}
+</div>
                         </div>
                         <div>
                           <label htmlFor="cardName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome no Cartão</label>
