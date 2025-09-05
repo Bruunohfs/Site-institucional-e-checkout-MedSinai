@@ -1,3 +1,6 @@
+// /api/pagar-com-cartao.js - VERSÃO FINAL COM ASSINATURAS
+
+// 1. LEIA A URL DA API DAS VARIÁVEIS DE AMBIENTE
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
 export default async function handler(req, res) {
@@ -11,10 +14,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    // O objeto 'cliente' aqui contém TODOS os dados do formulário (pessoais + cartão + endereço)
-    const { plano, cliente } = req.body; 
+    const { plano, cliente } = req.body;
 
-    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
+    // --- LÓGICA DO CLIENTE (sem alterações) ---
+    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, {
+      headers: { 'access_token': ASAAS_API_KEY }
+    });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
 
@@ -24,70 +29,112 @@ export default async function handler(req, res) {
       const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-        body: JSON.stringify({ name: cliente.nomeCompleto, cpfCnpj: cliente.cpf, email: cliente.email, mobilePhone: cliente.telefone }),
+        body: JSON.stringify({
+          name: cliente.nomeCompleto,
+          cpfCnpj: cliente.cpf,
+          email: cliente.email,
+          mobilePhone: cliente.telefone,
+        }),
       });
       const newCustomer = await newCustomerResponse.json();
       if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
       customerId = newCustomer.id;
     }
 
-    let dadosCobranca;
-    
-    // ✨✨ AQUI ESTÁ A CORREÇÃO ✨✨
-    // Montamos o objeto de informações do titular do cartão
-    const creditCardHolderInfo = {
-      name: cliente.nomeCompleto,
-      email: cliente.email,
-      cpfCnpj: cliente.cpf,
-      // Usamos os dados de endereço que vêm diretamente do corpo da requisição ('cliente')
-      postalCode: cliente.postalCode, 
-      addressNumber: cliente.addressNumber,
-      // O campo 'address' não é obrigatório, mas podemos adicionar o logradouro se o tivermos no futuro.
-      // O campo 'province' (bairro) também não é obrigatório.
-      phone: cliente.telefone.replace(/\D/g, ''),
-    };
+    // --- ✨ A GRANDE MUDANÇA COMEÇA AQUI ✨ ---
+    let endpoint;
+    let payload;
 
     if (plano.tipo === 'anual') {
+      // --- LÓGICA PARA PLANO ANUAL (PAGAMENTO PARCELADO) ---
+      // O endpoint é de pagamentos, como já estava.
+      endpoint = `${ASAAS_API_URL}/payments`;
+      
       const precoNumerico = parseFloat(plano.preco.replace(',', '.'));
-      dadosCobranca = {
+      payload = {
         customer: customerId,
         billingType: 'CREDIT_CARD',
         dueDate: new Date().toISOString().split('T')[0],
         installmentCount: 12,
         totalValue: precoNumerico * 12,
         description: `Assinatura do Plano Anual: ${plano.nome} (12x)`,
-        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
-        creditCardHolderInfo,
+        creditCard: { /* ... dados do cartão ... */ },
+        creditCardHolderInfo: { /* ... dados do titular ... */ },
       };
+      // Preenchendo os dados que foram omitidos para clareza
+      payload.creditCard = {
+        holderName: cliente.cardName,
+        number: cliente.cardNumber.replace(/ /g, ''),
+        expiryMonth: cliente.expiryDate.split('/')[0],
+        expiryYear: `20${cliente.expiryDate.split('/')[1]}`,
+        ccv: cliente.cvv,
+      };
+      payload.creditCardHolderInfo = {
+        name: cliente.nomeCompleto,
+        email: cliente.email,
+        cpfCnpj: cliente.cpf,
+        postalCode: cliente.postalCode,
+        addressNumber: cliente.addressNumber,
+        phone: cliente.telefone.replace(/\D/g, ''),
+      };
+
     } else {
-      // Para manter a consistência, também enviamos o endereço para planos mensais, se disponível.
-      dadosCobranca = {
+      // --- LÓGICA PARA PLANO MENSAL (ASSINATURA RECORRENTE) ---
+      // ✨ O endpoint agora é de assinaturas!
+      endpoint = `${ASAAS_API_URL}/subscriptions`;
+
+      payload = {
         customer: customerId,
         billingType: 'CREDIT_CARD',
-        dueDate: new Date().toISOString().split('T')[0],
+        // O valor da mensalidade
         value: parseFloat(plano.preco.replace(',', '.')),
-        description: `Assinatura do Plano Mensal: ${plano.nome}`,
-        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
-        creditCardHolderInfo,
+        // A data da próxima cobrança (geralmente 1 mês a partir de hoje)
+        nextDueDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+        // O ciclo da cobrança
+        cycle: 'MONTHLY',
+        description: `Assinatura Mensal do Plano: ${plano.nome}`,
+        creditCard: { /* ... dados do cartão ... */ },
+        creditCardHolderInfo: { /* ... dados do titular ... */ },
+      };
+      // Preenchendo os dados que foram omitidos para clareza
+      payload.creditCard = {
+        holderName: cliente.cardName,
+        number: cliente.cardNumber.replace(/ /g, ''),
+        expiryMonth: cliente.expiryDate.split('/')[0],
+        expiryYear: `20${cliente.expiryDate.split('/')[1]}`,
+        ccv: cliente.cvv,
+      };
+      payload.creditCardHolderInfo = {
+        name: cliente.nomeCompleto,
+        email: cliente.email,
+        cpfCnpj: cliente.cpf,
+        // Para assinaturas, o endereço não é obrigatório, mas é bom ter
+        postalCode: cliente.postalCode || '00000-000',
+        addressNumber: cliente.addressNumber || 'S/N',
+        phone: cliente.telefone.replace(/\D/g, ''),
       };
     }
 
-    const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
+    // --- Enviar a Cobrança ou Assinatura para o Asaas ---
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-      body: JSON.stringify(dadosCobranca),
+      body: JSON.stringify(payload),
     });
 
-    const paymentResult = await paymentResponse.json();
-    if (!paymentResponse.ok) {
-      // Pega a primeira mensagem de erro da lista, se existir.
-      const errorMessage = paymentResult.errors?.[0]?.description || 'Falha na transação.';
+    const result = await response.json();
+    if (!response.ok) {
+      // O erro pode vir em `result.errors` ou `result.error`
+      const errorMessage = result.errors?.[0]?.description || result.error || 'Falha na transação.';
       throw new Error(errorMessage);
     }
-    res.status(200).json({ success: true, status: paymentResult.status });
+
+    // A resposta da API de Assinatura é um pouco diferente da de Pagamento.
+    // Vamos padronizar nossa resposta para o front-end.
+    res.status(200).json({ success: true, status: result.status || 'ACTIVE' });
 
   } catch (error) {
-    console.error("Erro detalhado ao pagar com cartão:", error.message);
-    res.status(500).json({ success: false, error: 'Falha ao processar pagamento com cartão.', details: error.message });
+    console.error("Erro detalhado ao processar:", error.message);
+    res.status(500).json({ success: false, error: 'Falha ao processar transação.', details: error.message });
   }
 }

@@ -372,7 +372,7 @@ if (tipoPlano === 'anual' && planoSelecionado) {
                           type="text" 
                           id="addressNumber" 
                           placeholder="123" 
-                          {...register("addressNumber", { required: "O número é obrigatório" })} 
+                          {...register("addressNumber", { required: número é obrigatório" })} 
                           className={`w-full mt-1 p-3 rounded-lg border ${errors.addressNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'} text-gray-900 dark:text-black`} 
                         />
                         {errors.addressNumber && <p className="text-red-500 text-xs mt-1">{errors.addressNumber.message}</p>}
