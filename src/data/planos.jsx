@@ -12,7 +12,7 @@ export const planosMensais = [
         "Consultas ilimitadas",
         "Sem cobranças extras",
         "Dependentes Inclusos", 
-        "Veterinario para cães e gatos",
+        "Medicos veterinarios",
         "Clube de vantagens"
       ],
       checkoutUrl: defaultCheckoutUrl 
@@ -41,7 +41,7 @@ export const planosMensais = [
         "Consultas ilimitadas",
         "Sem cobranças extras",
         "Dependentes Inclusos",
-        "Veterinario para cães e gatos",
+        "Medicos veterinarios",
         "Clube de vantagens"
       ],
       checkoutUrl: defaultCheckoutUrl 
@@ -73,7 +73,7 @@ export const planosAnuais = [
         "Consultas ilimitadas",
         "Sem cobranças extras",
         "Dependentes Inclusos", 
-        "Veterinario para cães e gatos",
+        "Medicos veterinarios",
         "Clube de vantagens"
       ],
       checkoutUrl: defaultCheckoutUrl 
@@ -105,7 +105,7 @@ export const planosAnuais = [
         "Consultas ilimitadas",
         "Sem cobranças extras",
         "Dependentes Inclusos",
-        "Veterinario para cães e gatos",
+        "Medicos Veterinarios",
         "Clube de vantagens"
       ],
       checkoutUrl: defaultCheckoutUrl 
