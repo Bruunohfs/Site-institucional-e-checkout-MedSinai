@@ -420,58 +420,56 @@ function CheckoutPage() {
                   </div>
 
                   {/* Botões de Seleção de Pagamento */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <button
-                      type="button"
-                      onClick={() => setMetodoPagamento('cartao')}
-                      className={`p-4 rounded-lg border-2 transition-colors ${
-                        metodoPagamento === 'cartao'
-                          ? 'border-green-600 bg-green-50 dark:bg-green-900'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
-                      }`}
-                    >
-                      <div className="text-center">
-                        <div className="font-semibold text-gray-900 dark:text-white">Cartão</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {tipoPlano === 'anual' ? 'Planos anuais apenas no cartão de crédito.' : 'À vista ou parcelado'}
-                        </div>
-                      </div>
-                    </button>
+<div className="grid grid-cols-3 gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 p-1 mb-6">
+  {/* Botão Cartão */}
+  <button
+    type="button"
+    onClick={() => setMetodoPagamento('cartao')}
+    disabled={tipoPlano === 'anual'}
+    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+      metodoPagamento === 'cartao' 
+        ? 'bg-white text-gray-800 shadow' 
+        : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
+    } ${tipoPlano === 'anual' ? 'cursor-not-allowed' : ''}`}
+  >
+    Cartão
+  </button>
 
-                    {tipoPlano === 'mensal' && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setMetodoPagamento('pix')}
-                          className={`p-4 rounded-lg border-2 transition-colors ${
-                            metodoPagamento === 'pix'
-                              ? 'border-green-600 bg-green-50 dark:bg-green-900'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
-                          }`}
-                        >
-                          <div className="text-center">
-                            <div className="font-semibold text-gray-900 dark:text-white">Pix</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">Liberação imediata</div>
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setMetodoPagamento('boleto')}
-                          className={`p-4 rounded-lg border-2 transition-colors ${
-                            metodoPagamento === 'boleto'
-                              ? 'border-green-600 bg-green-50 dark:bg-green-900'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-green-400'
-                          }`}
-                        >
-                          <div className="text-center">
-                            <div className="font-semibold text-gray-900 dark:text-white">Boleto</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">Até 3 dias úteis</div>
-                          </div>
-                        </button>
-                      </>
-                    )}
-                  </div>
+  {/* Botões Pix e Boleto (condicionais) */}
+  {tipoPlano !== 'anual' ? (
+    <>
+      <button
+        type="button"
+        onClick={() => setMetodoPagamento('pix')}
+        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+          metodoPagamento === 'pix' 
+            ? 'bg-white text-gray-800 shadow' 
+            : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
+        }`}
+      >
+        Pix
+      </button>
+      <button
+        type="button"
+        onClick={() => setMetodoPagamento('boleto')}
+        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+          metodoPagamento === 'boleto' 
+            ? 'bg-white text-gray-800 shadow' 
+            : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
+        }`}
+      >
+        Boleto
+      </button>
+    </>
+  ) : (
+    // Aviso para planos anuais
+    <div className="col-span-2 flex items-center justify-start p-2">
+      <p className="text-xs text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">
+            Planos anuais apenas no cartão.
+      </p>
+    </div>
+  )}
+</div>
 
                   {/* Campos do Cartão */}
                   {metodoPagamento === 'cartao' && (
