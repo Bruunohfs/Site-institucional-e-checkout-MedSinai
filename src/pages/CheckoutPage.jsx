@@ -112,17 +112,44 @@ function CheckoutPage() {
             <p className="text-center text-gray-600 dark:text-gray-400 mb-8">Você está a um passo de ter acesso a todos os benefícios.</p>
 
             {/* Resumo do Pedido */}
-            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-8 border border-gray-200 dark:border-gray-600">
-              <div className="flex justify-between items-center">
-                <p className="font-semibold text-gray-800 dark:text-gray-200">Plano Selecionado:</p>
-                <p className="font-bold text-lg text-gray-900 dark:text-white">{planoSelecionado.nome}</p>
-              </div>
-              <hr className="my-2 border-gray-200 dark:border-gray-600" />
-              <div className="flex justify-between items-center">
-                <p className="font-semibold text-gray-800 dark:text-gray-200">Valor Mensal:</p>
-                <p className="font-bold text-lg text-green-600 dark:text-green-400">R$ {planoSelecionado.preco}</p>
-              </div>
-            </div>
+
+           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-8 border border-gray-200 dark:border-gray-600">
+ 
+              {/* --- LÓGICA PARA PLANO MENSAL --- */}
+  {tipoPlano === 'mensal' && (
+    <>
+      <div className="flex justify-between items-center">
+        <p className="font-semibold text-gray-800 dark:text-gray-200">Plano Selecionado:</p>
+        <p className="font-bold text-lg text-gray-900 dark:text-white">{planoSelecionado.nome} (Mensal)</p>
+      </div>
+      <hr className="my-2 border-gray-200 dark:border-gray-600" />
+      <div className="flex justify-between items-center">
+        <p className="font-semibold text-gray-800 dark:text-gray-200">Valor da Cobrança:</p>
+        <p className="font-bold text-lg text-green-600 dark:text-green-400">R$ {planoSelecionado.preco}</p>
+      </div>
+    </>
+  )}
+
+            {/* --- LÓGICA PARA PLANO ANUAL --- */}
+  {tipoPlano === 'anual' && (
+    <>
+      <div className="flex justify-between items-center">
+        <p className="font-semibold text-gray-800 dark:text-gray-200">Plano Selecionado:</p>
+        <p className="font-bold text-lg text-gray-900 dark:text-white">{planoSelecionado.nome} (Anual)</p>
+      </div>
+      <hr className="my-2 border-gray-200 dark:border-gray-600" />
+      <div className="flex justify-between items-center">
+        <p className="font-semibold text-gray-800 dark:text-gray-200">Valor da Cobrança:</p>
+        <div className="text-right">
+          <p className="font-bold text-lg text-green-600 dark:text-green-400">12x de R$ {planoSelecionado.preco}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Total: R$ {(parseFloat(planoSelecionado.preco.replace(',', '.')) * 12).toFixed(2).replace('.', ',')}
+          </p>
+        </div>
+      </div>
+    </>
+  )}
+</div>
 
             {/* Formulário de Pagamento */}
             <form onSubmit={handleSubmit(handleFormSubmit)}>
