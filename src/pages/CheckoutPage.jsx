@@ -162,11 +162,35 @@ function CheckoutPage() {
                       <input type="email" id="email" placeholder="seu@email.com" {...register("email", { required: "O e-mail é obrigatório", pattern: { value: /^\S+@\S+$/i, message: "Formato de e-mail inválido" } })} className={`w-full mt-1 p-3 rounded-lg border ${errors.email ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
                       {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                     </div>
-                    <div>
-                      <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Telefone</label>
-                      <Controller name="telefone" control={control} rules={{ required: "O telefone é obrigatório" }} render={({ field }) => (<IMaskInput {...field} mask="(00) 00000-0000" id="telefone" placeholder="(00) 00000-0000" className={`w-full mt-1 p-3 rounded-lg border ${errors.telefone ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
-                      {errors.telefone && <p className="text-red-500 text-xs mt-1">{errors.telefone.message}</p>}
-                    </div>
+                   <div>
+  <label htmlFor="telefone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Telefone</label>
+  <Controller
+    name="telefone"
+    control={control}
+    rules={{ 
+      required: "O telefone é obrigatório",
+      minLength: { // Adiciona uma validação de comprimento mínimo
+        value: 15, // Ex: (16) 99108-4300 tem 15 caracteres
+        message: "Telefone incompleto"
+      }
+    }}
+    render={({ field: { onChange, name, value } }) => ( // Desestruturamos o 'field'
+      <IMaskInput
+        mask="(00) 00000-0000"
+        id={name}
+        name={name}
+        value={value}
+        placeholder="(00) 00000-0000"
+        className={`w-full mt-1 p-3 rounded-lg border ${errors.telefone ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`}
+        // A MÁGICA ESTÁ AQUI:
+        // onAccept notifica o react-hook-form com o valor correto.
+        // Isso funciona para digitação manual E para o autofill.
+        onAccept={(val) => onChange(val)}
+      />
+    )}
+  />
+  {errors.telefone && <p className="text-red-500 text-xs mt-1">{errors.telefone.message}</p>}
+</div>
                   </div>
                 </div>
 
