@@ -33,14 +33,19 @@ export default async function handler(req, res) {
     }
 
     // --- LÓGICA DA ASSINATURA ---
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 2); // Adiciona 2 dias à data atual
+
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'PIX',
       value: parseFloat(plano.preco.replace(',', '.')),
-      nextDueDate: new Date().toISOString().split('T')[0],
+      // Usamos a nova data com o prazo de 2 dias.
+      nextDueDate: dueDate.toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
+
 
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, {
       method: 'POST',
