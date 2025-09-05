@@ -1,4 +1,4 @@
-// /api/gerar-boleto.js - VERSÃO FINAL EXPLÍCITA
+// /api/gerar-boleto.js - COM CAPTURA DE ERRO DETALHADA
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   try {
     const { cliente, plano } = req.body;
 
-    // --- Lógica do Cliente (sem alterações) ---
+    // --- Lógica do Cliente ---
     const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
@@ -38,8 +38,11 @@ export default async function handler(req, res) {
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
+    if (!subscriptionResponse.ok) {
+      const errorText = await subscriptionResponse.text();
+      throw new Error(`Falha ao criar assinatura: ${errorText}`);
+    }
     const subscriptionResult = await subscriptionResponse.json();
-    if (!subscriptionResponse.ok) { throw new Error(subscriptionResult.errors?.[0]?.description || 'Falha ao criar a assinatura.'); }
 
     // --- PASSO 2: CRIAR O PAGAMENTO AVULSO ---
     const dueDate = new Date();
@@ -50,16 +53,23 @@ export default async function handler(req, res) {
       dueDate: dueDate.toISOString().split('T')[0],
       value: parseFloat(plano.preco.replace(',', '.')),
       description: `Primeira cobrança do Plano: ${plano.nome}`,
-      subscription: subscriptionResult.id, // Vinculando à assinatura
+      subscription: subscriptionResult.id,
     };
     const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(paymentPayload) });
+    
+    // ✨✨ A GRANDE MUDANÇA ESTÁ AQUI ✨✨
+    if (!paymentResponse.ok) {
+      // Se a resposta não for OK, leia o corpo como TEXTO para ver o erro real.
+      const errorText = await paymentResponse.text();
+      throw new Error(`Falha ao gerar a primeira cobrança: ${errorText}`);
+    }
     const paymentResult = await paymentResponse.json();
-    if (!paymentResponse.ok) { throw new Error(paymentResult.errors?.[0]?.description || 'Falha ao gerar a primeira cobrança.'); }
 
     res.status(200).json({ success: true, boletoUrl: paymentResult.bankSlipUrl, cobrancaId: paymentResult.id });
 
   } catch (error) {
     console.error("Erro detalhado no fluxo de assinatura de boleto:", error.message);
+    // Agora o 'details' terá a resposta completa da Asaas
     res.status(500).json({ success: false, error: 'Falha no processo de assinatura.', details: error.message });
   }
 }
