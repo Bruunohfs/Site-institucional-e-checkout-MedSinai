@@ -13,7 +13,7 @@ const LockIcon = () => (
 
 function CheckoutPage() {
   // --- LÓGICA DO REACT HOOK FORM ---
-  const { register, handleSubmit, control, formState: { errors, isValid }, unregister } = useForm({
+  const { register, handleSubmit, control, formState: { errors, isValid }, unregister, watch, setValue } = useForm({
     mode: 'all',
     shouldUnregister: true,
   });
@@ -27,6 +27,25 @@ function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
+  const cepValue = watch("postalCode");
+
+useEffect(() => {
+  
+  if (cepValue?.length === 9) {
+    fetch(`https://viacep.com.br/ws/${cepValue.replace('-', '' )}/json/`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.erro) {
+          // Preenche os campos do formulário com os dados retornados
+          setValue("address", data.logradouro, { shouldValidate: true });
+          setValue("neighborhood", data.bairro, { shouldValidate: true });
+          setValue("city", data.localidade, { shouldValidate: true });
+          setValue("state", data.uf, { shouldValidate: true });
+        }
+      })
+      .catch(err => console.error("Falha ao buscar CEP:", err));
+  }
+}, [cepValue, setValue]);
 
   useEffect(() => {
         if (metodoPagamento !== 'cartao') {
@@ -167,6 +186,67 @@ function CheckoutPage() {
                       <input type="text" id="nomeCompleto" placeholder="Seu nome completo" {...register("nomeCompleto", { required: "O nome é obrigatório" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.nomeCompleto ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
                       {errors.nomeCompleto && <p className="text-red-500 text-xs mt-1">{errors.nomeCompleto.message}</p>}
                     </div>
+                    {/* ✨✨ SEÇÃO 1.5: SEU ENDEREÇO (A GRANDE NOVIDADE) ✨✨ */}
+           {/* Esta seção só aparece se o plano for anual (pois só ele exige endereço) */}
+         {tipoPlano === 'anual' && (
+           <div>
+          <div className="flex items-center mb-4">
+       {/* Usamos um número "1.5" visualmente ou podemos renumerar */}
+       <span className="flex items-center justify-center w-8 h-8 bg-green-600 text-white font-bold rounded-full mr-3">2</span>
+       <h3 className="text-xl font-bold text-gray-900 dark:text-white">Seu Endereço</h3>
+     </div>
+     <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-4">
+       {/* CEP */}
+       <div className="md:col-span-2">
+         <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CEP</label>
+         <Controller name="postalCode" control={control} rules={{ required: "O CEP é obrigatório", minLength: { value: 9, message: "CEP incompleto" } }} render={({ field }) => (<IMaskInput {...field} mask="00000-000" placeholder="00000-000" className={`w-full mt-1 p-3 rounded-lg border ${errors.postalCode ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />)} />
+         {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode.message}</p>}
+       </div>
+       {/* Número */}
+       <div className="md:col-span-2">
+         <label htmlFor="addressNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Número</label>
+         <input type="text" id="addressNumber" placeholder="123" {...register("addressNumber", { required: "O número é obrigatório" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.addressNumber ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} />
+         {errors.addressNumber && <p className="text-red-500 text-xs mt-1">{errors.addressNumber.message}</p>}
+       </div>
+       {/* Rua */}
+       <div className="md:col-span-4">
+         <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Rua</label>
+         <input type="text" id="address" {...register("address", { required: "A rua é obrigatória" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.address ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} readOnly />
+         {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>}
+       </div>
+       {/* Bairro */}
+       <div className="md:col-span-2">
+         <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bairro</label>
+         <input type="text" id="neighborhood" {...register("neighborhood", { required: "O bairro é obrigatório" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.neighborhood ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} readOnly />
+         {errors.neighborhood && <p className="text-red-500 text-xs mt-1">{errors.neighborhood.message}</p>}
+       </div>
+       {/* Cidade */}
+       <div className="md:col-span-1">
+         <label htmlFor="city" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cidade</label>
+         <input type="text" id="city" {...register("city", { required: "A cidade é obrigatória" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.city ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} readOnly />
+         {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
+       </div>
+       {/* Estado */}
+       <div className="md:col-span-1">
+         <label htmlFor="state" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
+         <input type="text" id="state" {...register("state", { required: "O estado é obrigatório" })} className={`w-full mt-1 p-3 rounded-lg border ${errors.state ? 'border-red-500' : 'bg-gray-50 dark:bg-gray-700 dark:border-gray-600'}`} readOnly />
+         {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
+       </div>
+     </div>
+   </div>
+ )}
+
+ {/* SEÇÃO 2 (AGORA 3): FORMA DE PAGAMENTO */}
+ <div>
+   <div className="flex items-center mb-4">
+     <span className="flex items-center justify-center w-8 h-8 bg-green-600 text-white font-bold rounded-full mr-3">
+       {tipoPlano === 'anual' ? '3' : '2'}
+     </span>
+     <h3 className="text-xl font-bold text-gray-900 dark:text-white">Forma de Pagamento</h3>
+   </div>
+   {/* ... o resto da sua seção de pagamento (botões, campos de cartão) permanece aqui ... */}
+   {/* IMPORTANTE: Remova os campos de CEP e Número de dentro da seção do cartão! */}
+ </div>
 <div>
   <label htmlFor="cpf" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CPF</label>
   <Controller
