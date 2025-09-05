@@ -17,6 +17,27 @@ function CheckoutPage() {
   const arrayDeBusca = tipoPlano === 'anual' ? planosAnuais : planosMensais;
   const planoSelecionado = arrayDeBusca.find(p => p.nome.toLowerCase().replace(/ /g, '-') === idDoPlano);
 
+  let valorEconomia = 0;
+if (tipoPlano === 'anual' && planoSelecionado) {
+  // 1. Encontre o plano mensal com o mesmo nome
+  const planoMensalCorrespondente = planosMensais.find(
+    p => p.nome === planoSelecionado.nome
+  );
+
+  if (planoMensalCorrespondente) {
+    // 2. Converta os preços para números
+    const precoAnualNumerico = parseFloat(planoSelecionado.preco.replace(',', '.'));
+    const precoMensalNumerico = parseFloat(planoMensalCorrespondente.preco.replace(',', '.'));
+
+    // 3. Calcule os custos totais
+    const custoTotalAnual = precoAnualNumerico * 12;
+    const custoTotalMensal = precoMensalNumerico * 12;
+
+    // 4. Calcule a economia
+    valorEconomia = custoTotalMensal - custoTotalAnual;
+  }
+}
+
   // React Hook Form setup
   const { register, handleSubmit, control, formState: { errors, isValid }, unregister, watch, setValue } = useForm({
     mode: 'all',
@@ -163,9 +184,11 @@ function CheckoutPage() {
                     <p className="font-semibold text-gray-800 dark:text-gray-200">Valor da Cobrança:</p>
                     <div className="text-right">
                       <p className="font-bold text-lg text-green-600 dark:text-green-400">12x de R$ {planoSelecionado.preco}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Total: R$ {(parseFloat(planoSelecionado.preco.replace(',', '.')) * 12).toFixed(2).replace('.', ',')}
+                      {valorEconomia > 0 && (
+                       <p className="text-xs font-semibold text-green-600 dark:text-green-400">
+                         Economize R$ {valorEconomia.toFixed(2).replace('.', ',')} em 1 ano!
                       </p>
+                      )}
                     </div>
                   </div>
                 </>
