@@ -18,7 +18,9 @@ function CheckoutPage() {
     shouldUnregister: true,
   });
 
-  const [metodoPagamento, setMetodoPagamento] = useState('cartao');
+  const [metodoPagamento, setMetodoPagamento] = useState(
+    tipoPlano === 'anual' ? 'cartao' : 'cartao' 
+  );
   const { tipoPlano, idDoPlano } = useParams();
   const arrayDeBusca = tipoPlano === 'anual' ? planosAnuais : planosMensais;
   const planoSelecionado = arrayDeBusca.find(p => p.nome.toLowerCase().replace(/ /g, '-') === idDoPlano);
@@ -264,11 +266,53 @@ function CheckoutPage() {
                     <span className="flex items-center justify-center w-8 h-8 bg-green-600 text-white font-bold rounded-full mr-3">2</span>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">Forma de Pagamento</h3>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 p-1 mb-6">
-                    <button type="button" onClick={() => setMetodoPagamento('cartao')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'cartao' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}>Cartão</button>
-                    <button type="button" onClick={() => setMetodoPagamento('pix')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'pix' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}>Pix</button>
-                    <button type="button" onClick={() => setMetodoPagamento('boleto')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'boleto' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}>Boleto</button>
-                  </div>
+<div className="grid grid-cols-3 gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 p-1 mb-6">
+  {/* O botão de Cartão sempre aparece */}
+  <button
+    type="button"
+    onClick={() => setMetodoPagamento('cartao')}
+    // Se for plano anual, o botão fica "travado" no estilo ativo e desabilitado para clique
+    disabled={tipoPlano === 'anual'}
+    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+      metodoPagamento === 'cartao' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
+    } ${tipoPlano === 'anual' ? 'cursor-not-allowed' : ''}`}
+  >
+    Cartão
+  </button>
+
+  {/* ✨ A MÁGICA: Pix e Boleto só aparecem se o plano NÃO for anual ✨ */}
+  {tipoPlano !== 'anual' && (
+    <>
+      <button
+        type="button"
+        onClick={() => setMetodoPagamento('pix')}
+        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+          metodoPagamento === 'pix' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
+        }`}
+      >
+        Pix
+      </button>
+      <button
+        type="button"
+        onClick={() => setMetodoPagamento('boleto')}
+        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+          metodoPagamento === 'boleto' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'
+        }`}
+      >
+        Boleto
+      </button>
+    </>
+  )}
+
+  {/* Se o plano for anual, mostramos um aviso */}
+  {tipoPlano === 'anual' && (
+    <div className="col-span-2 flex items-center justify-center p-2">
+      <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+        Planos anuais apenas no cartão de crédito.
+      </p>
+    </div>
+  )}
+</div>
                   
                   <div>
                     {metodoPagamento === 'cartao' && (
