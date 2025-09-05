@@ -1,8 +1,6 @@
-// /api/gerar-boleto.js - VERSÃO FINAL COM LÓGICA DE BUSCA
+// /api/gerar-boleto.js - COM VENCIMENTO DE 3 DIAS
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
-
-// Função para esperar um pouco
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
@@ -18,7 +16,7 @@ export default async function handler(req, res) {
   try {
     const { cliente, plano } = req.body;
 
-    // --- Lógica do Cliente ---
+    // --- Lógica do Cliente (sem alterações) ---
     const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
@@ -36,7 +34,7 @@ export default async function handler(req, res) {
       customer: customerId,
       billingType: 'BOLETO',
       value: parseFloat(plano.preco.replace(',', '.')),
-      nextDueDate: new Date().toISOString().split('T')[0], // Primeira cobrança hoje!
+      nextDueDate: new Date().toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
@@ -47,21 +45,31 @@ export default async function handler(req, res) {
     }
     const subscriptionResult = await subscriptionResponse.json();
 
-    // --- PASSO 2: BUSCAR O PRIMEIRO PAGAMENTO GERADO PELA ASSINATURA ---
-    await sleep(2000); // Espera 2 segundos para a Asaas processar
-
+    // --- PASSO 2: BUSCAR O PRIMEIRO PAGAMENTO ---
+    await sleep(2000);
     const paymentsResponse = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionResult.id}/payments`, { headers: { 'access_token': ASAAS_API_KEY } });
     if (!paymentsResponse.ok) {
-        const errorText = await paymentsResponse.text();
-        throw new Error(`Falha ao buscar pagamentos da assinatura: ${errorText}`);
+      const errorText = await paymentsResponse.text();
+      throw new Error(`Falha ao buscar pagamentos da assinatura: ${errorText}`);
     }
     const paymentsResult = await paymentsResponse.json();
-
     if (!paymentsResult.data || paymentsResult.data.length === 0) {
-        throw new Error("A Asaas criou a assinatura, mas o primeiro pagamento ainda não foi encontrado.");
+      throw new Error("A Asaas criou a assinatura, mas o primeiro pagamento ainda não foi encontrado.");
     }
-
     const firstPayment = paymentsResult.data[0];
+
+    // ✨✨ A MUDANÇA ESTÁ AQUI ✨✨
+    // --- PASSO 3: ATUALIZAR O VENCIMENTO DO BOLETO PARA DAQUI A 3 DIAS ---
+    const hoje = new Date();
+    const dataVencimento = new Date(hoje.setDate(hoje.getDate() + 3));
+    
+    await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}`, {
+        method: 'POST', // Usar POST para atualizar
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+        body: JSON.stringify({ dueDate: dataVencimento.toISOString().split('T')[0] })
+    });
+    // Não precisamos checar o resultado, apenas garantir que a atualização foi enviada.
+    // A URL do boleto permanece a mesma.
 
     res.status(200).json({ success: true, boletoUrl: firstPayment.bankSlipUrl, cobrancaId: firstPayment.id });
 

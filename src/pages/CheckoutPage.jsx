@@ -590,7 +590,7 @@ if (tipoPlano === 'anual' && planoSelecionado) {
                   )}
 
                   {/* Área do Pix */}
-                  {metodoPagamento === 'pix' && (
+                    {metodoPagamento === 'pix' && (
                     <div className="text-center p-4 border-dashed border-2 border-gray-300 dark:border-gray-600 rounded-lg">
                       {!paymentResult || !paymentResult.success || paymentResult.type !== 'pix' ? (
                         <>
@@ -607,11 +607,18 @@ if (tipoPlano === 'anual' && planoSelecionado) {
                             onClick={() => navigator.clipboard.writeText(paymentResult.payload)} title="Clique para copiar">
                             {paymentResult.payload}
                           </div>
+                          
+                          {/* ✨✨ A MUDANÇA ESTÁ AQUI ✨✨ */}
+                          <div className="mt-4 p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                            <p className="text-sm font-semibold text-green-800 dark:text-green-200">
+                              Sua assinatura foi criada com sucesso! Após a confirmação do pagamento, seu acesso será liberado.
+                            </p>
+                          </div>
+
                         </div>
                       )}
                     </div>
                   )}
-
                   {/* Área do Boleto */}
                   {metodoPagamento === 'boleto' && (
                     <div className="text-center p-4 border-dashed border-2 border-gray-300 dark:border-gray-600 rounded-lg">
