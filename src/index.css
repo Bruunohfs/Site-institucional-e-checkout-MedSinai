@@ -13,23 +13,3 @@
     font-family: 'Montserrat', sans-serif; /* <-- Sem as barras invertidas! */
   }
 }
-input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #374151 inset !important; /* Cor do seu input no modo escuro (gray-700) */
-    -webkit-text-fill-color: #FFFFFF !important; /* Cor do texto no modo escuro (branco) */
-    transition: background-color 5000s ease-in-out 0s;
-}
-
-/*
-  Mesmo hack, mas para o modo claro.
-  A Vercel pode não aplicar isso corretamente sem o !important.
-*/
-html:not(.dark) input:-webkit-autofill,
-html:not(.dark) input:-webkit-autofill:hover,
-html:not(.dark) input:-webkit-autill:focus,
-html:not(.dark) input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #F9FAFB inset !important; /* Cor do seu input no modo claro (gray-50) */
-    -webkit-text-fill-color: #111827 !important; /* Cor do texto no modo claro (gray-900) */
-}
