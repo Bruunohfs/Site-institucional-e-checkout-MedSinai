@@ -1,3 +1,5 @@
+// /api/gerar-boleto.js - VERSÃO FINAL COM ASSINATURAS
+
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
 export default async function handler(req, res) {
@@ -7,80 +9,76 @@ export default async function handler(req, res) {
 
   const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
   if (!ASAAS_API_KEY || !ASAAS_API_URL) {
-    console.error("ERRO CRÍTICO: Chave de API ou URL do Asaas não encontrada.");
     return res.status(500).json({ success: false, error: 'Configuração interna do servidor incompleta.' });
   }
 
   try {
     const { cliente, plano } = req.body;
-    let customerId;
 
-    // Chamada 1: Buscar cliente com fetch
-    const searchResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, {
-      method: 'GET',
+    // --- Lógica do Cliente (sem alterações) ---
+    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, {
       headers: { 'access_token': ASAAS_API_KEY }
     });
-    const searchResult = await searchResponse.json();
+    const searchResult = await searchCustomerResponse.json();
+    let customerId;
 
     if (searchResult.data && searchResult.data.length > 0) {
       customerId = searchResult.data[0].id;
     } else {
-      const customerData = {
-        name: cliente.nomeCompleto,
-        cpfCnpj: cliente.cpf,
-        email: cliente.email,
-        mobilePhone: cliente.telefone,
-      };
-      // Chamada 2: Criar cliente com fetch
-      const createCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, {
+      // ... código para criar cliente ...
+      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, {
         method: 'POST',
-        headers: {
-          'access_token': ASAAS_API_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(customerData)
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+        body: JSON.stringify({
+          name: cliente.nomeCompleto,
+          cpfCnpj: cliente.cpf,
+          email: cliente.email,
+          mobilePhone: cliente.telefone,
+        }),
       });
-      const newCustomer = await createCustomerResponse.json();
+      const newCustomer = await newCustomerResponse.json();
+      if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
       customerId = newCustomer.id;
     }
 
-    if (!customerId) {
-      throw new Error('Não foi possível obter ou criar o cliente no Asaas.');
-    }
-
-    const dadosCobranca = {
+    // --- LÓGICA DA ASSINATURA ---
+    const payload = {
       customer: customerId,
-      billingType: 'BOLETO',
-      dueDate: new Date(new Date().getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      billingType: 'BOLETO', // A forma de pagamento da assinatura
       value: parseFloat(plano.preco.replace(',', '.')),
-      description: `Assinatura do Plano: ${plano.nome}`,
-      externalReference: `PLANO_${plano.nome.replace(/ /g, '_').toUpperCase()}_${cliente.cpf}`,
+      nextDueDate: new Date().toISOString().split('T')[0], // A primeira cobrança é hoje
+      cycle: 'MONTHLY',
+      description: `Assinatura Mensal do Plano: ${plano.nome}`,
     };
 
-    // Chamada 3: Criar cobrança com fetch
-    const createPaymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
+    const response = await fetch(`${ASAAS_API_URL}/subscriptions`, {
       method: 'POST',
-      headers: {
-        'access_token': ASAAS_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(dadosCobranca)
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+      body: JSON.stringify(payload),
     });
-    const paymentResponse = await createPaymentResponse.json();
 
-    if (!createPaymentResponse.ok) {
-      console.error("Erro retornado pela API do Asaas:", paymentResponse);
-      throw new Error(JSON.stringify(paymentResponse.errors || { message: 'Erro desconhecido do Asaas' }));
+    const result = await response.json();
+    if (!response.ok) {
+      const errorMessage = result.errors?.[0]?.description || 'Falha ao criar assinatura.';
+      throw new Error(errorMessage);
+    }
+
+    // A API de assinatura retorna os dados da primeira cobrança.
+    // Vamos pegar a URL do boleto dessa primeira cobrança.
+    const primeiroBoletoUrl = result.payments?.[0]?.bankSlipUrl;
+
+    if (!primeiroBoletoUrl) {
+      throw new Error("Assinatura criada, mas não foi possível obter a URL do primeiro boleto.");
     }
 
     res.status(200).json({
       success: true,
-      boletoUrl: paymentResponse.bankSlipUrl,
-      cobrancaId: paymentResponse.id
+      boletoUrl: primeiroBoletoUrl, // Retornamos para o front-end
+      cobrancaId: result.payments?.[0]?.id
     });
 
   } catch (error) {
-    console.error("Erro detalhado no bloco catch:", error.message);
-    res.status(500).json({ success: false, error: 'Falha ao gerar cobrança.', details: error.message });
+    console.error("Erro detalhado ao gerar assinatura de boleto:", error.message);
+    res.status(500).json({ success: false, error: 'Falha ao gerar assinatura.', details: error.message });
   }
 }
