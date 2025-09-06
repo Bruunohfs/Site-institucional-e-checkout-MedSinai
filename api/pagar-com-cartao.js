@@ -4,6 +4,7 @@
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
 export default async function handler(req, res) {
+   console.log("BACKEND RECEBEU:", JSON.stringify(req.body, null, 2));
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
