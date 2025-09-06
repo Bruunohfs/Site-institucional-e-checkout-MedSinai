@@ -1,4 +1,4 @@
-// /api/gerar-boleto.js - COM VENCIMENTO DE 3 DIAS
+// /api/gerar-boleto.js
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       customerId = newCustomer.id;
     }
 
-    // --- PASSO 1: CRIAR A ASSINATURA ---
+    // --- PASSO 1: CRIAR A ASSINATURA (REMOVEMOS A REFERÊNCIA DAQUI) ---
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'BOLETO',
@@ -38,7 +38,6 @@ export default async function handler(req, res) {
       nextDueDate: new Date().toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
-      externalReference: referenciaParceiro
     };
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
     if (!subscriptionResponse.ok) {
@@ -60,18 +59,21 @@ export default async function handler(req, res) {
     }
     const firstPayment = paymentsResult.data[0];
 
-    // ✨✨ A MUDANÇA ESTÁ AQUI ✨✨
-    // --- PASSO 3: ATUALIZAR O VENCIMENTO DO BOLETO PARA DAQUI A 3 DIAS ---
+    // --- PASSO 3: ATUALIZAR A COBRANÇA COM A REFERÊNCIA (A MUDANÇA PRINCIPAL) ---
+    await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+        body: JSON.stringify({ externalReference: referenciaParceiro })
+    });
+
+    // --- PASSO 4: ATUALIZAR O VENCIMENTO DO BOLETO ---
     const hoje = new Date();
     const dataVencimento = new Date(hoje.setDate(hoje.getDate() + 3));
-    
     await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}`, {
-        method: 'POST', // Usar POST para atualizar
+        method: 'POST',
         headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
         body: JSON.stringify({ dueDate: dataVencimento.toISOString().split('T')[0] })
     });
-    // Não precisamos checar o resultado, apenas garantir que a atualização foi enviada.
-    // A URL do boleto permanece a mesma.
 
     res.status(200).json({ success: true, boletoUrl: firstPayment.bankSlipUrl, cobrancaId: firstPayment.id });
 
