@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       customer: customerId,
       billingType: 'BOLETO',
       dueDate: new Date().toISOString().split('T')[0],
-      value: 1.50, // Mudei o valor para 1.50 para diferenciar do teste anterior
+      value: 5.00, // Valor mínimo para boleto
       description: "Teste de Sanidade da API v2",
       observations: "Se isso aparecer, a API funciona com cobranças avulsas."
     };
