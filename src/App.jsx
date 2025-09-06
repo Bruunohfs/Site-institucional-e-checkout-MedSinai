@@ -10,8 +10,10 @@ import carrosselImg2 from './assets/carrossel-img-2.jpg';
 import carrosselImg3 from './assets/carrossel-img-3.jpeg';
 import { useNavigate } from 'react-router-dom';
 import { planosMensais, planosAnuais } from "@/data/planos";
+import useTracker from '@/hooks/useTracker';
 
 function App() {
+  useTracker();
   const navigate = useNavigate();
   const [isAnual, setIsAnual] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
