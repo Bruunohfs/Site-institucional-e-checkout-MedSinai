@@ -1,4 +1,4 @@
-// /api/teste-final.js - Versão que descobre o ID do cliente
+// /api/teste-final.js - Versão que CRIA e depois LÊ a cobrança
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
@@ -13,45 +13,50 @@ export default async function handler(req, res) {
   }
 
   try {
-    // --- PASSO 1: DESCOBRIR O ID DO CLIENTE PELO CPF ---
-    const cpfParaBuscar = '42397392844'; // CPF do cliente "Bruno Henrique"
-    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cpfParaBuscar}`, {
-      headers: { 'access_token': ASAAS_API_KEY }
-    });
+    // --- PASSO 1: DESCOBRIR O ID DO CLIENTE ---
+    const cpfParaBuscar = '42397392844';
+    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cpfParaBuscar}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
-
-    if (!searchResult.data || searchResult.data.length === 0) {
-      throw new Error(`Cliente com CPF ${cpfParaBuscar} não encontrado.`);
-    }
+    if (!searchResult.data || searchResult.data.length === 0) { throw new Error(`Cliente com CPF ${cpfParaBuscar} não encontrado.`); }
     const customerId = searchResult.data[0].id;
-    console.log(`ID do cliente encontrado: ${customerId}`); // Vamos ver o ID no log!
 
     // --- PASSO 2: CRIAR A COBRANÇA DE TESTE ---
     const payload = {
       customer: customerId,
       billingType: 'BOLETO',
       dueDate: new Date().toISOString().split('T')[0],
-      value: 5.00, // Valor mínimo para boleto
-      description: "Teste de Sanidade da API v2",
-      observations: "Se isso aparecer, a API funciona com cobranças avulsas."
+      value: 6.00, // Mudei para 6.00 para ser uma nova cobrança
+      description: "Teste de Leitura da API",
+      observations: "Leitura via API para confirmar o salvamento."
     };
 
-    const response = await fetch(`${ASAAS_API_URL}/payments`, {
+    const createResponse = await fetch(`${ASAAS_API_URL}/payments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
       body: JSON.stringify(payload),
     });
+    const createResult = await createResponse.json();
+    if (!createResponse.ok) { throw new Error(`Erro ao criar: ${JSON.stringify(createResult)}`); }
+    
+    const newPaymentId = createResult.id;
+    console.log(`Cobrança criada com ID: ${newPaymentId}`);
 
-    const result = await response.json();
+    // --- PASSO 3: LER OS DADOS DA COBRANÇA RECÉM-CRIADA ---
+    const readResponse = await fetch(`${ASAAS_API_URL}/payments/${newPaymentId}`, {
+      method: 'GET',
+      headers: { 'access_token': ASAAS_API_KEY }
+    });
+    const readResult = await readResponse.json();
 
-    if (!response.ok) {
-      throw new Error(JSON.stringify(result));
-    }
-
-    res.status(200).json({ success: true, message: "Cobrança de teste v2 criada. Verifique o painel.", data: result });
+    // --- PASSO 4: ENVIAR O RESULTADO DA LEITURA DE VOLTA ---
+    res.status(200).json({
+      success: true,
+      message: "Cobrança criada e lida. Verifique o resultado abaixo.",
+      dadosSalvosNaAsaas: readResult // AQUI ESTÁ A PROVA
+    });
 
   } catch (error) {
-    console.error("Erro no teste final v2:", error.message);
-    res.status(500).json({ success: false, error: 'Falha no teste v2.', details: error.message });
+    console.error("Erro no teste final v3:", error.message);
+    res.status(500).json({ success: false, error: 'Falha no teste v3.', details: error.message });
   }
 }
