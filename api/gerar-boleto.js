@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   try {
     const { cliente, plano, referenciaParceiro } = req.body;
 
-    // --- Lógica do Cliente (sem alterações) ---
+    // --- Lógica do Cliente ---
     const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       customerId = newCustomer.id;
     }
 
-    // --- PASSO 1: CRIAR A ASSINATURA (REMOVEMOS A REFERÊNCIA DAQUI) ---
+    // --- PASSO 1: CRIAR A ASSINATURA COM A OBSERVAÇÃO ---
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'BOLETO',
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
       nextDueDate: new Date().toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
+      observations: `Venda originada pelo parceiro: ${referenciaParceiro}`,
     };
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
     if (!subscriptionResponse.ok) {
@@ -59,14 +60,7 @@ export default async function handler(req, res) {
     }
     const firstPayment = paymentsResult.data[0];
 
-    // --- PASSO 3: ATUALIZAR A COBRANÇA COM A REFERÊNCIA (A MUDANÇA PRINCIPAL) ---
-    await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-        body: JSON.stringify({ externalReference: referenciaParceiro })
-    });
-
-    // --- PASSO 4: ATUALIZAR O VENCIMENTO DO BOLETO ---
+    // --- PASSO 3: ATUALIZAR O VENCIMENTO DO BOLETO ---
     const hoje = new Date();
     const dataVencimento = new Date(hoje.setDate(hoje.getDate() + 3));
     await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}`, {

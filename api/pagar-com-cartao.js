@@ -1,4 +1,4 @@
-// /api/pagar-com-cartao.js
+// /api/pagar-com-cartao.js - VERSÃO CORRIGIDA
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
@@ -31,6 +31,7 @@ export default async function handler(req, res) {
 
     if (plano.tipo === 'anual') {
       // --- LÓGICA PARA PLANO ANUAL (PAGAMENTO PARCELADO) ---
+      // Esta parte já estava correta, pois cria um /payment direto.
       const endpoint = `${ASAAS_API_URL}/payments`;
       const precoNumerico = parseFloat(plano.preco.replace(',', '.'));
       const payload = {
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
         installmentCount: 12,
         totalValue: precoNumerico * 12,
         description: `Assinatura do Plano Anual: ${plano.nome} (12x)`,
-        externalReference: referenciaParceiro, // Aqui deve funcionar pois é um /payment
+        observations: `Venda originada pelo parceiro: ${referenciaParceiro}`,
         creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
         creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf, postalCode: cliente.postalCode, addressNumber: cliente.addressNumber, phone: cliente.telefone.replace(/\D/g, '') },
       };
@@ -51,7 +52,8 @@ export default async function handler(req, res) {
       res.status(200).json({ success: true, status: result.status });
 
     } else {
-      // --- LÓGICA PARA PLANO MENSAL (ASSINATURA RECORRENTE) ---
+      // --- LÓGICA PARA PLANO MENSAL (ASSINATURA RECORRENTE) - CORRIGIDA ---
+      // 1. Cria a assinatura sem a observação
       const subscriptionPayload = {
         customer: customerId,
         billingType: 'CREDIT_CARD',
@@ -67,11 +69,11 @@ export default async function handler(req, res) {
       const result = await subscriptionResponse.json();
       if (!subscriptionResponse.ok) throw new Error(result.errors?.[0]?.description || result.error || 'Falha na transação.');
 
-      // ATUALIZA A ASSINATURA COM A REFERÊNCIA
+      // 2. ATUALIZA a assinatura recém-criada para adicionar a observação
       await fetch(`${ASAAS_API_URL}/subscriptions/${result.id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-          body: JSON.stringify({ externalReference: referenciaParceiro })
+          body: JSON.stringify({ observations: `Venda originada pelo parceiro: ${referenciaParceiro}` })
       });
 
       res.status(200).json({ success: true, status: result.status });

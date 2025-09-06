@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       customerId = newCustomer.id;
     }
 
-    // --- PASSO 1: CRIAR A ASSINATURA (REMOVEMOS A REFERÊNCIA DAQUI) ---
+    // --- PASSO 1: CRIAR A ASSINATURA COM A OBSERVAÇÃO ---
     const subscriptionPayload = {
       customer: customerId,
       billingType: 'PIX',
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
       nextDueDate: new Date().toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
+      observations: `Venda originada pelo parceiro: ${referenciaParceiro}`
     };
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
     if (!subscriptionResponse.ok) {
@@ -59,14 +60,7 @@ export default async function handler(req, res) {
     }
     const firstPayment = paymentsResult.data[0];
 
-    // --- PASSO 3: ATUALIZAR A COBRANÇA COM A REFERÊNCIA (A MUDANÇA PRINCIPAL) ---
-    await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-        body: JSON.stringify({ externalReference: referenciaParceiro })
-    });
-
-    // --- PASSO 4: GERAR O QR CODE PARA O PAGAMENTO ---
+    // --- PASSO 3: GERAR O QR CODE PARA O PAGAMENTO ---
     const qrCodeResponse = await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}/pixQrCode`, { method: 'GET', headers: { 'access_token': ASAAS_API_KEY } });
     if (!qrCodeResponse.ok) {
       const errorText = await qrCodeResponse.text();
