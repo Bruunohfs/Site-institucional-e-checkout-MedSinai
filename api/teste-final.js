@@ -1,4 +1,4 @@
-// /api/teste-final.js
+// /api/teste-final.js - Versão que descobre o ID do cliente
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
@@ -13,16 +13,27 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usaremos um ID de cliente que já existe para simplificar
-    const customerId = 'cus_000005839509'; // Peguei um ID de cliente dos seus prints
+    // --- PASSO 1: DESCOBRIR O ID DO CLIENTE PELO CPF ---
+    const cpfParaBuscar = '42397392844'; // CPF do cliente "Bruno Henrique"
+    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cpfParaBuscar}`, {
+      headers: { 'access_token': ASAAS_API_KEY }
+    });
+    const searchResult = await searchCustomerResponse.json();
 
+    if (!searchResult.data || searchResult.data.length === 0) {
+      throw new Error(`Cliente com CPF ${cpfParaBuscar} não encontrado.`);
+    }
+    const customerId = searchResult.data[0].id;
+    console.log(`ID do cliente encontrado: ${customerId}`); // Vamos ver o ID no log!
+
+    // --- PASSO 2: CRIAR A COBRANÇA DE TESTE ---
     const payload = {
       customer: customerId,
       billingType: 'BOLETO',
       dueDate: new Date().toISOString().split('T')[0],
-      value: 1.00, // Um valor simbólico
-      description: "Teste de Sanidade da API",
-      observations: "Se isso aparecer, o problema é no fluxo de assinaturas."
+      value: 1.50, // Mudei o valor para 1.50 para diferenciar do teste anterior
+      description: "Teste de Sanidade da API v2",
+      observations: "Se isso aparecer, a API funciona com cobranças avulsas."
     };
 
     const response = await fetch(`${ASAAS_API_URL}/payments`, {
@@ -37,10 +48,10 @@ export default async function handler(req, res) {
       throw new Error(JSON.stringify(result));
     }
 
-    res.status(200).json({ success: true, message: "Cobrança de teste criada. Verifique o painel.", data: result });
+    res.status(200).json({ success: true, message: "Cobrança de teste v2 criada. Verifique o painel.", data: result });
 
   } catch (error) {
-    console.error("Erro no teste final:", error.message);
-    res.status(500).json({ success: false, error: 'Falha no teste.', details: error.message });
+    console.error("Erro no teste final v2:", error.message);
+    res.status(500).json({ success: false, error: 'Falha no teste v2.', details: error.message });
   }
 }
