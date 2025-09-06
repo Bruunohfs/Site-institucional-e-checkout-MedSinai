@@ -118,7 +118,7 @@ if (tipoPlano === 'anual' && planoSelecionado) {
       },
       cliente: data,
 
-      ReferenciaParceiro: partnerId || 'venda_direta'
+      referenciaParceiro: partnerId || 'venda_direta'
     };
 
     try {

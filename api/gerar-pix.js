@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { cliente, plano, ReferenciaParceiro } = req.body;
+    const { cliente, plano, referenciaParceiro } = req.body;
 
     // --- Lógica do Cliente ---
     const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
       nextDueDate: new Date().toISOString().split('T')[0], // Primeira cobrança hoje!
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
-      externalReference: ReferenciaParceiro
+      externalReference: referenciaParceiro
     };
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
     if (!subscriptionResponse.ok) {

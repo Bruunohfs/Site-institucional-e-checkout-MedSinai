@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { plano, cliente, ReferenciaParceiro } = req.body;
+    const { plano, cliente, referenciaParceiro } = req.body;
 
     // --- LÓGICA DO CLIENTE (sem alterações) ---
     const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, {
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
         installmentCount: 12,
         totalValue: precoNumerico * 12,
         description: `Assinatura do Plano Anual: ${plano.nome} (12x)`,
-        externalReference: ReferenciaParceiro,
+        externalReference: referenciaParceiro,
         creditCard: { /* ... dados do cartão ... */ },
         creditCardHolderInfo: { /* ... dados do titular ... */ },
       };
