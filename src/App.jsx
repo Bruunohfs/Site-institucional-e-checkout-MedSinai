@@ -407,7 +407,7 @@ const comoFuncionaSteps = [
           <img 
             src={parceirosCinemaImg} 
             alt="Parceiros de cinema: Cinemark, Cinépolis, Moviecom, GrupoCine, Cineart" 
-            className="rounded-2xl shadow-lg transform hover:scale-10 transition-transform duration-300"
+            className="rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"
           />
         </div>
       </div>
