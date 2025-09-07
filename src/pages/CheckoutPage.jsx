@@ -331,7 +331,7 @@ return (
           <div className="flex-grow">
             <p className="font-semibold text-blue-800 dark:text-blue-300">Adicione Pix Farma!</p>
             <p className="text-sm text-gray-600 dark:text-gray-300">
-            Por + <strong>R$ {diferencaPrecoPlus.toFixed(2).replace('.',',')}</strong>, tenha R${valorUpgradePixFarma} de crédito em farmácias todos os meses!
+            Por + <strong>R$ {diferencaPrecoPlus.toFixed(2).replace('.',',')}</strong>, tenha <strong>R${valorUpgradePixFarma}</strong> de crédito em farmácias todos os meses!
             </p>
           </div>
           <div className="ml-auto text-green-500">

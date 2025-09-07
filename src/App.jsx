@@ -351,7 +351,7 @@ const comoFuncionaSteps = [
           <div>
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Pix Farma</h3>
             <p className="text-base text-gray-800 dark:text-gray-300">
-              Saldo mensal de R$30 disponivel para ser usado na compra de medicamentos em qualquer farmácia do Brasil.
+              Saldo mensal de <strong>R$30</strong> disponivel para ser usado na compra de medicamentos em qualquer farmácia do Brasil.
             </p>
           </div>
         </div>
