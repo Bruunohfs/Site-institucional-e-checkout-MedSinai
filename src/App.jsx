@@ -12,48 +12,125 @@ import { useNavigate } from 'react-router-dom';
 import { planosMensais, planosAnuais } from "@/data/planos";
 import useTracker from '@/hooks/useTracker';
 
+
+
+
 function App() {
   useTracker();
   const navigate = useNavigate();
   const [isAnual, setIsAnual] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const swiperRef = useRef(null)
-  const [theme, setTheme] = useState('light');
+  const swiperRef = useRef(null);
+  const [openFaq, setOpenFaq] = useState(null);
 
-  const handleThemeSwitch = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add('dark');
-  } else {
-      document.documentElement.classList.remove('dark');
-  }
-},[theme]);
-
-  const whatsappNumber = "16992291295"
-  const whatsappUrl = `https://wa.me/${whatsappNumber}`
+  const whatsappNumber = "16992291295";
+  const whatsappUrl = `https://wa.me/${whatsappNumber}`;
   const planosAtivos = isAnual ? planosAnuais : planosMensais;
 
   const handleAssinarAgora = (plano) => {
     const tipoPlano = isAnual ? 'anual' : 'mensal';
     const idDoPlano = plano.nome.toLowerCase().replace(/ /g, '-');
     navigate(`/pagamento/${tipoPlano}/${idDoPlano}`);
-  }
+  };
 
   const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId)
+    const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
+      element.scrollIntoView({ behavior: 'smooth' });
     }
-    setIsMobileMenuOpen(false)
-  }
+    setIsMobileMenuOpen(false);
+  };
 
   const openWhatsApp = () => {
-    window.open(whatsappUrl, '_blank')
-    setIsMobileMenuOpen(false)
+    window.open(whatsappUrl, '_blank');
+    setIsMobileMenuOpen(false);
+  };
+
+  const testimonials = [
+  {
+    name: "Juliana M.",
+    role: "Mãe do Theo",
+    avatar: "https://i.pravatar.cc/150?img=1", // Foto aleatória de mulher
+    stars: 5,
+    text: "Salvação para uma mãe! Falei com um pediatra às 2h da manhã sem sair de casa. A tranquilidade de ter um médico a qualquer hora não tem preço. Recomendo demais!"
+  },
+  {
+    name: "Carlos S.",
+    role: "Profissional de TI, 48 anos",
+    avatar: "https://i.pravatar.cc/150?img=32", // Foto aleatória de homem
+    stars: 5,
+    text: "Consegui renovar minhas receitas de uso contínuo em uma consulta rápida por vídeo, sem precisar faltar ao trabalho. Economizei tempo e dinheiro. O serviço é prático e eficiente."
+  },
+  {
+    name: "Mariana L.",
+    role: "Estudante Universitária",
+    avatar: "https://i.pravatar.cc/150?img=25", // Foto aleatória de mulher jovem
+    stars: 5,
+    text: "Tive uma crise de ansiedade e consegui falar com um psicólogo na mesma hora. O acolhimento foi incrível e me ajudou a passar pelo momento. Cuidar da saúde mental ficou mais fácil."
+  },
+  {
+    name: "Roberto F.",
+    role: "Dono do Paçoca",
+    avatar: "https://i.pravatar.cc/150?img=60", // Foto aleatória de homem mais velho
+    stars: 5,
+    text: "Meu cachorro comeu algo que não devia no fim de semana. Falei com um veterinário pelo app, que me orientou sobre o que fazer. O Paçoca ficou bem e eu, muito mais tranquilo."
+  },
+  {
+    name: "Fernanda P.",
+    role: "Viajante Frequente",
+    avatar: "https://i.pravatar.cc/150?img=47", // Foto aleatória de mulher
+    stars: 5,
+    text: "Estava em uma viagem a trabalho e tive uma reação alérgica. Um dermatologista me atendeu por vídeo e prescreveu a medicação, que comprei com desconto pelo app. Fantástico!"
+  },
+  {
+    name: "Lucas G.",
+    role: "Praticante de Musculação",
+    avatar: "https://i.pravatar.cc/150?img=12", // Foto aleatória de homem jovem
+    stars: 5,
+    text: "Tirei várias dúvidas sobre suplementação e dieta com a nutricionista. O acompanhamento ajuda muito a manter o foco e alcançar meus objetivos na academia. Valeu muito a pena!"
   }
+];
+
+const faqData = [
+  {
+    question: "Posso cancelar a qualquer momento?",
+    answer: "Sim! Nossos planos mensais não têm fidelidade. Você pode cancelar quando quiser, sem multas ou burocracia, diretamente pelo seu painel de cliente. Para planos anuais, o cancelamento segue as regras do contrato, garantindo o melhor custo-benefício para você."
+  },
+  {
+    question: "Como funciona a inclusão de dependentes?",
+    answer: "Nos planos familiares, você pode incluir seus filhos menores de 18 anos sem nenhum custo adicional. O cadastro é feito de forma simples e rápida após a ativação do seu plano, e eles terão acesso aos mesmos benefícios de telemedicina."
+  },
+  {
+    question: "Meus dados e consultas são seguros?",
+    answer: "Absolutamente. Sua segurança e privacidade são nossa prioridade máxima. Todas as consultas são criptografadas de ponta a ponta e seus dados são armazenados em conformidade com a Lei Geral de Proteção de Dados (LGPD). Ninguém além de você e do médico tem acesso ao conteúdo da consulta."
+  },
+  {
+    question: "Preciso agendar as consultas com antecedência?",
+    answer: "Para Clínico Geral, o atendimento é imediato, 24 horas por dia, sem necessidade de agendamento. Para consultas com especialistas, você pode agendar um horário de sua preferência diretamente pelo aplicativo, garantindo a flexibilidade que você precisa."
+  },
+  {
+    question: "O que acontece se eu precisar de um exame ou receita?",
+    answer: "Durante a teleconsulta, o médico pode emitir receitas digitais e pedidos de exames, ambos com validade nacional e aceitos na maioria das farmácias e laboratórios. Você recebe os documentos diretamente no seu celular, com toda a segurança e validade legal."
+  }
+];
+
+const comoFuncionaSteps = [
+  {
+    icon: "🔑",
+    title: "1. Ative seu Plano",
+    description: "Após a compra, você recebe um código de ativação exclusivo por e-mail."
+  },
+  {
+    icon: "📱",
+    title: "2. Baixe o App",
+    description: "Baixe o aplicativo Medsinai na App Store ou Google Play e insira seu código."
+  },
+  {
+    icon: "💬",
+    title: "3. Fale com um Médico",
+    description: "Pronto! Inicie uma consulta por chat ou vídeo com um especialista, 24h por dia."
+  }
+];
 
   return (
     <div className="w-full">
@@ -164,6 +241,31 @@ function App() {
         </div>
       </section>
 
+<section className="py-16 bg-white dark:bg-gray-900 sm:py-24">
+  <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    {/* Título da Seção */}
+    <div className="text-center mb-12">
+      <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+        Simples, rápido e na palma da sua mão
+      </h2>
+      <p className="mt-4 text-lg text-gray-500 dark:text-gray-400">
+        Tenha acesso a médicos de qualidade em apenas 3 passos.
+      </p>
+    </div>
+
+    {/* Grid que renderiza os passos dinamicamente */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {comoFuncionaSteps.map((step, index) => (
+        <div key={index} className="text-center p-6 rounded-lg border border-gray-300 dark:bg-gray-800 dark:border-gray-600 shadow-md hover:shadow-xl">
+          <div className="text-4xl mb-4">{step.icon}</div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{step.title}</h3>
+          <p className="text-gray-600 dark:text-gray-400">{step.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
       <section id="services" className="py-16 px-6 bg-white dark:bg-gray-900">
   <div className="container mx-auto">
     <div className="text-center mb-12">
@@ -196,6 +298,7 @@ function App() {
     </div>
   </div>
 </section>
+
 <section className="py-16 px-6 bg-gray-50 dark:bg-gray-900">
   <div className="container mx-auto">
     <div className="text-center mb-12">
@@ -224,6 +327,71 @@ function App() {
     </div>
   </div>
 </section>
+
+<section className="py-16 bg-white dark:bg-gray-900 sm:py-24">
+  <div className="container mx-auto px-4">
+    {/* Título da Seção */}
+    <div className="text-center mb-12">
+      <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        Milhares de vidas transformadas
+      </h2>
+      <p className="text-xl text-gray-600 dark:text-gray-400">
+        Veja o que nossos clientes estão dizendo sobre a MedSinai.
+      </p>
+    </div>
+
+    {/* Carrossel Swiper */}
+    <Swiper
+      modules={[Navigation, Autoplay]}
+      spaceBetween={30} // Espaço entre os slides
+      slidesPerView={1} // Padrão para telas pequenas
+      loop={true}
+      autoplay={{
+        delay: 8000,
+        disableOnInteraction: true,
+      }}
+      breakpoints={{
+        // Quando a tela for >= 640px, mostra 2 slides
+        640: {
+          slidesPerView: 2,
+          spaceBetween: 20,
+        },
+        // Quando a tela for >= 1024px, mostra 3 slides
+        1024: {
+          slidesPerView: 3,
+          spaceBetween: 30,
+        },
+      }}
+      className="pb-10" // Adiciona um padding inferior para a navegação não cortar
+    >
+      {testimonials.map((testimonial, index) => (
+        <SwiperSlide key={index}>
+          <div className="h-full bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col">
+            <div className="flex-grow mb-6">
+              <div className="flex items-center mb-4">
+                {/* Estrelas de Avaliação */}
+                {[...Array(testimonial.stars)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 dark:text-gray-300">"{testimonial.text}"</p>
+            </div>
+            <div className="flex items-center">
+              <img className="w-12 h-12 rounded-full object-cover mr-4" src={testimonial.avatar} alt={testimonial.name} />
+              <div>
+                <p className="font-bold text-gray-900 dark:text-white">{testimonial.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.role}</p>
+              </div>
+            </div>
+          </div>
+        </SwiperSlide>
+      ))}
+    </Swiper>
+  </div>
+</section>
+
 
 <section id="plans" className="py-16 px-6 bg-white dark:bg-gray-900">
   <div className="container mx-auto">
@@ -298,23 +466,59 @@ function App() {
   </div>
 </section>
 
-      <section className="py-16 px-6 bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-6">Pronto para ter acesso a saúde de onde estiver?</h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">Fale com um de nossos especialistas e descubra como o MedSinai pode transformar a sua vida.</p>
-          <div className="flex justify-center">
-            <button 
-              onClick={openWhatsApp}
-              className="px-8 py-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-3"
+    {/* FAQ PERGUNTAS E RESPOSTAS */}
+
+<section className="py-16 bg-white dark:bg-gray-900 sm:py-24">
+  <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    {/* Grid principal que divide a seção em duas colunas em telas grandes */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-16">
+      
+      {/* Coluna da Esquerda: Título e Descrição */}
+      <div className="mb-12 lg:mb-0 lg:pr-8">
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          Ficou com alguma dúvida?
+        </h2>
+        <p className="text-x2 text-gray-600 dark:text-gray-400">
+          Confira as perguntas mais frequentes
+        </p>
+      </div>
+
+      {/* Coluna da Direita: Acordeão de Perguntas */}
+      <div className="space-y-3">
+        {faqData.map((faq, index) => (
+          // Cada item do FAQ agora tem sua própria div com borda e sombra
+          <div key={index} className="bg-gray-300/75 dark:bg-gray-800 border border-gray-400 dark:border-gray-700 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+            {/* Cabeçalho da Pergunta (Clicável) */}
+            <button
+              onClick={() => setOpenFaq(openFaq === index ? null : index)}
+              className="w-full flex justify-between items-center text-left text-lg font-semibold text-gray-800 dark:text-gray-200"
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+              <span>{faq.question}</span>
+              {/* Ícone de Seta que Gira */}
+              <svg
+                className={`w-5 h-5 transform transition-transform duration-300 text-green-500 ${openFaq === index ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
               </svg>
-              Falar com Especialista
             </button>
+
+            {/* Corpo da Resposta (Expansível) */}
+            <div
+              className={`overflow-hidden transition-all duration-500 ease-in-out ${openFaq === index ? 'max-h-96 mt-4' : 'max-h-0'}`}
+            >
+              <p className="text-gray-600 dark:text-gray-400">
+                {faq.answer}
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
     </div>
   )
 }

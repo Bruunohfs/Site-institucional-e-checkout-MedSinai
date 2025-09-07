@@ -1,5 +1,3 @@
-// /api/pagar-com-cartao.js - VERSÃO CORRIGIDA
-
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
 export default async function handler(req, res) {
