@@ -324,7 +324,7 @@ const comoFuncionaSteps = [
 </section>
 
 {/* =================================================================== */}
-{/* ================= NOVA SEÇÃO: FAÇA O UPGRADE (AJUSTADA) ============ */}
+{/* ================= NOOVA SEÇÃO: FAÇA O UPGRADE (AJUSTADA) =========== */}
 {/* =================================================================== */}
 <section className="py-16 px-6 bg-gray-50 dark:bg-gray-900">
   <div className="container mx-auto">
@@ -333,7 +333,7 @@ const comoFuncionaSteps = [
       {/* Coluna da Esquerda: Título */}
       <div className="lg:col-span-1 text-center lg:text-left">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Conheça os benefícios exclusivos dos nossos Planos Plus
+          Conheça os benefícios exclusivos dos nossos Planos Plus:
         </h2>
         <div className="inline-block w-36 h-1 bg-gradient-to-r from-green-400 to-blue-400 rounded-full mt-4"></div>
       </div>
