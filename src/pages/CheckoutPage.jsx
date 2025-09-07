@@ -35,6 +35,7 @@ function CheckoutPage() {
   let planoPlusEquivalente = null;
   let valorEconomiaAnual = 0;
   let diferencaPrecoPlus = 0;
+  let valorUpgradePixFarma = 0;
 
 if (planoSelecionado) {
   // 1. Tenta encontrar o plano Anual equivalente (UPSell)
@@ -55,6 +56,7 @@ if (planoSelecionado) {
       const precoPlus = parseFloat(planoPlusEquivalente.preco.replace(',', '.'));
       const precoAtual = parseFloat(planoSelecionado.preco.replace(',', '.'));
       diferencaPrecoPlus = precoPlus - precoAtual;
+      valorUpgradePixFarma = planoPlusEquivalente.valorPixFarma || 30;
     }
   }
 }
@@ -329,7 +331,7 @@ return (
           <div className="flex-grow">
             <p className="font-semibold text-blue-800 dark:text-blue-300">Adicione Pix Farma!</p>
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              Por + <strong>R$ {diferencaPrecoPlus.toFixed(2).replace('.',',')}</strong>, tenha R$30 de crédito em farmácias.
+            Por + <strong>R$ {diferencaPrecoPlus.toFixed(2).replace('.',',')}</strong>, tenha R${valorUpgradePixFarma} de crédito em farmácias todos os meses!
             </p>
           </div>
           <div className="ml-auto text-green-500">
