@@ -226,7 +226,7 @@ return (
         {/* =================================================================== */}
         <div className="relative mb-8 lg:mb-0 space-y-6">
           {/* Bloco 1: Resumo do Pedido */}
-          <div className="lg:sticky lg:top-12">
+          <div>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-500 dark:border-gray-800">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Resumo do Pedido</h3>
                {tipoPlano === 'mensal' && (
@@ -296,9 +296,9 @@ return (
           type="button" 
           onClick={handleUpgradeToAnual} 
           className="w-full bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-lg border border-gray-500 dark:border-gray-800 flex items-center gap-4 text-left
-                     hover:border-blue-500 hover:ring-2 hover:ring-blue-500/50 transition-all duration-300"
+                     hover:border-green-500 hover:ring-2 hover:ring-green-500 transition-all duration-300"
         >
-          <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/50 p-3 rounded-lg">
+          <div className="flex-shrink-0 bg-transparent dark:bg-transparent p-3 rounded-lg">
             <span className="text-2xl">🗓️</span>
           </div>
           <div className="flex-grow">
@@ -321,9 +321,9 @@ return (
           type="button" 
           onClick={handleUpgradeToPlus} 
           className="w-full bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-lg border border-gray-500 dark:border-gray-800 flex items-center gap-4 text-left
-                     hover:border-purple-500 hover:ring-2 hover:ring-purple-500/50 transition-all duration-300"
+                     hover:border-green-500 hover:ring-2 hover:ring-green-500 transition-all duration-300"
         >
-          <div className="flex-shrink-0 bg-purple-100 dark:bg-purple-900/50 p-3 rounded-lg">
+          <div className="flex-shrink-0 bg-transparent dark:bg-transparent p-3 rounded-lg">
             <span className="text-2xl">💊</span>
           </div>
           <div className="flex-grow">

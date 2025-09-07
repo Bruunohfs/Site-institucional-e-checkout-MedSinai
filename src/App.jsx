@@ -11,7 +11,9 @@ import carrosselImg3 from './assets/carrossel-img-3.jpeg';
 import { useNavigate } from 'react-router-dom';
 import { planosMensais, planosAnuais } from "@/data/planos";
 import useTracker from '@/hooks/useTracker';
-
+import parceirosCinemaImg from '@/assets/logos/logoscinema.png';
+import parceirosCashbackImg from '@/assets/logos/logosmarcas.png';
+import CountUp from 'react-countup';
 
 
 
@@ -223,21 +225,43 @@ const comoFuncionaSteps = [
                </button>
                   </div>
                </div>
-
-          <div className="grid grid-cols-3 gap-8 mt-12 text-center">
-            <div>
-              <div className="text-3xl lg:text-4xl font-bold text-green-600 dark:text-green-400">+1M</div>
-              <div className="text-gray-600 dark:text-gray-400">Usuários</div>
-            </div>
-            <div>
-              <div className="text-3xl lg:text-4xl font-bold text-green-600 dark:text-green-400">24h</div>
-              <div className="text-gray-600 dark:text-gray-400">Atendimento</div>
-            </div>
-            <div>
-              <div className="text-3xl lg:text-4xl font-bold text-green-600 dark:text-green-400">4.9</div>
-              <div className="text-gray-600 dark:text-gray-400">Avaliação</div>
-            </div>
+               {/* =================================================================== */}
+               {/* ============ NOVA SEÇÃO DE ESTATÍSTICAS (PROVA SOCIAL) ============ */}
+               {/* =================================================================== */}
+<div className="py-12">
+  <div className="container mx-auto">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 border border-gray-300 dark:border-gray-600">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        
+        {/* Estatística 1: Usuários */}
+        <div className="flex flex-col items-center">
+          <div className="flex items-center text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+            <span className="mr-1">+</span>
+            <CountUp end={1000000} duration={3} />
           </div>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">De usuários no Brasil</p>
+        </div>
+
+        {/* Estatística 2: Atendimento */}
+        <div className="flex flex-col items-center border-t-2 md:border-t-0 md:border-l-2 md:border-r-2 border-gray-200 dark:border-gray-700 py-4 md:py-0">
+          <div className="flex items-center text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+            <CountUp end={24} duration={3} suffix="hrs" />
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Atendimento</p>
+        </div>
+
+        {/* Estatística 3: Avaliação */}
+        <div className="flex flex-col items-center">
+          <div className="flex items-center text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+            <CountUp end={4.9} duration={3} decimals={1} separator="." />
+            <span className="text-yellow-400 ml-2">★★★</span>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Satisfação dos Usuarios</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
         </div>
       </section>
 
@@ -299,31 +323,114 @@ const comoFuncionaSteps = [
   </div>
 </section>
 
+{/* =================================================================== */}
+{/* ================= NOVA SEÇÃO: FAÇA O UPGRADE (AJUSTADA) ============ */}
+{/* =================================================================== */}
 <section className="py-16 px-6 bg-gray-50 dark:bg-gray-900">
   <div className="container mx-auto">
-    <div className="text-center mb-12">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+      
+      {/* Coluna da Esquerda: Título */}
+      <div className="lg:col-span-1 text-center lg:text-left">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          “Conheça os benefícios exclusivos dos nossos Planos Plus”
+        </h2>
+        <div className="inline-block w-36 h-1 bg-gradient-to-r from-green-400 to-blue-400 rounded-full mt-4"></div>
+      </div>
+
+      {/* Coluna da Direita: Cards de Benefícios */}
+      <div className="lg:col-span-2 space-y-6">
+        
+        {/* Card 1: Farma (Estilo ajustado) */}
+        <div className="flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-300 dark:border-gray-600">
+          {/* Ícone de Emoji */}
+          <div className="mr-6 text-5xl">
+            💊
+          </div>
+          {/* Texto */}
+          <div>
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Pix Farma</h3>
+            <p className="text-base text-gray-800 dark:text-gray-300">
+              Saldo mensal de R$30 disponivel para ser usado na compra de medicamentos em qualquer farmácia do Brasil.
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: Lab/Exames (Estilo ajustado) */}
+        <div className="flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-300 dark:border-gray-600">
+          {/* Ícone de Emoji */}
+          <div className="mr-6 text-5xl">
+            🧪
+          </div>
+          {/* Texto */}
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Clinicas e Laboratorios</h3>
+            <p className="text-base text-gray-800 dark:text-gray-300">
+              Exames e Consultas presenciais com descontos exclusivos em nossa rede credenciada.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+ {/* =================================================================== */}
+      {/* ============ NOVA SEÇÃO: CLUBE DE VANTAGENS (COM LOGOS LOCAIS) ====== */}
+      {/* =================================================================== */}
+      <section className="py-16 bg-white dark:bg-gray-900 sm:py-24">
+  <div className="container mx-auto px-4">
+    {/* Título Principal */}
+    <div className="text-center mb-16">
       <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        Clube de Vantagens <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">que Cuida do Seu Bolso</span>
+        Um Clube de Vantagens de Verdade
       </h2>
-      <p className="text-xl text-gray-600 dark:text-gray-400">
-        Além de cuidar da sua saúde, o MedSinai oferece benefícios exclusivos que fazem a diferença no seu dia a dia.
+      <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+        Com MedSinai+, seu bem-estar vai além da saúde. Tenha acesso a benefícios exclusivos que cuidam também do seu bolso e do seu lazer.
       </p>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-      {[
-        { icon: "💳", title: "Cashback", desc: "Receba parte do valor gasto em compras de volta", value: "Até 5%" },
-        { icon: "🎬", title: "Cinema", desc: "Compre ingressos com desconto direto pelo app", value: "Até 55% off" },
-        { icon: "💊", title: "Pix Farma", desc: "Crédito mensal para compra de medicamentos", value: "R$ 30/mês" },
-        { icon: "🏥", title: "Clínicas", desc: "Acesso a rede credenciada com preços especiais", value: "Descontos" }
-      ].map((benefit, index) => (
-        <div key={index} className="text-center p-6 bg-white rounded-lg shadow-sm border border-gray-300 dark:bg-gray-800 dark:border-gray-600 hover:shadow-lg">
-          <div className="text-4xl mb-4">{benefit.icon}</div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{benefit.title}</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">{benefit.desc}</p>
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">{benefit.value}</div>
+    <div className="space-y-16"> {/* Aumentei o espaço entre os cards */}
+      
+      {/* Card de Benefício: CINEMA */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="text-center lg:text-left">
+          <h3 className="text-3xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">50% de Desconto em Cinemas</span>
+          </h3>
+          <p className="text-lg text-gray-600 dark:text-gray-300">
+            Sua paixão pela sétima arte vale a metade do preço! Compre ingressos com 50% de desconto nas maiores redes de cinema do país, diretamente pelo nosso app.
+          </p>
         </div>
-      ))}
+        <div>
+          <img 
+            src={parceirosCinemaImg} 
+            alt="Parceiros de cinema: Cinemark, Cinépolis, Moviecom, GrupoCine, Cineart" 
+            className="rounded-2xl shadow-lg transform hover:scale-10 transition-transform duration-300"
+          />
+        </div>
+      </div>
+
+      {/* Card de Benefício: CASHBACK */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="text-center lg:text-left lg:order-last">
+          <h3 className="text-3xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">Até 5% de Cashback</span>
+          </h3>
+          <p className="text-lg text-gray-600 dark:text-gray-300">
+            Suas compras viram dinheiro de volta! Acesse as maiores lojas do Brasil pelo nosso app e receba até 5% de cashback em eletrônicos, moda, farmácias e muito mais.
+          </p>
+        </div>
+        <div className="lg:order-first">
+          <img 
+            src={parceirosCashbackImg} 
+            alt="Parceiros de cashback: Nike, Netshoes, Kabum, Electrolux, Natura, Casas Bahia, Gol" 
+            className="rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -402,32 +509,35 @@ const comoFuncionaSteps = [
       <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
         Planos flexíveis que se adaptam às suas necessidades e orçamento.
       </p>
-      
-      <div className="flex justify-center mb-8">
-        <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-          <button 
-            onClick={() => setIsAnual(false)}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
-              !isAnual 
-                ? 'bg-pink-200 text-pink-800' 
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
-            }`}
-          >
-            Mensal
-          </button>
-          <button 
-            onClick={() => setIsAnual(true)}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
-              isAnual 
-                ? 'bg-blue-200 text-blue-800' 
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
-            }`}
-          >
-            Anual
-          </button>
-        </div>
-      </div>
-    </div>
+               {/*BOTAO DE SELEÇÃO DE PLANO MENSAL E ANUAL*/}
+<div className="flex justify-center mb-8">
+  {/* 1. Container principal: relativo e com formato de pílula */}
+  <div className="relative inline-flex bg-gray-300 dark:bg-gray-700 rounded-full p-1">
+    
+    {/* 2. O fundo deslizante: absoluto, com transição e movido pelo estado 'isAnual' */}
+    <span
+      className={`absolute top-1 left-1 h-[calc(100%-0.5rem)] w-[calc(50%-0.25rem)] bg-green-400 dark:bg-green-500 rounded-full shadow-md transition-transform duration-300 ease-in-out
+             ${isAnual ? 'transform translate-x-full' : 'transform translate-x-0'}`}
+      aria-hidden="true"
+    />
+
+    {/* 3. Botões: agora são 'relative' para ficarem sobre o fundo deslizante */}
+    <button 
+      onClick={() => setIsAnual(false)}
+      className={`relative px-6 py-2 rounded-full text-sm font-semibold z-10 transition-colors duration-300
+                 ${!isAnual ? 'text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-800 dark:hover:text-white'}`}>
+      Mensal
+    </button>
+
+    <button 
+      onClick={() => setIsAnual(true)}
+      className={`relative px-6 py-2 rounded-full text-sm font-semibold z-10 transition-colors duration-300
+                 ${isAnual ? 'text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-800 dark:hover:text-white'}`}>
+      Anual
+    </button>
+  </div>
+</div>
+</div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
       {planosAtivos.map((plano) => (
