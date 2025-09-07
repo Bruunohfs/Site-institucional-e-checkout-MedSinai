@@ -22,7 +22,7 @@ export const planosMensais = [
       nome: "Individual Plus", 
       descricao: "Individual + benefícios farmácia",
       preco: "49,90",
-      valorPixFarma:30,
+      valorPixFarma:"30,00",
       economia: "",
       beneficios: [
         "Tudo do Individual",
@@ -52,7 +52,7 @@ export const planosMensais = [
       nome: "Família Plus", 
       descricao: "Família + benefícios farmácia",
       preco: "89,90",
-      valorPixFarma:60,
+      valorPixFarma:"60,00",
       economia: "",
       beneficios: [
         "Tudo do Família",
@@ -85,7 +85,7 @@ export const planosAnuais = [
       nome: "Individual Plus", 
       descricao: "Individual + benefícios farmácia",
       preco: "39,90",
-      valorPixFarma:30,
+      valorPixFarma:"30,00",
       parcelamento: "12x de",
       economia: "Economize R$ 120/ano",
       beneficios: [
@@ -118,7 +118,7 @@ export const planosAnuais = [
       nome: "Família Plus", 
       descricao: "Família + benefícios farmácia",
       preco: "79,90",
-      valorPixFarma:60,
+      valorPixFarma:"60,00",
       parcelamento: "12x de",
       economia: "Economize R$ 120/ano",
       beneficios: [
