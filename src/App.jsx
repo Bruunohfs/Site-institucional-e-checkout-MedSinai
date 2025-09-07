@@ -333,7 +333,7 @@ const comoFuncionaSteps = [
       {/* Coluna da Esquerda: Título */}
       <div className="lg:col-span-1 text-center lg:text-left">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          “Conheça os benefícios exclusivos dos nossos Planos Plus”
+          Conheça os benefícios exclusivos dos nossos Planos Plus
         </h2>
         <div className="inline-block w-36 h-1 bg-gradient-to-r from-green-400 to-blue-400 rounded-full mt-4"></div>
       </div>
@@ -407,7 +407,7 @@ const comoFuncionaSteps = [
           <img 
             src={parceirosCinemaImg} 
             alt="Parceiros de cinema: Cinemark, Cinépolis, Moviecom, GrupoCine, Cineart" 
-            className="rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"
+            className="rounded-2xl shadow-lg transform hover:scale-105nom transition-transform duration-300"
           />
         </div>
       </div>
