@@ -1,7 +1,9 @@
+// /api/pagar-com-cartao.js
+
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
 export default async function handler(req, res) {
-   console.log("BACKEND RECEBEU:", JSON.stringify(req.body, null, 2));
+  console.log("BACKEND RECEBEU:", JSON.stringify(req.body, null, 2));
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
@@ -14,23 +16,31 @@ export default async function handler(req, res) {
   try {
     const { plano, cliente, referenciaParceiro } = req.body;
 
-    // --- Lógica do Cliente ---
-    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
+    // --- Lógica do Cliente (já estava correta) ---
+    // Busca o cliente pelo CPF, se não existir, cria um novo.
+    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf.replace(/\D/g, '')}`, { headers: { 'access_token': ASAAS_API_KEY } });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
+
     if (searchResult.data && searchResult.data.length > 0) {
       customerId = searchResult.data[0].id;
     } else {
-      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify({ name: cliente.nomeCompleto, cpfCnpj: cliente.cpf, email: cliente.email, mobilePhone: cliente.telefone }) });
+      const newCustomerPayload = {
+        name: cliente.nomeCompleto,
+        cpfCnpj: cliente.cpf.replace(/\D/g, ''),
+        email: cliente.email,
+        mobilePhone: cliente.telefone.replace(/\D/g, '')
+      };
+      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(newCustomerPayload) });
       const newCustomer = await newCustomerResponse.json();
-      if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
+      if (!newCustomerResponse.ok) throw new Error(`Erro ao criar cliente: ${JSON.stringify(newCustomer.errors)}`);
       customerId = newCustomer.id;
     }
 
+    // --- LÓGICA DE PAGAMENTO CORRIGIDA ---
+
     if (plano.tipo === 'anual') {
       // --- LÓGICA PARA PLANO ANUAL (PAGAMENTO PARCELADO) ---
-      // Esta parte já estava correta, pois cria um /payment direto.
-      const endpoint = `${ASAAS_API_URL}/payments`;
       const precoNumerico = parseFloat(plano.preco.replace(',', '.'));
       const payload = {
         customer: customerId,
@@ -39,19 +49,20 @@ export default async function handler(req, res) {
         installmentCount: 12,
         totalValue: precoNumerico * 12,
         description: `Assinatura do Plano Anual: ${plano.nome} (12x)`,
-        observations: `Venda originada pelo parceiro: ${referenciaParceiro}`,
-        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
-        creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf, postalCode: cliente.postalCode, addressNumber: cliente.addressNumber, phone: cliente.telefone.replace(/\D/g, '') },
+        externalReference: referenciaParceiro, // ✨ USANDO O CAMPO CORRETO ✨
+        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/\s/g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
+        creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf.replace(/\D/g, ''), postalCode: cliente.postalCode, addressNumber: cliente.addressNumber, phone: cliente.telefone.replace(/\D/g, '') },
       };
       
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(payload) });
+      const response = await fetch(`${ASAAS_API_URL}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(payload) });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.errors?.[0]?.description || result.error || 'Falha na transação.');
-      res.status(200).json({ success: true, status: result.status });
+      if (!response.ok) throw new Error(result.errors?.[0]?.description || 'Falha na transação anual.');
+      
+      res.status(200).json({ success: true, status: result.status, paymentId: result.id });
 
     } else {
-      // --- LÓGICA PARA PLANO MENSAL (ASSINATURA RECORRENTE) - CORRIGIDA ---
-      // 1. Cria a assinatura sem a observação
+      // --- LÓGICA PARA PLANO MENSAL (ASSINATURA RECORRENTE) ---
+      // 1. Cria a assinatura SEM a referência externa
       const subscriptionPayload = {
         customer: customerId,
         billingType: 'CREDIT_CARD',
@@ -59,22 +70,22 @@ export default async function handler(req, res) {
         nextDueDate: new Date().toISOString().split('T')[0],
         cycle: 'MONTHLY',
         description: `Assinatura Mensal do Plano: ${plano.nome}`,
-        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
-        creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf, postalCode: cliente.postalCode || '00000-000', addressNumber: cliente.addressNumber || 'S/N', phone: cliente.telefone.replace(/\D/g, '') },
+        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/\s/g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
+        creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf.replace(/\D/g, ''), postalCode: cliente.postalCode || '00000-000', addressNumber: cliente.addressNumber || 'S/N', phone: cliente.telefone.replace(/\D/g, '') },
       };
       
       const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
       const result = await subscriptionResponse.json();
-      if (!subscriptionResponse.ok) throw new Error(result.errors?.[0]?.description || result.error || 'Falha na transação.');
+      if (!subscriptionResponse.ok) throw new Error(result.errors?.[0]?.description || 'Falha na criação da assinatura.');
 
-      // 2. ATUALIZA a assinatura recém-criada para adicionar a observação
+      // ✨ PASSO 2: ATUALIZA a assinatura recém-criada para adicionar a referência ✨
       await fetch(`${ASAAS_API_URL}/subscriptions/${result.id}`, {
-          method: 'POST',
+          method: 'POST', // O método de update também é POST
           headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-          body: JSON.stringify({ observations: `Venda originada pelo parceiro: ${referenciaParceiro}` })
+          body: JSON.stringify({ externalReference: referenciaParceiro }) // Usando o campo correto
       });
 
-      res.status(200).json({ success: true, status: result.status });
+      res.status(200).json({ success: true, status: result.status, subscriptionId: result.id });
     }
 
   } catch (error) {
