@@ -1,6 +1,6 @@
-// /api/webhook-asaas.js - VERSÃO 11 FINAL: BUSCA ATIVA DA DATA DE PAGAMENTO
+// /api/webhook-asaas.js - VERSÃO 12 FINAL: LÓGICA SIMPLIFICADA
 
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyG6f0yCNSGRsVlC0zu_HhGneELBqmxQx3Mi6ig8ySIYgICrcR9vezYnY35qEpp9yNrRw/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUSOar5rf4Fth10_WP6cxM9xcdir2G0PTycsppB6xDmv7fLKV83mtu9xM1wHAAIpH-pQ/exec';
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
@@ -20,38 +20,19 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'Ignorado: Sem referência de parceiro.' });
     }
 
-    if (event === 'PAYMENT_CREATED') {
-      console.log(`Registrando novo pagamento PENDING: ${payment.id}`);
-      const customerData = await getCustomerData(payment.customer);
-      const dataForSheet = formatDataForSheet(payment, customerData);
-      
-      await fetch(GOOGLE_SHEET_WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataForSheet),
-      });
-      console.log('Nova linha PENDING adicionada ao Google Sheets.');
+    // Para qualquer evento relevante, buscamos os dados mais recentes e enviamos para o Google.
+    // O Google Script vai decidir se deve adicionar uma nova linha ou atualizar uma existente.
+    const fullPaymentData = await getPaymentData(payment.id);
+    const customerData = await getCustomerData(fullPaymentData.customer);
+    const dataForSheet = formatDataForSheet(fullPaymentData, customerData);
 
-    } else if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_UPDATED') {
-      console.log(`Atualizando status do pagamento: ${payment.id} para ${payment.status}`);
-      
-      // ✨ LÓGICA MELHORADA: Busca os dados completos do pagamento na API da Asaas
-      const fullPaymentData = await getPaymentData(payment.id);
-      
-      const updateUrl = new URL(GOOGLE_SHEET_WEB_APP_URL);
-      updateUrl.searchParams.append('id_pagamento', fullPaymentData.id);
-      updateUrl.searchParams.append('status_pagamento', fullPaymentData.status);
-      if (fullPaymentData.paymentDate) {
-        updateUrl.searchParams.append('data_pagamento', fullPaymentData.paymentDate);
-      }
-
-      await fetch(updateUrl.toString(), { method: 'GET' });
-      console.log('Status e data de pagamento atualizados no Google Sheets.');
-      
-    } else {
-      console.log(`Evento ${event} ignorado (não relevante para o fluxo de registro/atualização).`);
-    }
-
+    await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataForSheet),
+    });
+    
+    console.log(`Dados do pagamento ${payment.id} enviados para o Google Sheets.`);
     res.status(200).json({ message: 'Notificação processada.' });
 
   } catch (error) {
@@ -60,9 +41,8 @@ export default async function handler(req, res) {
   }
 }
 
-// --- Funções Auxiliares ---
+// --- Funções Auxiliares (sem alteração) ---
 
-// ✨ NOVA FUNÇÃO AUXILIAR ✨
 async function getPaymentData(paymentId) {
   const response = await fetch(`${ASAAS_API_URL}/payments/${paymentId}`, {
     headers: { 'access_token': ASAAS_API_KEY }
