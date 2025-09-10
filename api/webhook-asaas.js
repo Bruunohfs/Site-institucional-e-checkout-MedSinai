@@ -1,5 +1,3 @@
-// /api/webhook-asaas.js - VERSÃO 13 FINAL: LÓGICA DE DATA DE PAGAMENTO PARA CARTÃO
-
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUSOar5rf4Fth10_WP6cxM9xcdir2G0PTycsppB6xDmv7fLKV83mtu9xM1wHAAIpH-pQ/exec';
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
@@ -14,6 +12,20 @@ export default async function handler(req, res) {
     const event = notification.event;
     const payment = notification.payment;
     console.log(`🎉 WEBHOOK RECEBIDO: Evento ${event} para pagamento ${payment?.id}`);
+
+    if (event === 'PAYMENT_DELETED') {
+      await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete',
+          id_pagamento: payment.id
+        }),
+      });
+      console.log(`Solicitação de deleção enviada para o pagamento ${payment.id}.`);
+      return res.status(200).json({ message: 'Solicitação de deleção processada.' });
+    }
+
 
     if (!payment?.externalReference) {
       console.log('Evento ignorado (sem ref. de parceiro).');
