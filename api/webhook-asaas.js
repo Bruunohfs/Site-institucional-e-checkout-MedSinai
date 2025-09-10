@@ -1,4 +1,4 @@
-// /api/webhook-asaas.js - VERSÃO 12 FINAL: LÓGICA SIMPLIFICADA
+// /api/webhook-asaas.js - VERSÃO 13 FINAL: LÓGICA DE DATA DE PAGAMENTO PARA CARTÃO
 
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUSOar5rf4Fth10_WP6cxM9xcdir2G0PTycsppB6xDmv7fLKV83mtu9xM1wHAAIpH-pQ/exec';
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
@@ -20,8 +20,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'Ignorado: Sem referência de parceiro.' });
     }
 
-    // Para qualquer evento relevante, buscamos os dados mais recentes e enviamos para o Google.
-    // O Google Script vai decidir se deve adicionar uma nova linha ou atualizar uma existente.
     const fullPaymentData = await getPaymentData(payment.id);
     const customerData = await getCustomerData(fullPaymentData.customer);
     const dataForSheet = formatDataForSheet(fullPaymentData, customerData);
@@ -41,7 +39,7 @@ export default async function handler(req, res) {
   }
 }
 
-// --- Funções Auxiliares (sem alteração) ---
+// --- Funções Auxiliares ---
 
 async function getPaymentData(paymentId) {
   const response = await fetch(`${ASAAS_API_URL}/payments/${paymentId}`, {
@@ -58,6 +56,18 @@ async function getCustomerData(customerId) {
 }
 
 function formatDataForSheet(payment, customerData) {
+  // ✨ LÓGICA DE DATA DE PAGAMENTO CORRIGIDA ✨
+  let dataPagamentoFinal = 'Pendente';
+  if (payment.status === 'RECEIVED' || payment.status === 'CONFIRMED') {
+    // Se a data de pagamento existir no objeto, use-a.
+    if (payment.paymentDate) {
+      dataPagamentoFinal = payment.paymentDate;
+    } else {
+      // Senão (caso do cartão de crédito avulso), use a data de hoje.
+      dataPagamentoFinal = new Date().toISOString().split('T')[0];
+    }
+  }
+
   return {
     id_pagamento: payment.id,
     id_assinatura: payment.subscription || 'N/A',
@@ -71,6 +81,6 @@ function formatDataForSheet(payment, customerData) {
     nome_plano: payment.description || 'N/A',
     data_vencimento: payment.dueDate || 'N/A',
     forma_pagamento: payment.billingType || 'N/A',
-    data_pagamento: payment.paymentDate || 'Pendente'
+    data_pagamento: dataPagamentoFinal // Usando a nova variável
   };
 }
