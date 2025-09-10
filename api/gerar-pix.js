@@ -1,10 +1,10 @@
-// /api/gerar-pix.js
+// /api/gerar-pix.js - VERSÃO FINAL CORRIGIDA
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
-   console.log("BACKEND RECEBEU:", JSON.stringify(req.body, null, 2));
+  console.log("BACKEND RECEBEU:", JSON.stringify(req.body, null, 2));
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
@@ -17,61 +17,103 @@ export default async function handler(req, res) {
   try {
     const { cliente, plano, referenciaParceiro } = req.body;
 
-    // --- Lógica do Cliente ---
-    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf}`, { headers: { 'access_token': ASAAS_API_KEY } });
-    const searchResult = await searchCustomerResponse.json();
-    let customerId;
-    if (searchResult.data && searchResult.data.length > 0) {
-      customerId = searchResult.data[0].id;
+    // --- PASSO 1: ENCONTRA OU CRIA O CLIENTE (UMA ÚNICA VEZ) ---
+    const customerId = await findOrCreateCustomer(cliente);
+    let paymentId; // Declara a variável que vai guardar o ID do pagamento
+
+    if (plano.tipo === 'anual') {
+      // --- LÓGICA PARA PAGAMENTO ÚNICO DO PLANO ANUAL ---
+      const precoNumerico = parseFloat(plano.preco.replace(',', '.'));
+      const paymentPayload = {
+        customer: customerId,
+        billingType: 'PIX',
+        dueDate: new Date().toISOString().split('T')[0],
+        value: precoNumerico * 12,
+        description: `Pagamento Plano Anual: ${plano.nome}`,
+        externalReference: referenciaParceiro,
+      };
+
+      const response = await fetch(`${ASAAS_API_URL}/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+        body: JSON.stringify(paymentPayload)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(JSON.stringify(result.errors));
+      paymentId = result.id; // Guarda o ID do pagamento avulso
+
     } else {
-      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify({ name: cliente.nomeCompleto, cpfCnpj: cliente.cpf, email: cliente.email, mobilePhone: cliente.telefone }) });
-      const newCustomer = await newCustomerResponse.json();
-      if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
-      customerId = newCustomer.id;
-    }
+      // --- LÓGICA PARA ASSINATURA MENSAL ---
+      const subscriptionPayload = {
+        customer: customerId,
+        billingType: 'PIX',
+        value: parseFloat(plano.preco.replace(',', '.')),
+        nextDueDate: new Date().toISOString().split('T')[0],
+        cycle: 'MONTHLY',
+        description: `Assinatura Mensal do Plano: ${plano.nome}`,
+        externalReference: referenciaParceiro,
+      };
+      const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
+      if (!subscriptionResponse.ok) {
+        const errorText = await subscriptionResponse.text();
+        throw new Error(`Falha ao criar assinatura: ${errorText}`);
+      }
+      const subscriptionResult = await subscriptionResponse.json();
 
-    // --- PASSO 1: CRIAR A ASSINATURA COM A OBSERVAÇÃO ---
-    const subscriptionPayload = {
-      customer: customerId,
-      billingType: 'PIX',
-      value: parseFloat(plano.preco.replace(',', '.')),
-      nextDueDate: new Date().toISOString().split('T')[0],
-      cycle: 'MONTHLY',
-      description: `Assinatura Mensal do Plano: ${plano.nome}`,
-      externalReference: referenciaParceiro,
-    };
-    const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
-    if (!subscriptionResponse.ok) {
-      const errorText = await subscriptionResponse.text();
-      throw new Error(`Falha ao criar assinatura: ${errorText}`);
-    }
-    const subscriptionResult = await subscriptionResponse.json();
-
-    // --- PASSO 2: BUSCAR O PRIMEIRO PAGAMENTO ---
-    await sleep(2000);
-    const paymentsResponse = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionResult.id}/payments`, { headers: { 'access_token': ASAAS_API_KEY } });
-    if (!paymentsResponse.ok) {
+      await sleep(2000);
+      const paymentsResponse = await fetch(`${ASAAS_API_URL}/subscriptions/${subscriptionResult.id}/payments`, { headers: { 'access_token': ASAAS_API_KEY } });
+      if (!paymentsResponse.ok) {
         const errorText = await paymentsResponse.text();
         throw new Error(`Falha ao buscar pagamentos da assinatura: ${errorText}`);
-    }
-    const paymentsResult = await paymentsResponse.json();
-    if (!paymentsResult.data || paymentsResult.data.length === 0) {
+      }
+      const paymentsResult = await paymentsResponse.json();
+      if (!paymentsResult.data || paymentsResult.data.length === 0) {
         throw new Error("A Asaas criou a assinatura, mas o primeiro pagamento ainda não foi encontrado.");
+      }
+      paymentId = paymentsResult.data[0].id; // Guarda o ID do primeiro pagamento da assinatura
     }
-    const firstPayment = paymentsResult.data[0];
 
-    // --- PASSO 3: GERAR O QR CODE PARA O PAGAMENTO ---
-    const qrCodeResponse = await fetch(`${ASAAS_API_URL}/payments/${firstPayment.id}/pixQrCode`, { method: 'GET', headers: { 'access_token': ASAAS_API_KEY } });
+    // --- PASSO FINAL: GERAR O QR CODE PARA O PAGAMENTO ---
+    // Este código agora funciona para ambos os casos (anual e mensal)
+    const qrCodeResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, { method: 'GET', headers: { 'access_token': ASAAS_API_KEY } });
     if (!qrCodeResponse.ok) {
       const errorText = await qrCodeResponse.text();
       throw new Error(`Não foi possível gerar o QR Code: ${errorText}`);
     }
     const qrCodeData = await qrCodeResponse.json();
 
-    res.status(200).json({ success: true, payload: qrCodeData.payload, encodedImage: qrCodeData.encodedImage, cobrancaId: firstPayment.id });
+    return res.status(200).json({ success: true, payload: qrCodeData.payload, encodedImage: qrCodeData.encodedImage, cobrancaId: paymentId });
 
   } catch (error) {
     console.error("Erro detalhado no fluxo de assinatura de Pix:", error.message);
-    res.status(500).json({ success: false, error: 'Falha no processo de assinatura.', details: error.message });
+    return res.status(500).json({ success: false, error: 'Falha no processo de assinatura.', details: error.message });
+  }
+}
+
+// Função auxiliar para não repetir código
+async function findOrCreateCustomer(cliente) {
+  const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+  const ASAAS_API_URL = process.env.ASAAS_API_URL;
+  
+  const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf.replace(/\D/g, '')}`, { headers: { 'access_token': ASAAS_API_KEY } });
+  const searchResult = await searchCustomerResponse.json();
+  
+  if (searchResult.data && searchResult.data.length > 0) {
+    return searchResult.data[0].id;
+  } else {
+    const newCustomerPayload = {
+      name: cliente.nomeCompleto,
+      cpfCnpj: cliente.cpf.replace(/\D/g, ''),
+      email: cliente.email,
+      mobilePhone: cliente.telefone.replace(/\D/g, '')
+    };
+    const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, 
+      body: JSON.stringify(newCustomerPayload) 
+    });
+    const newCustomer = await newCustomerResponse.json();
+    if (!newCustomerResponse.ok) throw new Error(JSON.stringify(newCustomer.errors));
+    return newCustomer.id;
   }
 }

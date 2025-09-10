@@ -141,17 +141,15 @@ if (tipoPlano === 'anual' && planoSelecionado) {
 
   // useEffect para controlar estado do botão
   useEffect(() => {
-    const isPersonalDataValid = isValid;
-    let isPaymentDataValid = false;
-    
-    if (metodoPagamento === 'pix' || metodoPagamento === 'boleto') {
-      isPaymentDataValid = true;
-    } else if (metodoPagamento === 'cartao') {
-      isPaymentDataValid = isValid;
-    }
-    
-    setIsButtonDisabled(!isPersonalDataValid || !isPaymentDataValid || isProcessing);
-  }, [isValid, metodoPagamento, isProcessing]);
+  // A validação geral do formulário (nome, cpf, etc.)
+  const isPersonalDataValid = isValid;
+
+  // Para PIX e Boleto, a validação dos dados de pagamento é sempre verdadeira.
+  // Para Cartão, depende se os campos do cartão estão válidos.
+  const isPaymentDataValid = (metodoPagamento === 'pix' || metodoPagamento === 'boleto') || isValid;
+  
+  setIsButtonDisabled(!isPersonalDataValid || !isPaymentDataValid || isProcessing);
+}, [isValid, metodoPagamento, isProcessing]);
 
   const handleFormSubmit = async (data) => {
     setIsProcessing(true);
@@ -380,11 +378,6 @@ return (
                     <Controller name="cpf" control={control} rules={{ required: "O CPF é obrigatório", minLength: { value: 14, message: "CPF incompleto" } }} render={({ field: { onChange, name, value } }) => (<IMaskInput mask="000.000.000-00" id={name} name={name} value={value} placeholder="000.000.000-00" className={`w-full mt-1 p-3 rounded-lg border ${errors.cpf ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'} text-gray-900 dark:text-black`} onAccept={(val) => onChange(val)} />)} />
                     {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf.message}</p>}
                   </div>
-                  <div>
-                    <label htmlFor="dataNascimento" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Nascimento</label>
-                    <Controller name="dataNascimento" control={control} rules={{ required: "A data é obrigatória", validate: (value) => { if (value.length < 10) { return "Data incompleta"; } const parts = value.split('/'); const day = parseInt(parts[0], 10); const month = parseInt(parts[1], 10); const year = parseInt(parts[2], 10); const date = new Date(year, month - 1, day); if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) { return "Data inválida"; } const today = new Date(); const age = today.getFullYear() - date.getFullYear(); if (age < 1 || age > 120) { return "Data de nascimento inválida"; } return true; } }} render={({ field: { onChange, name, value } }) => (<IMaskInput mask="00/00/0000" id={name} name={name} value={value} placeholder="DD/MM/AAAA" className={`w-full mt-1 p-3 rounded-lg border ${errors.dataNascimento ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'} text-gray-900 dark:text-black`} onAccept={(val) => onChange(val)} />)} />
-                    {errors.dataNascimento && <p className="text-red-500 text-xs mt-1">{errors.dataNascimento.message}</p>}
-                  </div>
                 </div>
               </div>
 
@@ -437,16 +430,28 @@ return (
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">Forma de Pagamento</h3>
                 </div>
                 <div className="grid grid-cols-3 gap-2 rounded-lg bg-gray-300 dark:bg-gray-700 p-1 mb-6">
-                  <button type="button" onClick={() => setMetodoPagamento('cartao')} disabled={tipoPlano === 'anual'} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'cartao' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'} ${tipoPlano === 'anual' ? 'cursor-not-allowed' : ''}`}>Cartão</button>
-                  {tipoPlano !== 'anual' ? (
-                    <>
-                      <button type="button" onClick={() => setMetodoPagamento('pix')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'pix' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}>Pix</button>
-                      <button type="button" onClick={() => setMetodoPagamento('boleto')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'boleto' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}>Boleto</button>
-                    </>
-                  ) : (
-                    <div className="col-span-2 flex items-center justify-start p-2"><p className="text-xs text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">Planos anuais apenas no cartão.</p></div>
-                  )}
-                </div>
+                <button 
+                 type="button" 
+    onClick={() => setMetodoPagamento('cartao')} 
+    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'cartao' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}
+  >
+    Cartão
+  </button>
+  <button 
+    type="button" 
+    onClick={() => setMetodoPagamento('pix')} 
+    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'pix' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}
+  >
+    Pix
+  </button>
+  <button 
+    type="button" 
+    onClick={() => setMetodoPagamento('boleto')} 
+    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${metodoPagamento === 'boleto' ? 'bg-white text-gray-800 shadow' : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-white/50'}`}
+  >
+    Boleto
+  </button>
+</div>
                 {metodoPagamento === 'cartao' && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
