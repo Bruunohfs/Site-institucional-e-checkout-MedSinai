@@ -1,10 +1,10 @@
-// /api/webhook-asaas.js - VERSÃO 10 FINAL: COM FORMA E DATA DE PAGAMENTO
+// /api/webhook-asaas.js - VERSÃO 11 FINAL: BUSCA ATIVA DA DATA DE PAGAMENTO
 
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzePZJVj-0UP3YIc-0WiPnzRTMD-f5qOXLtOq4KqulebPI90tFjCYdjFXbx3Wwt0OmDcQ/exec';
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
-export default async function handler(req, res ) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
@@ -35,12 +35,14 @@ export default async function handler(req, res ) {
     } else if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_UPDATED') {
       console.log(`Atualizando status do pagamento: ${payment.id} para ${payment.status}`);
       
+      // ✨ LÓGICA MELHORADA: Busca os dados completos do pagamento na API da Asaas
+      const fullPaymentData = await getPaymentData(payment.id);
+      
       const updateUrl = new URL(GOOGLE_SHEET_WEB_APP_URL);
-      updateUrl.searchParams.append('id_pagamento', payment.id);
-      updateUrl.searchParams.append('status_pagamento', payment.status);
-      // ✨ ADIÇÃO IMPORTANTE: Também enviamos a data do pagamento para ser atualizada
-      if (payment.paymentDate) {
-        updateUrl.searchParams.append('data_pagamento', payment.paymentDate);
+      updateUrl.searchParams.append('id_pagamento', fullPaymentData.id);
+      updateUrl.searchParams.append('status_pagamento', fullPaymentData.status);
+      if (fullPaymentData.paymentDate) {
+        updateUrl.searchParams.append('data_pagamento', fullPaymentData.paymentDate);
       }
 
       await fetch(updateUrl.toString(), { method: 'GET' });
@@ -52,14 +54,21 @@ export default async function handler(req, res ) {
 
     res.status(200).json({ message: 'Notificação processada.' });
 
-  } catch (error)
-  {
+  } catch (error) {
     console.error("Erro ao processar o webhook:", error.message);
     res.status(500).json({ error: 'Erro interno ao processar a notificação.' });
   }
 }
 
 // --- Funções Auxiliares ---
+
+// ✨ NOVA FUNÇÃO AUXILIAR ✨
+async function getPaymentData(paymentId) {
+  const response = await fetch(`${ASAAS_API_URL}/payments/${paymentId}`, {
+    headers: { 'access_token': ASAAS_API_KEY }
+  });
+  return response.json();
+}
 
 async function getCustomerData(customerId) {
   const response = await fetch(`${ASAAS_API_URL}/customers/${customerId}`, {
@@ -81,8 +90,7 @@ function formatDataForSheet(payment, customerData) {
     telefone_cliente: customerData.mobilePhone || 'N/A',
     nome_plano: payment.description || 'N/A',
     data_vencimento: payment.dueDate || 'N/A',
-    // ✨ NOVAS INFORMAÇÕES ✨
     forma_pagamento: payment.billingType || 'N/A',
-    data_pagamento: payment.paymentDate || 'Pendente' // Se não houver data de pagamento, registra como "Pendente"
+    data_pagamento: payment.paymentDate || 'Pendente'
   };
 }
