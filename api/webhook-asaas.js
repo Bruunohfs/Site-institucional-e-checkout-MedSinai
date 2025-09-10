@@ -1,6 +1,6 @@
 // /api/webhook-asaas.js - VERSÃO 11 FINAL: BUSCA ATIVA DA DATA DE PAGAMENTO
 
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyXqilrtY9y9-IhuGth2iyyrp5JhWvyEUMkGL4FsC_99PFSMbZ-V6EfEgWNRJnowf-Gcg/exec';
+const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/library/d/1gsnsscMs8nkgTikiDe4UrHSaNTJqKxEuSB53ljiA-YX8E5bXn6KX3aDO/8';
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
