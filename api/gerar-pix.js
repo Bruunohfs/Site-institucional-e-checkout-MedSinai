@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       nextDueDate: new Date().toISOString().split('T')[0],
       cycle: 'MONTHLY',
       description: `Assinatura Mensal do Plano: ${plano.nome}`,
-      observations: `Venda originada pelo parceiro: ${referenciaParceiro}`
+      externalReference: referenciaParceiro,
     };
     const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
     if (!subscriptionResponse.ok) {
