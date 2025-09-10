@@ -1,4 +1,4 @@
-// /api/webhook-asaas.js - VERSÃO 9 FINAL: ADICIONANDO DATA DE VENCIMENTO
+// /api/webhook-asaas.js - VERSÃO 10 FINAL: COM FORMA E DATA DE PAGAMENTO
 
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzePZJVj-0UP3YIc-0WiPnzRTMD-f5qOXLtOq4KqulebPI90tFjCYdjFXbx3Wwt0OmDcQ/exec';
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
@@ -38,9 +38,13 @@ export default async function handler(req, res ) {
       const updateUrl = new URL(GOOGLE_SHEET_WEB_APP_URL);
       updateUrl.searchParams.append('id_pagamento', payment.id);
       updateUrl.searchParams.append('status_pagamento', payment.status);
+      // ✨ ADIÇÃO IMPORTANTE: Também enviamos a data do pagamento para ser atualizada
+      if (payment.paymentDate) {
+        updateUrl.searchParams.append('data_pagamento', payment.paymentDate);
+      }
 
       await fetch(updateUrl.toString(), { method: 'GET' });
-      console.log('Status atualizado no Google Sheets.');
+      console.log('Status e data de pagamento atualizados no Google Sheets.');
       
     } else {
       console.log(`Evento ${event} ignorado (não relevante para o fluxo de registro/atualização).`);
@@ -48,7 +52,8 @@ export default async function handler(req, res ) {
 
     res.status(200).json({ message: 'Notificação processada.' });
 
-  } catch (error) {
+  } catch (error)
+  {
     console.error("Erro ao processar o webhook:", error.message);
     res.status(500).json({ error: 'Erro interno ao processar a notificação.' });
   }
@@ -63,7 +68,6 @@ async function getCustomerData(customerId) {
   return response.json();
 }
 
-// Função auxiliar para formatar os dados para a planilha
 function formatDataForSheet(payment, customerData) {
   return {
     id_pagamento: payment.id,
@@ -76,6 +80,9 @@ function formatDataForSheet(payment, customerData) {
     email_cliente: customerData.email || 'N/A',
     telefone_cliente: customerData.mobilePhone || 'N/A',
     nome_plano: payment.description || 'N/A',
-    data_vencimento: payment.dueDate || 'N/A' 
+    data_vencimento: payment.dueDate || 'N/A',
+    // ✨ NOVAS INFORMAÇÕES ✨
+    forma_pagamento: payment.billingType || 'N/A',
+    data_pagamento: payment.paymentDate || 'Pendente' // Se não houver data de pagamento, registra como "Pendente"
   };
 }
