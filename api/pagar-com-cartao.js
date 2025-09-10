@@ -99,7 +99,7 @@ export default async function handler(req, res) {
         value: parseFloat(plano.preco.replace(',', '.')),
         nextDueDate: nextDueDate.toISOString().split('T')[0],
         cycle: 'MONTHLY',
-        description: `Plano: ${plano.nome}`,
+        description: `Assinatura Mensal do Plano: ${plano.nome}`,
         externalReference: referenciaParceiro, // Rastreia a assinatura também
         creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
         creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf.replace(/\D/g, ''), postalCode: cliente.postalCode || '00000-000', addressNumber: cliente.addressNumber || 'S/N', phone: cliente.telefone.replace(/\D/g, '') },
