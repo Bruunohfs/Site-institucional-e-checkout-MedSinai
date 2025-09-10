@@ -1,4 +1,4 @@
-// /api/webhook-asaas.js - VERSÃO 6 FINAL: LÓGICA ANTI-DUPLICIDADE
+// /api/webhook-asaas.js - VERSÃO 8 FINAL: LÓGICA DE REGISTRO E ATUALIZAÇÃO
 
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzePZJVj-0UP3YIc-0WiPnzRTMD-f5qOXLtOq4KqulebPI90tFjCYdjFXbx3Wwt0OmDcQ/exec';
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
@@ -15,23 +15,18 @@ export default async function handler(req, res ) {
     const payment = notification.payment;
     console.log(`🎉 WEBHOOK RECEBIDO: Evento ${event} para pagamento ${payment?.id}`);
 
-    // Só processa se tiver uma referência de parceiro
+    // Só processa se tiver uma referência de parceiro, para não poluir a planilha com vendas diretas não rastreadas
     if (!payment?.externalReference) {
       console.log('Evento ignorado (sem ref. de parceiro).');
       return res.status(200).json({ message: 'Ignorado: Sem referência de parceiro.' });
     }
 
-    // ✨ LÓGICA ANTI-DUPLICIDADE ✨
+    // --- LÓGICA DE REGISTRO E ATUALIZAÇÃO ---
 
     if (event === 'PAYMENT_CREATED') {
-      // Se for a primeira fatura de uma assinatura, não registre. A venda real foi o pagamento avulso.
-      if (payment.subscription) {
-        console.log(`Evento ignorado (primeira fatura da assinatura ${payment.subscription}). A venda já foi registrada.`);
-        return res.status(200).json({ message: 'Ignorado: Fatura de assinatura.' });
-      }
-
-      // Se for um pagamento avulso sendo criado, ADICIONE a linha na planilha.
-      console.log(`Registrando novo pagamento: ${payment.id}`);
+      // Sempre que um pagamento é criado, registramos como uma nova linha.
+      // Isso captura a intenção de compra (Boleto/PIX gerado, Cartão iniciado).
+      console.log(`Registrando novo pagamento PENDING: ${payment.id}`);
       const customerData = await getCustomerData(payment.customer);
       const dataForSheet = formatDataForSheet(payment, customerData);
       
@@ -40,21 +35,21 @@ export default async function handler(req, res ) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataForSheet),
       });
-      console.log('Nova linha adicionada ao Google Sheets.');
+      console.log('Nova linha PENDING adicionada ao Google Sheets.');
 
-    } else if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
-      // Se for um pagamento sendo confirmado, ATUALIZE a linha existente.
+    } else if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_UPDATED') {
+      // Quando o status de um pagamento muda (ex: pago), atualizamos a linha existente.
       console.log(`Atualizando status do pagamento: ${payment.id} para ${payment.status}`);
       
-      // Monta a URL para a requisição GET do Google Apps Script
       const updateUrl = new URL(GOOGLE_SHEET_WEB_APP_URL);
       updateUrl.searchParams.append('id_pagamento', payment.id);
       updateUrl.searchParams.append('status_pagamento', payment.status);
 
       await fetch(updateUrl.toString(), { method: 'GET' });
       console.log('Status atualizado no Google Sheets.');
+      
     } else {
-      console.log(`Evento ${event} ignorado (não relevante para o fluxo).`);
+      console.log(`Evento ${event} ignorado (não relevante para o fluxo de registro/atualização).`);
     }
 
     res.status(200).json({ message: 'Notificação processada.' });
@@ -65,7 +60,7 @@ export default async function handler(req, res ) {
   }
 }
 
-// --- Funções Auxiliares ---
+// --- Funções Auxiliares (sem alteração) ---
 
 async function getCustomerData(customerId) {
   const response = await fetch(`${ASAAS_API_URL}/customers/${customerId}`, {
