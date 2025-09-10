@@ -1,4 +1,4 @@
-// /api/pagar-com-cartao.js - VERSÃO FINAL SIMPLIFICADA
+// /api/pagar-com-cartao.js - VERSÃO FINAL COM COBRANÇA INSTANTÂNEA
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
@@ -46,7 +46,8 @@ export default async function handler(req, res) {
     // --- Lógica de Pagamento ---
 
     if (plano.tipo === 'anual') {
-      // --- LÓGICA PARA PLANO ANUAL (PAGAMENTO ÚNICO PARCELADO) ---
+      // Planos anuais já são pagamentos únicos parcelados, então a cobrança é instantânea.
+      // Esta lógica já está correta.
       const precoNumerico = parseFloat(plano.preco.replace(',', '.'));
       const payload = {
         customer: customerId,
@@ -54,37 +55,62 @@ export default async function handler(req, res) {
         dueDate: new Date().toISOString().split('T')[0],
         installmentCount: 12,
         totalValue: precoNumerico * 12,
-        description: `Assinatura do Plano Anual: ${plano.nome} (12x)`,
+        description: `Plano: ${plano.nome} (Anual - 12x)`,
         externalReference: referenciaParceiro,
-        creditCard: { /* ... dados do cartão ... */ },
-        creditCardHolderInfo: { /* ... dados do titular ... */ },
+        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
+        creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf.replace(/\D/g, ''), postalCode: cliente.postalCode, addressNumber: cliente.addressNumber, phone: cliente.telefone.replace(/\D/g, '') },
       };
       
       const response = await fetch(`${ASAAS_API_URL}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(payload) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.errors?.[0]?.description || 'Falha na transação anual.');
       
-      res.status(200).json({ success: true, status: result.status, paymentId: result.id });
+      return res.status(200).json({ success: true, status: result.status, paymentId: result.id });
 
     } else {
-      // --- LÓGICA PARA PLANO MENSAL (ASSINATURA RECORRENTE) - SIMPLIFICADA ---
+      // --- LÓGICA PARA PLANO MENSAL COM COBRANÇA INSTANTÂNEA ---
+
+      // 1. Cobre a primeira mensalidade como um pagamento avulso
+      const firstPaymentPayload = {
+        customer: customerId,
+        billingType: 'CREDIT_CARD',
+        dueDate: new Date().toISOString().split('T')[0],
+        value: parseFloat(plano.preco.replace(',', '.')),
+        description: `Primeira parcela - Plano: ${plano.nome}`,
+        externalReference: referenciaParceiro, // Rastreia a primeira venda
+        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
+        creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf.replace(/\D/g, ''), postalCode: cliente.postalCode || '00000-000', addressNumber: cliente.addressNumber || 'S/N', phone: cliente.telefone.replace(/\D/g, '') },
+      };
+
+      const firstPaymentResponse = await fetch(`${ASAAS_API_URL}/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(firstPaymentPayload) });
+      const firstPaymentResult = await firstPaymentResponse.json();
+
+      if (!firstPaymentResponse.ok || firstPaymentResult.status === 'FAILED') {
+        throw new Error(firstPaymentResult.errors?.[0]?.description || 'Falha na cobrança da primeira parcela.');
+      }
+
+      // 2. Se a primeira cobrança foi bem-sucedida, crie a assinatura para o futuro
+      const nextDueDate = new Date();
+      nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+
       const subscriptionPayload = {
         customer: customerId,
         billingType: 'CREDIT_CARD',
         value: parseFloat(plano.preco.replace(',', '.')),
-        nextDueDate: new Date().toISOString().split('T')[0],
+        nextDueDate: nextDueDate.toISOString().split('T')[0],
         cycle: 'MONTHLY',
-        description: `Assinatura Mensal do Plano: ${plano.nome}`,
-        externalReference: referenciaParceiro, // ✨ ENVIANDO NA CRIAÇÃO, COMO MANDA A DOCUMENTAÇÃO ✨
-        creditCard: { /* ... dados do cartão ... */ },
-        creditCardHolderInfo: { /* ... dados do titular ... */ },
+        description: `Plano: ${plano.nome}`,
+        externalReference: referenciaParceiro, // Rastreia a assinatura também
+        creditCard: { holderName: cliente.cardName, number: cliente.cardNumber.replace(/ /g, ''), expiryMonth: cliente.expiryDate.split('/')[0], expiryYear: `20${cliente.expiryDate.split('/')[1]}`, ccv: cliente.cvv },
+        creditCardHolderInfo: { name: cliente.nomeCompleto, email: cliente.email, cpfCnpj: cliente.cpf.replace(/\D/g, ''), postalCode: cliente.postalCode || '00000-000', addressNumber: cliente.addressNumber || 'S/N', phone: cliente.telefone.replace(/\D/g, '') },
       };
       
-      const subscriptionResponse = await fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
-      const result = await subscriptionResponse.json();
-      if (!subscriptionResponse.ok) throw new Error(result.errors?.[0]?.description || 'Falha na criação da assinatura.');
+      // Não precisamos esperar a resposta da criação da assinatura, podemos fazer isso em "fogo e esqueça"
+      // para dar uma resposta mais rápida ao cliente.
+      fetch(`${ASAAS_API_URL}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(subscriptionPayload) });
 
-      res.status(200).json({ success: true, status: result.status, subscriptionId: result.id });
+      // Retorna o sucesso baseado na primeira cobrança, que é o que importa para o cliente.
+      return res.status(200).json({ success: true, status: firstPaymentResult.status, paymentId: firstPaymentResult.id });
     }
 
   } catch (error) {
