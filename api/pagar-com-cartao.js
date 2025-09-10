@@ -1,24 +1,28 @@
-// /api/pagar-com-cartao.js
+// /api/pagar-com-cartao.js - VERSÃO CORRIGIDA E FINAL
 
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 
 export default async function handler(req, res) {
+  // Log para depuração, mostrando o que o backend recebeu do frontend
   console.log("BACKEND RECEBEU:", JSON.stringify(req.body, null, 2));
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
   const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
   if (!ASAAS_API_KEY || !ASAAS_API_URL) {
+    console.error("Asaas API Key ou URL não configurada.");
     return res.status(500).json({ success: false, error: 'Configuração interna do servidor incompleta.' });
   }
 
   try {
     const { plano, cliente, referenciaParceiro } = req.body;
 
-    // --- Lógica do Cliente (já estava correta) ---
-    // Busca o cliente pelo CPF, se não existir, cria um novo.
-    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf.replace(/\D/g, '')}`, { headers: { 'access_token': ASAAS_API_KEY } });
+    // --- Lógica do Cliente (Busca ou Cria) ---
+    const searchCustomerResponse = await fetch(`${ASAAS_API_URL}/customers?cpfCnpj=${cliente.cpf.replace(/\D/g, '')}`, {
+      headers: { 'access_token': ASAAS_API_KEY }
+    });
     const searchResult = await searchCustomerResponse.json();
     let customerId;
 
@@ -31,16 +35,22 @@ export default async function handler(req, res) {
         email: cliente.email,
         mobilePhone: cliente.telefone.replace(/\D/g, '')
       };
-      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY }, body: JSON.stringify(newCustomerPayload) });
+      const newCustomerResponse = await fetch(`${ASAAS_API_URL}/customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+        body: JSON.stringify(newCustomerPayload)
+      });
       const newCustomer = await newCustomerResponse.json();
-      if (!newCustomerResponse.ok) throw new Error(`Erro ao criar cliente: ${JSON.stringify(newCustomer.errors)}`);
+      if (!newCustomerResponse.ok) {
+        throw new Error(`Erro ao criar cliente: ${JSON.stringify(newCustomer.errors)}`);
+      }
       customerId = newCustomer.id;
     }
 
-    // --- LÓGICA DE PAGAMENTO CORRIGIDA ---
+    // --- Lógica de Pagamento ---
 
     if (plano.tipo === 'anual') {
-      // --- LÓGICA PARA PLANO ANUAL (PAGAMENTO PARCELADO) ---
+      // --- LÓGICA PARA PLANO ANUAL (PAGAMENTO ÚNICO PARCELADO) ---
       const precoNumerico = parseFloat(plano.preco.replace(',', '.'));
       const payload = {
         customer: customerId,
