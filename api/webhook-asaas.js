@@ -1,4 +1,4 @@
-// /api/webhook-asaas.js - VERSÃO 8 FINAL: LÓGICA DE REGISTRO E ATUALIZAÇÃO
+// /api/webhook-asaas.js - VERSÃO 9 FINAL: ADICIONANDO DATA DE VENCIMENTO
 
 const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzePZJVj-0UP3YIc-0WiPnzRTMD-f5qOXLtOq4KqulebPI90tFjCYdjFXbx3Wwt0OmDcQ/exec';
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
@@ -15,17 +15,12 @@ export default async function handler(req, res ) {
     const payment = notification.payment;
     console.log(`🎉 WEBHOOK RECEBIDO: Evento ${event} para pagamento ${payment?.id}`);
 
-    // Só processa se tiver uma referência de parceiro, para não poluir a planilha com vendas diretas não rastreadas
     if (!payment?.externalReference) {
       console.log('Evento ignorado (sem ref. de parceiro).');
       return res.status(200).json({ message: 'Ignorado: Sem referência de parceiro.' });
     }
 
-    // --- LÓGICA DE REGISTRO E ATUALIZAÇÃO ---
-
     if (event === 'PAYMENT_CREATED') {
-      // Sempre que um pagamento é criado, registramos como uma nova linha.
-      // Isso captura a intenção de compra (Boleto/PIX gerado, Cartão iniciado).
       console.log(`Registrando novo pagamento PENDING: ${payment.id}`);
       const customerData = await getCustomerData(payment.customer);
       const dataForSheet = formatDataForSheet(payment, customerData);
@@ -38,7 +33,6 @@ export default async function handler(req, res ) {
       console.log('Nova linha PENDING adicionada ao Google Sheets.');
 
     } else if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_UPDATED') {
-      // Quando o status de um pagamento muda (ex: pago), atualizamos a linha existente.
       console.log(`Atualizando status do pagamento: ${payment.id} para ${payment.status}`);
       
       const updateUrl = new URL(GOOGLE_SHEET_WEB_APP_URL);
@@ -60,7 +54,7 @@ export default async function handler(req, res ) {
   }
 }
 
-// --- Funções Auxiliares (sem alteração) ---
+// --- Funções Auxiliares ---
 
 async function getCustomerData(customerId) {
   const response = await fetch(`${ASAAS_API_URL}/customers/${customerId}`, {
@@ -69,6 +63,7 @@ async function getCustomerData(customerId) {
   return response.json();
 }
 
+// Função auxiliar para formatar os dados para a planilha
 function formatDataForSheet(payment, customerData) {
   return {
     id_pagamento: payment.id,
@@ -80,6 +75,7 @@ function formatDataForSheet(payment, customerData) {
     cpf_cliente: customerData.cpfCnpj || 'N/A',
     email_cliente: customerData.email || 'N/A',
     telefone_cliente: customerData.mobilePhone || 'N/A',
-    nome_plano: payment.description || 'N/A'
+    nome_plano: payment.description || 'N/A',
+    data_vencimento: payment.dueDate || 'N/A' 
   };
 }
