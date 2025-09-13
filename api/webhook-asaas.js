@@ -1,8 +1,12 @@
-const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUSOar5rf4Fth10_WP6cxM9xcdir2G0PTycsppB6xDmv7fLKV83mtu9xM1wHAAIpH-pQ/exec';
+import { createClient } from '@supabase/supabase-js';
+
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+const supabaseUrl = 'https://qgezhliwujahjhisfqti.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFnZXpobGl3dWphaGpoaXNmcXRpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzgwMzEyMiwiZXhwIjoyMDczMzc5MTIyfQ.KPTVGJFnnU2yHo9XebFZyXBPVYKJFVb_DgC47Ges3DI';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default async function handler(req, res) {
+export default async function handler(req, res ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
@@ -11,42 +15,75 @@ export default async function handler(req, res) {
     const notification = req.body;
     const event = notification.event;
     const payment = notification.payment;
-    console.log(`🎉 WEBHOOK RECEBIDO: Evento ${event} para pagamento ${payment?.id}`);
+    console.log(`🎉 WEBHOOK SUPABASE: Evento ${event} para pagamento ${payment?.id}`);
 
+    // --- LÓGICA DE DELETE ---
     if (event === 'PAYMENT_DELETED') {
-      await fetch(GOOGLE_SHEET_WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'delete',
-          id_pagamento: payment.id
-        }),
-      });
-      console.log(`Solicitação de deleção enviada para o pagamento ${payment.id}.`);
-      return res.status(200).json({ message: 'Solicitação de deleção processada.' });
+      const { error } = await supabase
+        .from('vendas')
+        .delete()
+        .eq('id_pagamento', payment.id);
+
+      if (error) {
+        console.error('Erro ao deletar no Supabase:', error);
+        throw error; // Joga o erro para ser pego pelo catch
+      }
+      console.log(`Pagamento ${payment.id} deletado do Supabase.`);
+      return res.status(200).json({ message: 'Deleção processada.' });
     }
 
-
-    if (!payment?.externalReference) {
-      console.log('Evento ignorado (sem ref. de parceiro).');
-      return res.status(200).json({ message: 'Ignorado: Sem referência de parceiro.' });
-    }
-
+    // --- LÓGICA DE INSERT OU UPDATE ---
+    
+    // Busca os dados completos do pagamento e cliente no Asaas
     const fullPaymentData = await getPaymentData(payment.id);
     const customerData = await getCustomerData(fullPaymentData.customer);
-    const dataForSheet = formatDataForSheet(fullPaymentData, customerData);
-
-    await fetch(GOOGLE_SHEET_WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dataForSheet),
-    });
     
-    console.log(`Dados do pagamento ${payment.id} enviados para o Google Sheets.`);
-    res.status(200).json({ message: 'Notificação processada.' });
+    // Formata os dados para o formato da nossa tabela 'vendas'
+    const dadosVenda = formatDataForSupabase(fullPaymentData, customerData);
+
+    // Verifica se a venda já existe no nosso banco de dados
+    const { data: vendaExistente, error: selectError } = await supabase
+      .from('vendas')
+      .select('id')
+      .eq('id_pagamento', payment.id)
+      .maybeSingle(); // Retorna um objeto ou null, sem dar erro se não achar
+
+    if (selectError) {
+      console.error('Erro ao verificar venda existente:', selectError);
+      throw selectError;
+    }
+
+    // Se a venda já existe, ATUALIZA. Senão, INSERE.
+    if (vendaExistente) {
+      // --- LÓGICA DE UPDATE ---
+      const { data, error } = await supabase
+        .from('vendas')
+        .update(dadosVenda)
+        .eq('id_pagamento', payment.id);
+      
+      if (error) {
+        console.error('Erro ao ATUALIZAR no Supabase:', error);
+        throw error;
+      }
+      console.log(`Venda ${payment.id} atualizada no Supabase.`);
+
+    } else {
+      // --- LÓGICA DE INSERT ---
+      const { data, error } = await supabase
+        .from('vendas')
+        .insert([dadosVenda]);
+
+      if (error) {
+        console.error('Erro ao INSERIR no Supabase:', error);
+        throw error;
+      }
+      console.log(`Venda ${payment.id} inserida no Supabase.`);
+    }
+
+    res.status(200).json({ message: 'Notificação processada com Supabase.' });
 
   } catch (error) {
-    console.error("Erro ao processar o webhook:", error.message);
+    console.error("Erro GERAL ao processar o webhook:", error.message);
     res.status(500).json({ error: 'Erro interno ao processar a notificação.' });
   }
 }
@@ -67,32 +104,25 @@ async function getCustomerData(customerId) {
   return response.json();
 }
 
-function formatDataForSheet(payment, customerData) {
-  // ✨ LÓGICA DE DATA DE PAGAMENTO CORRIGIDA ✨
-  let dataPagamentoFinal = 'Pendente';
+function formatDataForSupabase(payment, customerData) {
+  let dataPagamentoFinal = null; // No banco, usamos null para "pendente"
   if (payment.status === 'RECEIVED' || payment.status === 'CONFIRMED') {
-    // Se a data de pagamento existir no objeto, use-a.
-    if (payment.paymentDate) {
-      dataPagamentoFinal = payment.paymentDate;
-    } else {
-      // Senão (caso do cartão de crédito avulso), use a data de hoje.
-      dataPagamentoFinal = new Date().toISOString().split('T')[0];
-    }
+    dataPagamentoFinal = payment.paymentDate || new Date().toISOString();
   }
 
   return {
     id_pagamento: payment.id,
-    id_assinatura: payment.subscription || 'N/A',
+    // id_assinatura: payment.subscription || null, // Nossa tabela não tem essa coluna, então removemos
     valor: payment.value,
-    id_parceiro: payment.externalReference,
+    id_parceiro: payment.externalReference || null, // Usa null se não houver parceiro
     status_pagamento: payment.status,
-    nome_cliente: customerData.name || 'N/A',
-    cpf_cliente: customerData.cpfCnpj || 'N/A',
-    email_cliente: customerData.email || 'N/A',
-    telefone_cliente: customerData.mobilePhone || 'N/A',
-    nome_plano: payment.description || 'N/A',
-    data_vencimento: payment.dueDate || 'N/A',
-    forma_pagamento: payment.billingType || 'N/A',
-    data_pagamento: dataPagamentoFinal // Usando a nova variável
+    nome_cliente: customerData.name,
+    cpf_cliente: customerData.cpfCnpj,
+    email_cliente: customerData.email,
+    telefone_cliente: customerData.mobilePhone,
+    nome_plano: payment.description,
+    data_vencimento: payment.dueDate,
+    forma_pagamento: payment.billingType,
+    data_pagamento: dataPagamentoFinal
   };
 }
