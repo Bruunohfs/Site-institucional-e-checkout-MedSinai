@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IMaskInput } from 'react-imask';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
 import IMask from 'imask';
@@ -17,8 +17,6 @@ function CheckoutPage() {
   const { tipoPlano, idDoPlano } = useParams();
   const arrayDeBusca = tipoPlano === 'anual' ? planosAnuais : planosMensais;
   const planoSelecionado = arrayDeBusca.find(p => p.nome.toLowerCase().replace(/ /g, '-') === idDoPlano);
-  const [searchParams] = useSearchParams();
-  const partnerIdFromUrl = searchParams.get('pid');
 
   // ✨ PASSO 3: Defina a variável do plano anual aqui
   // Lógica para encontrar os planos de Upsell e Cross-sell
@@ -145,6 +143,7 @@ if (tipoPlano === 'anual' && planoSelecionado) {
   const handleFormSubmit = async (data) => {
     setIsProcessing(true);
     setPaymentResult(null);
+    const partnerIdFromStorage = localStorage.getItem('medsinai_affiliate_id');
 
     const dadosCompletos = {
       plano: {
@@ -154,7 +153,7 @@ if (tipoPlano === 'anual' && planoSelecionado) {
       },
       cliente: data,
 
-      referenciaParceiro: partnerIdFromUrl || null
+      referenciaParceiro: partnerIdFromStorage || null
     };
 
     try {

@@ -32,7 +32,21 @@ function MainLayout() {
   const navigate = useNavigate();
   const mobileMenuIconColor = isScrolled ? 'bg-white' : 'bg-gray-800 dark:bg-white';
 
-  // --- LÓGICA CORRIGIDA E ESTRUTURADA ---
+useEffect(() => {
+  // Cria um objeto para manipular os parâmetros da URL
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Procura pelo parâmetro 'pid' (partner id)
+  const partnerId = urlParams.get('pid');
+
+  // Se um 'pid' for encontrado na URL...
+  if (partnerId) {
+    // ...salva ele no localStorage.
+    // Isso garante que o ID não se perca durante a navegação.
+    localStorage.setItem('medsinai_affiliate_id', partnerId);
+    console.log(`ID de parceiro ${partnerId} foi salvo no localStorage.`);
+  }
+}, []);
 
   // Efeito para o cabeçalho com scroll
   useEffect(() => {
