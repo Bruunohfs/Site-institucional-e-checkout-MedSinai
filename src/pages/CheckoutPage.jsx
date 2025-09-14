@@ -146,8 +146,6 @@ if (tipoPlano === 'anual' && planoSelecionado) {
     setIsProcessing(true);
     setPaymentResult(null);
 
-    const partnerId = getCookie('medsinai_partner_ref');
-
     const dadosCompletos = {
       plano: {
         nome: planoSelecionado.nome,
