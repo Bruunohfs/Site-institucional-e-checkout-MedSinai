@@ -4,11 +4,14 @@ import { createBrowserRouter, RouterProvider,} from "react-router-dom";
 import './index.css'
 
 
+
 // Importe seus componentes
 import MainLayout from './layouts/MainLayout.jsx'; // O layout principal com header/footer
 import App from './App.jsx'; // Sua página inicial
 import EmpresasPage from './pages/EmpresasPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx'
+import LoginPage from './pages/parceiros/login.jsx';
+import DashboardPage from './pages/parceiros/dashboard.jsx';
 
 // Crie as rotas
 const router = createBrowserRouter([
@@ -26,6 +29,14 @@ const router = createBrowserRouter([
       },
       { path: "/pagamento/:tipoPlano/:idDoPlano", 
         element: <CheckoutPage />,
+      },
+       {
+        path: "/parceiros/login",
+        element: <LoginPage />,
+      },
+      {
+        path: "/parceiros/dashboard",
+        element: <DashboardPage />,
       },
     ],
   },

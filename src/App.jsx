@@ -14,11 +14,15 @@ import useTracker from '@/hooks/useTracker';
 import parceirosCinemaImg from '@/assets/logos/logoscinema.png';
 import parceirosCashbackImg from '@/assets/logos/logosmarcas.png';
 import CountUp from 'react-countup';
+import { useSearchParams } from 'react-router-dom';
+
 
 
 
 function App() {
   useTracker();
+  const [searchParams] = useSearchParams();
+  const partnerIdFromUrl = searchParams.get('pid');
   const navigate = useNavigate();
   const [isAnual, setIsAnual] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -30,10 +34,19 @@ function App() {
   const planosAtivos = isAnual ? planosAnuais : planosMensais;
 
   const handleAssinarAgora = (plano) => {
-    const tipoPlano = isAnual ? 'anual' : 'mensal';
-    const idDoPlano = plano.nome.toLowerCase().replace(/ /g, '-');
-    navigate(`/pagamento/${tipoPlano}/${idDoPlano}`);
-  };
+  const tipoPlano = isAnual ? 'anual' : 'mensal';
+  const idDoPlano = plano.nome.toLowerCase().replace(/ /g, '-');
+  
+  // Constrói a URL base
+  let urlDestino = `/pagamento/${tipoPlano}/${idDoPlano}`;
+
+  // Se houver um ID de parceiro na URL, anexe-o
+  if (partnerIdFromUrl) {
+    urlDestino += `?pid=${partnerIdFromUrl}`;
+  }
+  
+  navigate(urlDestino);
+};
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);

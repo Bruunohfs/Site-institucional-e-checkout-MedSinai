@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IMaskInput } from 'react-imask';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
 import IMask from 'imask';
@@ -12,22 +12,13 @@ const LockIcon = () => (
   </svg>
 );
 
-function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for(let i=0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-}
-
 function CheckoutPage() {
   const navigate = useNavigate();
   const { tipoPlano, idDoPlano } = useParams();
   const arrayDeBusca = tipoPlano === 'anual' ? planosAnuais : planosMensais;
   const planoSelecionado = arrayDeBusca.find(p => p.nome.toLowerCase().replace(/ /g, '-') === idDoPlano);
+  const [searchParams] = useSearchParams();
+  const partnerIdFromUrl = searchParams.get('pid');
 
   // ✨ PASSO 3: Defina a variável do plano anual aqui
   // Lógica para encontrar os planos de Upsell e Cross-sell
@@ -165,7 +156,7 @@ if (tipoPlano === 'anual' && planoSelecionado) {
       },
       cliente: data,
 
-      referenciaParceiro: partnerId || 'venda_direta'
+      referenciaParceiro: partnerIdFromUrl || null
     };
 
     try {
