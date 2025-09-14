@@ -9,7 +9,7 @@ const LogoutIcon = () => <svg className="w-5 h-5" aria-hidden="true" fill="none"
 
 export default function Sidebar({ user, onLogout, theme, onThemeSwitch, isOpen, setIsOpen }) {
   const linkStyle = "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors";
-  const activeLinkStyle = "bg-green-500 text-white shadow-md";
+  const activeLinkStyle = "bg-gradient-to-r from-green-400 to-blue-400";
   const inactiveLinkStyle = "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700";
 
   // --- 1. Lógica para extrair o cargo do usuário ---

@@ -40,7 +40,7 @@ const MaterialCard = ({ material }) => {
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-300 flex-grow">{material.descricao}</p>
         <button
           onClick={handleAction}
-          className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+          className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-green-400 to-blue-400 hover:bg-blue-700 transition-colors"
         >
           {isText ? <CopyIcon /> : <DownloadIcon />}
           {isText ? 'Copiar Texto' : 'Baixar'}
