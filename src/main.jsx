@@ -14,7 +14,7 @@ import CheckoutPage from './pages/CheckoutPage.jsx';
 import LoginPage from './pages/parceiros/login.jsx';
 import DashboardPage from './pages/parceiros/dashboard.jsx'; // <<< Nossa página de "Visão Geral"
 import AnalyticsPage from './pages/parceiros/AnalyticsPage';
-import ToolsPage from './pages/parceiros/ToolsPage';
+import SupportMaterialPage from './pages/parceiros/SupportMaterialPage';
 
 // Crie as rotas
 const router = createBrowserRouter([
@@ -43,7 +43,7 @@ const router = createBrowserRouter([
 
       { path: "dashboard", element: <DashboardPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
-      { path: 'ferramentas', element: <ToolsPage /> },
+      { path: 'materiais', element: <SupportMaterialPage /> },
     ],
   },
 ]);

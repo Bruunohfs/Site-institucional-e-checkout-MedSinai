@@ -18,12 +18,12 @@ export default function DashboardLayout() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  
-  // --- ESTADO PARA O MENU MOBILE ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Lógica do tema (permanece a mesma)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+  // --- 1. Variável para armazenar o cargo do usuário ---
+  // Usamos 'user' do estado, que é preenchido após a sessão ser verificada.
+  const userRole = user?.user_metadata?.role;
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
@@ -37,8 +37,12 @@ export default function DashboardLayout() {
   useEffect(() => {
     const fetchSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) navigate('/parceiros/login');
-      else { setUser(session.user); setLoading(false); }
+      if (!session) {
+        navigate('/parceiros/login');
+      } else {
+        setUser(session.user);
+        setLoading(false);
+      }
     };
     fetchSession();
   }, [navigate]);
@@ -49,28 +53,36 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-      {/* --- SIDEBAR (AGORA COM LÓGICA MOBILE) --- */}
       <Sidebar 
         user={user} 
         onLogout={handleLogout} 
         theme={theme} 
         onThemeSwitch={handleThemeSwitch}
         isOpen={isMobileMenuOpen}
-        setIsOpen={setIsMobileMenuOpen} // Passa a função para o Sidebar poder se fechar
+        setIsOpen={setIsMobileMenuOpen}
       />
 
-      {/* --- CONTEÚDO PRINCIPAL --- */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* --- CABEÇALHO MOBILE COM BOTÃO HAMBÚRGUER --- */}
+        {/* --- CABEÇALHO MOBILE COM INDICADOR DE ADMIN --- */}
         <header className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md">
           <h1 className="text-lg font-bold">MedSinai</h1>
-          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-md text-gray-500 dark:text-gray-400">
-            <MenuIcon />
-          </button>
+          
+          {/* --- 2. Adicionando o indicador visual de Admin aqui --- */}
+          <div className="flex items-center gap-2">
+            {userRole === 'admin' && (
+              <span className="text-xs font-bold text-green-600 bg-green-100 dark:bg-green-900/50 px-2 py-1 rounded-full">
+                ADMIN
+              </span>
+            )}
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-md text-gray-500 dark:text-gray-400">
+              <MenuIcon />
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <Outlet context={{ user }} />
+          {/* Passamos o 'user' e o 'userRole' para as páginas filhas */}
+          <Outlet context={{ user, userRole }} />
         </main>
       </div>
     </div>

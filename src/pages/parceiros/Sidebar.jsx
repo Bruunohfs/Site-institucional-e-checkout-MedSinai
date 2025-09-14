@@ -48,7 +48,7 @@ export default function Sidebar({ user, onLogout, theme, onThemeSwitch, isOpen, 
             <NavLink to="/parceiros/analytics" onClick={handleLinkClick} className={({ isActive }) => `${linkStyle} ${isActive ? activeLinkStyle : inactiveLinkStyle}`}>
               <ChartIcon /> Análises e Gráficos
             </NavLink>
-            <NavLink to="/parceiros/ferramentas" onClick={handleLinkClick} className={({ isActive }) => `${linkStyle} ${isActive ? activeLinkStyle : inactiveLinkStyle}`}>
+            <NavLink to="/parceiros/materiais" onClick={handleLinkClick} className={({ isActive }) => `${linkStyle} ${isActive ? activeLinkStyle : inactiveLinkStyle}`}>
               <BookOpenIcon /> Material de Apoio
             </NavLink>
           </nav>
