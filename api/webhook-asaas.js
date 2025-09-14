@@ -123,6 +123,7 @@ function formatDataForSupabase(payment, customerData) {
     nome_plano: payment.description,
     data_vencimento: payment.dueDate,
     forma_pagamento: payment.billingType,
-    data_pagamento: dataPagamentoFinal
+    data_pagamento: dataPagamentoFinal,
+    data_evento: new Date().toISOString()
   };
 }

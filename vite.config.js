@@ -10,11 +10,14 @@ export default defineConfig({
     },
   },
   server: {
-    host: true, // Você já tinha esta linha, o que é ótimo!
-    // Adicione a linha abaixo para permitir qualquer endereço do ngrok
-    allowedHosts: ['.ngrok-free.app']
+    host: true,
+    allowedHosts: ['.ngrok-free.app'],
+    
+    // --- ADICIONE APENAS ESTA LINHA ---
+    origin: process.env.VERCEL_ENV === 'development' ? 'http://localhost:3000' : undefined,
+    // ----------------------------------
   },
   preview: {
     host: true
   }
-})
+} )

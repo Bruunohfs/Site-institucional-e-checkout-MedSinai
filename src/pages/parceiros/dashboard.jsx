@@ -84,7 +84,7 @@ export default function DashboardPage() {
           <tbody>
             {vendas.map((venda ) => (
               <tr key={venda.id}>
-                <td style={tdStyle}>{new Date(venda.data_evento).toLocaleDateString()}</td>
+                <td style={tdStyle}>{venda.data_evento ? new Date(venda.data_evento).toLocaleDateString('pt-BR') : 'N/A'}</td>
                 <td style={tdStyle}>{venda.nome_cliente}</td>
                 <td style={tdStyle}>{venda.nome_plano}</td>
                 <td style={tdStyle}>R$ {venda.valor}</td>
