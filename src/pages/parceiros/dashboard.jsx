@@ -1,101 +1,172 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom'; // Importa o hook
 import { createClient } from '@supabase/supabase-js';
 
-// Novamente, usamos as variáveis de ambiente PÚBLICAS
+// A configuração do Supabase ainda é necessária para buscar os dados
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Componentes (StatCard, formatDate) permanecem os mesmos
+const StatCard = ({ title, value, icon }) => (
+  <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md flex items-center gap-4">
+    <div className="text-3xl">{icon}</div>
+    <div>
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+    </div>
+  </div>
+);
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'Pendente';
+  return new Date(dateString).toLocaleDateString('pt-BR');
+};
+
+
 export default function DashboardPage() {
-  const [user, setUser] = useState(null);
+  // Recebe o 'user' do layout pai
+  const { user } = useOutletContext(); 
+
+  // O resto dos seus estados permanece aqui
   const [vendas, setVendas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState({ vendasMes: 0, comissaoPendente: 0, comissaoAprovadaMes: 0 });
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
+
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   useEffect(() => {
-    const fetchSessionAndData = async () => {
-      // 1. Pega a sessão do usuário (verifica se ele está logado)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        // Se não houver sessão, redireciona para o login
-        console.error("Nenhuma sessão encontrada, redirecionando para login.");
-        window.location.href = '/parceiros/login';
-        return;
-      }
-
-      setUser(session.user);
-
-      // 2. Busca as vendas do parceiro logado
-      // A MÁGICA ACONTECE AQUI:
-      // Graças à nossa política de RLS, este comando SÓ retornará as vendas
-      // onde a coluna 'id_parceiro' é igual ao ID do usuário logado.
-      const { data: vendasData, error: vendasError } = await supabase
-        .from('vendas')
-        .select('*'); // Pega todas as colunas
-
+    // O useEffect agora só busca os dados das vendas
+    const fetchData = async () => {
+      const { data: vendasData, error: vendasError } = await supabase.from('vendas').select('*');
+      
       if (vendasError) {
         console.error("Erro ao buscar vendas:", vendasError);
-      } else {
-        setVendas(vendasData);
+        setLoading(false);
+        return;
       }
+      
+      setVendas(vendasData || []);
 
+      if (vendasData) {
+        const hoje = new Date();
+        const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        let vendasMes = 0;
+        let comissaoPendente = 0;
+        let comissaoAprovadaMes = 0;
+
+        vendasData.forEach(venda => {
+          const dataContratacao = new Date(venda.created_at);
+          const dataPagamento = venda.data_pagamento ? new Date(venda.data_pagamento) : null;
+
+          if (dataContratacao >= primeiroDiaMes) vendasMes++;
+          
+          if (dataPagamento && dataPagamento >= primeiroDiaMes && (venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED')) {
+            comissaoAprovadaMes += venda.valor;
+          }
+          if (venda.status_pagamento === 'PENDING' || venda.status_pagamento === 'AWAITING_RISK_ANALYSIS') {
+            comissaoPendente += venda.valor;
+          }
+        });
+        setSummary({ vendasMes, comissaoPendente, comissaoAprovadaMes });
+      }
       setLoading(false);
     };
-
-    fetchSessionAndData();
+    fetchData();
   }, []);
 
+  // A lógica de ordenação e filtro permanece a mesma
+  const sortedAndFilteredVendas = [...vendas]
+    .sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    })
+    .filter(venda => {
+      if (filtroStatus === 'pagos') return venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED';
+      if (filtroStatus === 'pendentes') return venda.status_pagamento === 'PENDING' || venda.status_pagamento === 'AWAITING_RISK_ANALYSIS';
+      return true;
+    });
+
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '50px' }}>Carregando dados do parceiro...</div>;
+    return (
+      <div className="p-8">
+        <p className="text-gray-700 dark:text-gray-300">Carregando dados...</p>
+      </div>
+    );
   }
 
-  // Estilos simples para a tabela
-  const tableStyle = { width: '100%', borderCollapse: 'collapse', marginTop: '20px' };
-  const thStyle = { background: '#f2f2f2', padding: '12px', border: '1px solid #ddd', textAlign: 'left' };
-  const tdStyle = { padding: '12px', border: '1px solid #ddd' };
-
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1>Bem-vindo ao seu Dashboard, {user?.email}!</h1>
+    // O div principal agora só precisa de padding
+    <div className="p-4 sm:p-6 lg:p-8">
       
-      <div style={{ margin: '30px 0', padding: '20px', background: '#e0f7fa', borderRadius: '8px' }}>
-        <h2>Seu Link de Afiliado</h2>
-        <p>Compartilhe este link para rastrear suas vendas:</p>
-        <input 
-          type="text" 
-          readOnly 
-          value={`https://www.medsinai.com.br/?pid=${user?.id}`} 
-          style={{ width: '100%', padding: '10px', marginTop: '10px', border: '1px solid #b2dfdb', borderRadius: '4px' }}
-        />
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-8">Visão Geral</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        <StatCard title="Vendas (Mês)" value={summary.vendasMes} icon="📈" />
+        <StatCard title="Comissão Pendente" value={`R$ ${summary.comissaoPendente.toFixed(2).replace('.', ',')}`} icon="⏳" />
+        <StatCard title="Comissão Aprovada (Mês)" value={`R$ ${summary.comissaoAprovadaMes.toFixed(2).replace('.', ',')}`} icon="✅" />
       </div>
 
-      <h2>Suas Vendas</h2>
-      {vendas.length > 0 ? (
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thStyle}>Data</th>
-              <th style={thStyle}>Cliente</th>
-              <th style={thStyle}>Plano</th>
-              <th style={thStyle}>Valor</th>
-              <th style={thStyle}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vendas.map((venda ) => (
-              <tr key={venda.id}>
-                <td style={tdStyle}>{venda.data_evento ? new Date(venda.data_evento).toLocaleDateString('pt-BR') : 'N/A'}</td>
-                <td style={tdStyle}>{venda.nome_cliente}</td>
-                <td style={tdStyle}>{venda.nome_plano}</td>
-                <td style={tdStyle}>R$ {venda.valor}</td>
-                <td style={tdStyle}>{venda.status_pagamento}</td>
+      <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md">
+        <div className="mb-8 p-5 bg-blue-50 dark:bg-gray-700/50 rounded-lg">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Seu Link de Afiliado</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Compartilhe este link para rastrear suas vendas:</p>
+          {/* Agora 'user' vem do useOutletContext e funciona perfeitamente */}
+          <input type="text" readOnly value={`https://www.medsinai.com.br/?pid=${user?.id}`} className="w-full p-2 mt-2 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-700 dark:text-gray-200" />
+        </div>
+
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Suas Vendas</h2>
+
+        <div className="flex flex-wrap gap-3 my-4">
+          <button onClick={( ) => setFiltroStatus('todos')} className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${filtroStatus === 'todos' ? 'bg-green-500 text-white border-green-500' : 'bg-transparent dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>Todos</button>
+          <button onClick={() => setFiltroStatus('pagos')} className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${filtroStatus === 'pagos' ? 'bg-green-500 text-white border-green-500' : 'bg-transparent dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>Pagos</button>
+          <button onClick={() => setFiltroStatus('pendentes')} className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${filtroStatus === 'pendentes' ? 'bg-green-500 text-white border-green-500' : 'bg-transparent dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600'}`}>Pendentes</button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-300">
+              <tr>
+                <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => requestSort('created_at')}>Contratação {sortConfig.key === 'created_at' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => requestSort('nome_cliente')}>Cliente {sortConfig.key === 'nome_cliente' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => requestSort('nome_plano')}>Plano {sortConfig.key === 'nome_plano' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => requestSort('valor')}>Valor {sortConfig.key === 'valor' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => requestSort('forma_pagamento')}>Forma de Pagamento {sortConfig.key === 'forma_pagamento' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => requestSort('data_pagamento')}>Pagamento {sortConfig.key === 'data_pagamento' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => requestSort('data_vencimento')}>Vencimento {sortConfig.key === 'data_vencimento' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600" onClick={() => requestSort('status_pagamento')}>Status {sortConfig.key === 'status_pagamento' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>Você ainda não realizou nenhuma venda.</p>
-      )}
+            </thead>
+            <tbody>
+              {sortedAndFilteredVendas.map((venda) => (
+                <tr key={venda.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap">{formatDate(venda.created_at)}</td>
+                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{venda.nome_cliente}</td>
+                  <td className="px-6 py-4">{venda.nome_plano}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">R$ {venda.valor.toFixed(2).replace('.', ',')}</td>
+                  <td className="px-6 py-4 capitalize">{venda.forma_pagamento.toLowerCase().replace('_', ' ')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{formatDate(venda.data_pagamento)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{formatDate(venda.data_vencimento)}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 text-xs font-medium text-white rounded-full ${venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED' ? 'bg-green-500' : 'bg-orange-500'}`}>
+                      {venda.status_pagamento}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

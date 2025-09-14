@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// ATENÇÃO: Use as variáveis de ambiente para as chaves do Supabase!
-// Estas são as chaves PÚBLICAS (anon), seguras para usar no frontend.
+// As chaves públicas do Supabase continuam aqui
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -14,7 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
-    e.preventDefault(); // Impede o recarregamento da página
+    e.preventDefault();
     setLoading(true);
     setError(null);
 
@@ -24,13 +23,9 @@ export default function LoginPage() {
         password: password,
       });
 
-      if (error) {
-        throw error; // Joga o erro para o bloco catch
-      }
+      if (error) throw error;
 
-      // Se o login for bem-sucedido, redireciona para o dashboard
-      console.log('Login bem-sucedido!', data);
-      window.location.href = '/parceiros/dashboard'; // Vamos criar essa página depois
+      window.location.href = '/parceiros/dashboard';
 
     } catch (error) {
       console.error("Erro no login:", error.message);
@@ -40,41 +35,53 @@ export default function LoginPage() {
     }
   };
 
-  // Estilos simples para a página (pode ser substituído pela sua biblioteca de UI)
-  const styles = {
-    container: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0f2f5' },
-    form: { padding: '40px', background: 'white', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '360px' },
-    title: { textAlign: 'center', color: '#333', marginBottom: '24px' },
-    input: { width: '100%', padding: '12px', marginBottom: '16px', border: '1px solid #ddd', borderRadius: '4px' },
-    button: { width: '100%', padding: '12px', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' },
-    error: { color: 'red', textAlign: 'center', marginTop: '16px' }
-  };
-
   return (
-    <div style={styles.container}>
-      <form onSubmit={handleLogin} style={styles.form}>
-        <h2 style={styles.title}>Portal de Parceiros</h2>
-        <input
-          type="email"
-          placeholder="Seu e-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type="password"
-          placeholder="Sua senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <button type="submit" disabled={loading} style={styles.button}>
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
-        {error && <p style={styles.error}>{error}</p>}
-      </form>
+    // Container principal que ocupa a tela e reage ao tema escuro
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 px-4">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+        
+        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
+          Portal de Parceiros
+        </h2>
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">E-mail</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full mt-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">Senha</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="Sua senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full mt-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full px-4 py-3 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+
+          {error && <p className="text-sm text-center text-red-500">{error}</p>}
+        </form>
+      </div>
     </div>
   );
 }
