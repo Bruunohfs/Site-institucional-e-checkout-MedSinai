@@ -1,20 +1,28 @@
+// src/layouts/AdminLayout.jsx
+
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient.js';
+import { supabase } from '@/lib/supabaseClient.js'; // Já usando o alias!
 import AdminSidebar from '../pages/admin/AdminSidebar';
+
+// Ícone do menu hambúrguer
+const MenuIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
+  </svg>
+);
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // --- 1. ADICIONAR ESTADO PARA O MENU MOBILE ---
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // --- 1. LÓGICA DE TEMA ADICIONADA AQUI ---
-  const [theme, setTheme] = useState(() => {
-    // Pega o tema do localStorage ou usa a preferência do sistema
-    return localStorage.getItem('theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  });
+  // Lógica de tema (sem alterações)
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
-  // Aplica a classe 'dark' no HTML e salva a preferência
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -57,17 +65,33 @@ export default function AdminLayout() {
   }
 
   return (
-    // --- 2. CORES DINÂMICAS NO LAYOUT PRINCIPAL ---
     <div className="flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+      {/* --- 2. PASSAR AS PROPS DE CONTROLE DO MENU PARA O SIDEBAR --- */}
       <AdminSidebar 
         user={user} 
         onLogout={handleLogout}
-        theme={theme} // Passa o tema atual
-        onThemeSwitch={handleThemeSwitch} // Passa a função de troca
+        theme={theme}
+        onThemeSwitch={handleThemeSwitch}
+        isOpen={isMobileMenuOpen}
+        setIsOpen={setIsMobileMenuOpen}
       />
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        <Outlet context={{ user }} />
-      </main>
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* --- 3. ADICIONAR O CABEÇALHO MOBILE --- */}
+        <header className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md border-b dark:border-gray-700">
+          <div>
+            <h1 className="text-lg font-bold">MedSinai</h1>
+            <p className="text-xs font-semibold text-blue-400">PAINEL ADMIN</p>
+          </div>
+          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-md text-gray-500 dark:text-gray-400">
+            <MenuIcon />
+          </button>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <Outlet context={{ user }} />
+        </main>
+      </div>
     </div>
   );
 }

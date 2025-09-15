@@ -4,12 +4,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 
 const KpiCard = ({ title, value, icon }) => (
-  // CORREÇÃO APLICADA AQUI
-  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-400 dark:border-gray-700 flex items-center gap-5 shadow-sm">
-    <div className="text-3xl text-blue-500 dark:text-blue-400">{icon}</div>
-    <div>
-      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+  <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-400 dark:border-gray-700 flex items-center gap-4 shadow-sm">
+    <div className="text-2xl md:text-3xl text-blue-500 dark:text-blue-400">{icon}</div>
+    <div className="flex-1 overflow-hidden">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</h3>
+      <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">
+        {value}
+      </p>
     </div>
   </div>
 );
@@ -167,23 +168,23 @@ export default function AdminDashboard() {
           <table className="w-full text-left">
             <thead>
               <tr>
-                <th className="py-2 text-sm font-semibold text-gray-500 dark:text-gray-400">Data</th>
-                <th className="py-2 text-sm font-semibold text-gray-500 dark:text-gray-400">Cliente</th>
-                <th className="py-2 text-sm font-semibold text-gray-500 dark:text-gray-400">Plano</th>
-                <th className="py-2 text-sm font-semibold text-gray-500 dark:text-gray-400">Status</th>
+                <th className="py-2 text-sm font-semibold text-gray-900 dark:text-gray-400">Data</th>
+                <th className="py-2 text-sm font-semibold text-gray-900 dark:text-gray-400">Cliente</th>
+                <th className="py-2 text-sm font-semibold text-gray-900 dark:text-gray-400">Plano</th>
+                <th className="py-2 text-sm font-semibold text-gray-900 dark:text-gray-400">Status</th>
               </tr>
             </thead>
             <tbody>
               {dashboardData.ultimasVendas.map(v => (
-                <tr key={v.id} className="border-t border-gray-400 dark:border-gray-700">
-                  <td className="py-3 text-gray-600 dark:text-gray-300">{new Date(v.created_at).toLocaleString('pt-BR')}</td>
-                  <td className="py-3 font-medium text-gray-800 dark:text-white">{v.nome_cliente}</td>
-                  <td className="py-3 text-gray-600 dark:text-gray-300">{v.nome_plano}</td>
+                <tr key={v.id} className="border-t border-gray-400/50 dark:border-gray-700">
+                  <td className="py-3 text-gray-900 dark:text-gray-300">{new Date(v.created_at).toLocaleString('pt-BR')}</td>
+                  <td className="py-3 font-medium text-gray-900 dark:text-white">{v.nome_cliente}</td>
+                  <td className="py-3 text-gray-900 dark:text-gray-300">{v.nome_plano}</td>
                   <td className="py-3">
                     <span className={`px-2 py-1 text-xs font-bold rounded-full ${
                       v.status_pagamento === 'CONFIRMED' || v.status_pagamento === 'RECEIVED' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400' 
-                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400'
+                        ? 'bg-green-400 text-green-800 dark:bg-green-500/20 dark:text-green-400' 
+                        : 'bg-yellow-400 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400'
                     }`}>
                       {v.status_pagamento}
                     </span>

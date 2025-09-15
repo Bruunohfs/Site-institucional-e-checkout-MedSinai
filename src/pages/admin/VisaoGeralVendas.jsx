@@ -4,11 +4,13 @@ import { supabase } from '@/lib/supabaseClient.js';
 // --- COMPONENTES DE UI ---
 
 const KpiCard = ({ title, value, icon }) => (
-  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center gap-5 shadow-sm">
-    <div className="text-3xl text-blue-500 dark:text-blue-400">{icon}</div>
-    <div>
-      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+  <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center gap-4 shadow-sm">
+    <div className="text-2xl md:text-3xl text-blue-500 dark:text-blue-400">{icon}</div>
+    <div className="flex-1 overflow-hidden">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</h3>
+      <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">
+        {value}
+      </p>
     </div>
   </div>
 );
@@ -18,7 +20,7 @@ const FilterButton = ({ label, value, activeFilter, setFilter }) => (
     onClick={() => setFilter(value)}
     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ${
       activeFilter === value
-        ? 'bg-blue-600 text-white'
+        ? 'bg-gradient-to-r from-green-400 to-blue-400 text-white'
         : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600'
     }`}
   >
