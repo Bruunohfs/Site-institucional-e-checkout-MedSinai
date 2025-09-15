@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate, ScrollRestoration } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 import HeartbeatLine from '@/components/ui/HeartbeatLine';
+import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
+
 
 // ===================================================================
 // =================== ÍCONES PARA O RODAPÉ ==========================
@@ -115,124 +117,89 @@ useEffect(() => {
 
   return (
     <div className={`min-h-screen w-full flex flex-col bg-gray-50 dark:bg-gray-900`}>
-      <header className={`px-6 py-4 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-gradient-to-r from-green-400 to-blue-400 shadow-lg' : 'bg-transparent'}`}>
-        <div className="w-full flex items-center justify-between">
-          
-          <Link to="/" className="flex items-center gap-x-3 flex-shrink-0">
-            <img src={logo} alt="MedSinai Logo" className="h-10 w-auto" />
-            <span className={`text-2xl font-bold ${navLinkTextColor}`}>
-              MedSinai
-            </span>
-          </Link>
-          
-          <nav className="hidden md:flex items-center space-x-8">
-            <button onClick={() => handleNavigateAndScroll('services')} className={`${navLinkClasses} group`}>
-              Especialidades
-              <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
-            </button>
+    <header className={`relative px-4 sm:px-6 py-4 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-gradient-to-r from-green-400 to-blue-400 shadow-lg' : 'bg-transparent'}`}>
+  <div className="w-full flex items-center justify-between gap-4">
+    
+    {/* --- GRUPO DA ESQUERDA: Logo --- */}
+    <Link to="/" className="flex items-center gap-x-3 flex-shrink-0">
+      <img src={logo} alt="MedSinai Logo" className="h-10 w-auto" />
+      <span className={`hidden sm:block text-2xl font-bold ${navLinkTextColor}`}>
+        MedSinai
+      </span>
+    </Link>
+    
+    {/* --- GRUPO DO CENTRO (Desktop): Navegação Principal --- */}
+    <nav className="hidden lg:flex items-center gap-x-8">
+      <button onClick={() => handleNavigateAndScroll('services')} className={`${navLinkClasses} group`}>
+        Especialidades
+        <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
+      </button>
+      <button onClick={() => handleNavigateAndScroll("plans")} className={`${navLinkClasses} group`}>
+        Para Você
+        <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
+      </button>
+      <Link to="/empresas" onClick={handleLinkClick} className={`${navLinkClasses} group`}>
+        Para Empresas
+        <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
+      </Link>
+      <button onClick={openWhatsApp} className={`${navLinkClasses} group`}>
+        Contato
+        <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
+      </button>
+    </nav>
 
-             <button onClick={() => handleNavigateAndScroll("plans")} className={`${navLinkClasses} group`}>
-              Para Você
-              <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
-            </button>
+    {/* --- GRUPO DA DIREITA: Ações e Menus --- */}
+    <div className="flex items-center gap-x-2 sm:gap-x-4">
+      <ThemeSwitcher theme={theme} onThemeSwitch={handleThemeSwitch} />
 
-            <Link to="/empresas" onClick={handleLinkClick} className={`${navLinkClasses} group`}>
-              Para Empresas
-              <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
-            </Link>
+      <div className="hidden lg:flex items-center gap-x-4">
+        <button onClick={openWhatsApp} className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors whitespace-nowrap">
+          Entre em Contato
+        </button>
+        <button onClick={() => handleNavigateAndScroll('plans')} className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors whitespace-nowrap">
+          Assinar Agora
+        </button>
+      </div>
 
-            <button onClick={openWhatsApp} className={`${navLinkClasses} group`}>
-              Contato
-              <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
-            </button>
-
-            <button onClick={handleThemeSwitch} className="p-2 rounded-full hover:bg-white/20 transition">
-              {theme === 'light' ? (
-                   <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${isScrolled ? 'text-white' : 'text-gray-700 dark:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                    ) : (
-                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                     )}
-            </button>
-          </nav>
-
-          <div className="hidden md:flex items-center space-x-4">
-            <button 
-              onClick={openWhatsApp}
-              className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
-            >
-              Entre em Contato
-            </button>
-            <button 
-              onClick={() => handleNavigateAndScroll('plans')}
-              className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
-            >
-              Assinar Agora
-            </button>
+      <div className="lg:hidden">
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
+          <div className={`w-6 h-6 flex flex-col justify-center items-center`}>
+            <span className={`${mobileMenuIconColor} block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${isMobileMenuOpen ? 'rotate-45 translate-y-1' : '-translate-y-0.5'}`}></span>
+            <span className={`${mobileMenuIconColor} block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm my-0.5 ${isMobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
+            <span className={`${mobileMenuIconColor} block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${isMobileMenuOpen ? '-rotate-45 -translate-y-1' : 'translate-y-0.5'}`}></span>
           </div>
+        </button>
+      </div>
+    </div>
+  </div>
 
-          <div className="md:hidden flex items-center space-x-2">
-            <button onClick={handleThemeSwitch} className="p-2 rounded-full hover:bg-white/20 transition">
-              {theme === 'light' ? (
-                   <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${isScrolled ? 'text-white' : 'text-gray-700 dark:text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                     ) : (
-                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                      )}
-            </button>
+  {/* --- CORREÇÃO AQUI: O menu dropdown agora está dentro do header --- */}
+  <div className={`lg:hidden absolute top-full left-0 w-full bg-gradient-to-r from-green-400 to-blue-400 shadow-lg transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-screen py-4' : 'max-h-0 py-0 overflow-hidden'}`}>
+    <div className="px-6 space-y-4">
+      <button onClick={() => handleNavigateAndScroll('services')} className="block w-full text-left text-white font-medium py-2 hover:text-yellow-200 transition-colors">
+        Especialidades
+      </button>
+      <button onClick={() => handleNavigateAndScroll('plans')} className="block w-full text-left text-white font-medium py-2 hover:text-blue-200 transition-colors">
+        Para Você 
+      </button>
+      <Link to="/empresas" onClick={handleLinkClick} className="block w-full text-left text-white font-medium py-2 hover:text-yellow-200 transition-colors">
+        Para Empresas
+      </Link>
+      <button onClick={openWhatsApp} className="block w-full text-left text-white font-medium py-2 hover:text-orange-200 transition-colors">
+        Contato
+      </button>
+      <div className="border-t border-white/20 pt-4 space-y-4">
+        <button onClick={openWhatsApp} className="w-full px-4 py-3 rounded-lg bg-white text-green-600 font-medium hover:bg-gray-100 transition-colors">
+          Entre em Contato
+        </button>
+        <button onClick={() => handleNavigateAndScroll('plans')} className="w-full px-4 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors">
+          Assinar Agora
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
 
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white p-2" // A cor do texto aqui não importa mais para o ícone
-            >
-              <div className={`w-6 h-6 flex flex-col justify-center items-center`}>
-                {/* Aplicando a classe de cor dinâmica nos 3 spans do ícone */}
-                <span className={`${mobileMenuIconColor} block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${isMobileMenuOpen ? 'rotate-45 translate-y-1' : '-translate-y-0.5'}`}></span>
-                <span className={`${mobileMenuIconColor} block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm my-0.5 ${isMobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
-                <span className={`${mobileMenuIconColor} block transition-all duration-300 ease-out h-0.5 w-6 rounded-sm ${isMobileMenuOpen ? '-rotate-45 -translate-y-1' : 'translate-y-0.5'}`}></span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <div className={`md:hidden absolute top-full left-0 w-full bg-gradient-to-r from-green-400 to-blue-400 transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-          <div className="px-6 py-4 space-y-4">
-            <button 
-              onClick={() => handleNavigateAndScroll('services')}
-              className="block w-full text-left text-white font-medium py-2 hover:text-yellow-200 transition-colors"
-            >
-              Especialidades
-            </button>
-            <button 
-              onClick={() => handleNavigateAndScroll('plans')}
-              className="block w-full text-left text-white font-medium py-2 hover:text-blue-200 transition-colors"
-            >
-              Para Você 
-            </button>
-
-            <Link to="/empresas" onClick={handleLinkClick} className="block w-full text-left text-white font-medium py-2 hover:text-yellow-200 transition-colors">
-              Para Empresas
-            </Link>
-
-            <button 
-              onClick={openWhatsApp}
-              className="block w-full text-left text-white font-medium py-2 hover:text-orange-200 transition-colors"
-            >
-              Contato
-            </button>
-            <button 
-              onClick={openWhatsApp}
-              className="w-full mt-4 px-4 py-3 rounded-lg bg-white text-green-600 font-medium hover:bg-gray-100 transition-colors"
-            >
-              Entre em Contato
-            </button>
-            <button 
-              onClick={() => handleNavigateAndScroll('plans')}
-              className="w-full px-4 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
-            >
-              Assinar Agora
-            </button>
-          </div>
-        </div>
-      </header>
 
       <main className="flex-grow w-full">
         <Outlet />
