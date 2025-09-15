@@ -4,6 +4,8 @@ import { useParams, useNavigate, } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
 import IMask from 'imask';
+import { createClient } from '@supabase/supabase-js';
+
 
 // Ícone de cadeado
 const LockIcon = () => (
@@ -17,6 +19,9 @@ function CheckoutPage() {
   const { tipoPlano, idDoPlano } = useParams();
   const arrayDeBusca = tipoPlano === 'anual' ? planosAnuais : planosMensais;
   const planoSelecionado = arrayDeBusca.find(p => p.nome.toLowerCase().replace(/ /g, '-') === idDoPlano);
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   // ✨ PASSO 3: Defina a variável do plano anual aqui
   // Lógica para encontrar os planos de Upsell e Cross-sell
@@ -140,52 +145,87 @@ if (tipoPlano === 'anual' && planoSelecionado) {
   setIsButtonDisabled(!isPersonalDataValid || !isPaymentDataValid || isProcessing);
 }, [isValid, metodoPagamento, isProcessing]);
 
-  const handleFormSubmit = async (data) => {
-    setIsProcessing(true);
-    setPaymentResult(null);
-    const partnerIdFromStorage = localStorage.getItem('medsinai_affiliate_id');
+const handleFormSubmit = async (data) => {
+  setIsProcessing(true);
+  setPaymentResult(null);
 
-    const dadosCompletos = {
-      plano: {
-        nome: planoSelecionado.nome,
-        preco: planoSelecionado.preco,
-        tipo: tipoPlano,
-      },
-      cliente: data,
+  // ===================================================================
+  // =================== LÓGICA DE VERIFICAÇÃO INSERIDA AQUI =============
+  // ===================================================================
+  const partnerIdFromStorage = localStorage.getItem('medsinai_affiliate_id');
+  let idParceiroFinal = null; // Começa como nulo por padrão
 
-      referenciaParceiro: partnerIdFromStorage || null
-    };
-
+  // 1. Se um ID de parceiro foi encontrado no localStorage...
+  if (partnerIdFromStorage) {
     try {
-      const endpoint =
-        metodoPagamento === 'boleto' ? '/api/gerar-boleto' :
-        metodoPagamento === 'pix' ? '/api/gerar-pix' :
-        '/api/pagar-com-cartao';
+      console.log(`Verificando status do parceiro: ${partnerIdFromStorage}`);
+      
+      // 2. ...chame a Edge Function para verificar o status.
+      const { data: statusData, error: functionError } = await supabase.functions.invoke(`get-partner-status?id=${partnerIdFromStorage}`);
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosCompletos),
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.details || result.error);
-
-      if (metodoPagamento === 'boleto') {
-        setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
-      } else if (metodoPagamento === 'pix') {
-        setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
-      } else if (metodoPagamento === 'cartao') {
-        setPaymentResult({ success: true, type: 'cartao', status: result.status });
+      if (functionError) {
+        // Se a função falhar, não atribui a venda por segurança.
+        console.error("Erro ao verificar status do parceiro:", functionError);
+      } else if (statusData.status === 'ativo') {
+        // 3. SOMENTE se o status for 'ativo', usamos o ID.
+        console.log("Parceiro está ativo. Atribuindo venda.");
+        idParceiroFinal = partnerIdFromStorage;
+      } else {
+        // Se for 'inativo' ou 'invalido', a venda é registrada sem parceiro.
+        console.log(`Parceiro ${statusData.status}. Venda registrada como direta.`);
       }
-
-    } catch (error) {
-      console.error(`Erro ao processar pagamento:`, error);
-      setPaymentResult({ success: false, message: error.message || 'Ocorreu um erro inesperado.' });
-    } finally {
-      setIsProcessing(false);
+    } catch (e) {
+      // Captura qualquer outro erro na chamada da função
+      console.error("Exceção ao chamar a função de status:", e);
     }
+  } else {
+      console.log("Nenhum ID de parceiro encontrado. Venda registrada como direta.");
+  }
+  // ===================================================================
+  // =================== FIM DA LÓGICA DE VERIFICAÇÃO ==================
+  // ===================================================================
+
+  // Agora, montamos os dados completos usando o ID final verificado
+  const dadosCompletos = {
+    plano: {
+      nome: planoSelecionado.nome,
+      preco: planoSelecionado.preco,
+      tipo: tipoPlano,
+    },
+    cliente: data,
+    referenciaParceiro: idParceiroFinal // <-- USA A VARIÁVEL FINAL
   };
+
+  try {
+    const endpoint =
+      metodoPagamento === 'boleto' ? '/api/gerar-boleto' :
+      metodoPagamento === 'pix' ? '/api/gerar-pix' :
+      '/api/pagar-com-cartao';
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dadosCompletos),
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.details || result.error);
+
+    if (metodoPagamento === 'boleto') {
+      setPaymentResult({ success: true, type: 'boleto', url: result.boletoUrl });
+    } else if (metodoPagamento === 'pix') {
+      setPaymentResult({ success: true, type: 'pix', payload: result.payload, qrCodeImage: `data:image/png;base64,${result.encodedImage}` });
+    } else if (metodoPagamento === 'cartao') {
+      setPaymentResult({ success: true, type: 'cartao', status: result.status });
+    }
+
+  } catch (error) {
+    console.error(`Erro ao processar pagamento:`, error);
+    setPaymentResult({ success: false, message: error.message || 'Ocorreu um erro inesperado.' });
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   // Renderização de erro
   if (!planoSelecionado) {

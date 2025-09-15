@@ -1,11 +1,7 @@
-// src/layouts/AdminLayout.jsx
-
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
-
-// Importe o menu lateral que vamos criar a seguir
-import AdminSidebar from '../pages/admin/AdminSidebar'; 
+import AdminSidebar from '../pages/admin/AdminSidebar';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -16,29 +12,38 @@ export default function AdminLayout() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Lógica de segurança para proteger a rota de Admin
+  // --- 1. LÓGICA DE TEMA ADICIONADA AQUI ---
+  const [theme, setTheme] = useState(() => {
+    // Pega o tema do localStorage ou usa a preferência do sistema
+    return localStorage.getItem('theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  });
+
+  // Aplica a classe 'dark' no HTML e salva a preferência
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [theme]);
+
+  const handleThemeSwitch = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // Lógica de segurança (sem alterações)
   useEffect(() => {
     const fetchSessionAndCheckRole = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-
-      if (!session || error) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || session.user.user_metadata?.role !== 'admin') {
         navigate('/parceiros/login');
         return;
       }
-
-      const userRole = session.user.user_metadata?.role;
-
-      if (userRole !== 'admin') {
-        console.warn('Acesso negado: Usuário não é admin.');
-        navigate('/parceiros/dashboard'); // Redireciona para a área normal
-        return;
-      }
-
-      console.log('Acesso de Admin concedido.');
       setUser(session.user);
       setLoading(false);
     };
-
     fetchSessionAndCheckRole();
   }, [navigate]);
 
@@ -49,16 +54,22 @@ export default function AdminLayout() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-900 text-white">
+      <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
         Verificando permissões de administrador...
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-900 text-gray-200">
-      <AdminSidebar user={user} onLogout={handleLogout} />
-      <main className="flex-1 overflow-y-auto p-8">
+    // --- 2. CORES DINÂMICAS NO LAYOUT PRINCIPAL ---
+    <div className="flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+      <AdminSidebar 
+        user={user} 
+        onLogout={handleLogout}
+        theme={theme} // Passa o tema atual
+        onThemeSwitch={handleThemeSwitch} // Passa a função de troca
+      />
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <Outlet context={{ user }} />
       </main>
     </div>

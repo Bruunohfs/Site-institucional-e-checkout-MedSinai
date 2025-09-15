@@ -1,11 +1,16 @@
 // supabase/functions/update-partner-status/index.ts
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
+// --- 1. IMPORTA A FUNÇÃO CORRETA DO SEU ARQUIVO CORS ---
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req ) => {
+  // --- 2. GERA OS HEADERS DINAMICAMENTE ---
+  const requestOrigin = req.headers.get('origin');
+  const headers = getCorsHeaders(requestOrigin);
+
   // Lida com a requisição preflight do CORS
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: headers }); // Usa os headers gerados
   }
 
   try {
@@ -38,17 +43,18 @@ Deno.serve(async (req ) => {
 
     if (error) throw error;
 
+    // --- 3. USA OS HEADERS GERADOS NA RESPOSTA DE SUCESSO ---
+    headers.set('Content-Type', 'application/json');
     return new Response(JSON.stringify({ user }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: headers,
       status: 200,
     });
 
   } catch (error) {
-    // --- MUDANÇA IMPORTANTE AQUI ---
-    // Agora, mesmo em caso de erro, retornamos os cabeçalhos CORS.
-    // Isso permite que o navegador leia a mensagem de erro.
+    // --- 4. USA OS HEADERS GERADOS NA RESPOSTA DE ERRO ---
+    headers.set('Content-Type', 'application/json');
     return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: headers,
       status: 400,
     });
   }

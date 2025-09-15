@@ -17,6 +17,7 @@ import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import GerenciarParceiros from './pages/admin/GerenciarParceiros';
 import GerenciarConteudo from './pages/admin/GerenciarConteudo';
+import VisaoGeralVendas from './pages/admin/VisaoGeralVendas';
 
 // Crie as rotas
 const router = createBrowserRouter([
@@ -56,6 +57,7 @@ const router = createBrowserRouter([
       // Futuramente, as outras rotas de admin virão aqui:
       { path: "parceiros", element: <GerenciarParceiros /> },
       { path: "conteudo", element: <GerenciarConteudo /> },
+      { path: "vendas", element: <VisaoGeralVendas /> },
     ]
   }
 ]);
