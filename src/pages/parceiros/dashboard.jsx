@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient.js';
 
-// Configuração do Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Taxa de Comissão
 const TAXA_COMISSAO = 0.4; // 40%

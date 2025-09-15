@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient.js';
 import EditPartnerModal from './EditPartnerModal';
 import AddPartnerModal from './AddPartnerModal';
 
@@ -24,11 +24,6 @@ const StatusSwitch = ({ isChecked, onChange, isLoading }) => {
     </label>
   );
 };
-
-// Configuração do Supabase (sem alterações)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey, { functions: { __is_local: false } });
 
 // Ícones (sem alterações)
 const EditIcon = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z"></path></svg>;

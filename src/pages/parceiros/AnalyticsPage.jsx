@@ -1,16 +1,12 @@
 // src/pages/parceiros/AnalyticsPage.jsx
 
 import { useState, useEffect, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient.js';
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 
-// Configuração do Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Componentes e constantes (sem alterações)
 const ChartPlaceholder = () => ( <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md animate-pulse"><div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mb-4"></div><div className="h-64 bg-gray-300 dark:bg-gray-700 rounded"></div></div> );
