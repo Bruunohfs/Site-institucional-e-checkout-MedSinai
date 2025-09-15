@@ -1,20 +1,22 @@
-// src/main.jsx
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import './index.css';
 
-// Importe seus componentes de layout e página
+//componentes de layout e página
 import MainLayout from './layouts/MainLayout.jsx';
-import DashboardLayout from './layouts/DashboardLayout.jsx'; // <<< NOVO
+import DashboardLayout from './layouts/DashboardLayout.jsx'; 
 import App from './App.jsx';
 import EmpresasPage from './pages/EmpresasPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx';
 import LoginPage from './pages/parceiros/login.jsx';
-import DashboardPage from './pages/parceiros/dashboard.jsx'; // <<< Nossa página de "Visão Geral"
+import DashboardPage from './pages/parceiros/dashboard.jsx'; 
 import AnalyticsPage from './pages/parceiros/AnalyticsPage';
 import SupportMaterialPage from './pages/parceiros/SupportMaterialPage';
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import GerenciarParceiros from './pages/admin/GerenciarParceiros';
+import GerenciarConteudo from './pages/admin/GerenciarConteudo';
 
 // Crie as rotas
 const router = createBrowserRouter([
@@ -46,6 +48,16 @@ const router = createBrowserRouter([
       { path: 'materiais', element: <SupportMaterialPage /> },
     ],
   },
+{
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <AdminDashboard /> },
+      // Futuramente, as outras rotas de admin virão aqui:
+      { path: "parceiros", element: <GerenciarParceiros /> },
+      { path: "conteudo", element: <GerenciarConteudo /> },
+    ]
+  }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(

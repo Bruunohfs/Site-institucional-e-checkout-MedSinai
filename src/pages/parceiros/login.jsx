@@ -44,23 +44,50 @@ export default function LoginPage( ) {
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  // 1. Faz o login
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (error) {
-      setError('E-mail ou senha inválidos. Por favor, tente novamente.');
+  // 2. Se houver erro no login, mostra a mensagem
+  if (error) {
+    setError('E-mail ou senha inválidos. Por favor, tente novamente.');
+    setLoading(false);
+    return; // Para a execução aqui
+  }
+
+  // 3. Se o login for bem-sucedido, verifica o 'role'
+  if (data.user) {
+    const userRole = data.user.user_metadata?.role;
+    const userStatus = data.user.user_metadata?.status;
+
+    if (userStatus === 'inativo') {
+      setError('Sua conta de parceiro está desativada. Entre em contato com o suporte.');
+      await supabase.auth.signOut(); // Desloga o usuário imediatamente
       setLoading(false);
+      return;
+    }
+
+    // 4. Redireciona com base no 'role'
+    if (userRole === 'admin') {
+      console.log('Admin detectado. Redirecionando para /admin...');
+      navigate('/admin');
     } else {
+      console.log('Parceiro detectado. Redirecionando para /parceiros/dashboard...');
       navigate('/parceiros/dashboard');
     }
-  };
+  } else {
+    // Fallback, caso algo muito estranho aconteça
+    setError('Não foi possível verificar os dados do usuário.');
+    setLoading(false);
+  }
+};
 
   return (
     // A div principal agora tem cores de fundo que mudam com o tema
