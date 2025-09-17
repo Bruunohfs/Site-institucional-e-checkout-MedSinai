@@ -555,28 +555,43 @@ const comoFuncionaSteps = [
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
       {planosAtivos.map((plano) => (
         <div key={plano.id} className="border-2 border-gray-300 dark:border-gray-700 rounded-2xl p-6 flex flex-col shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{plano.nome}</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">{plano.descricao}</p>
-          <div className="mb-4 flex items-baseline">
-            {plano.parcelamento && (
-             <span className="text-xl font-semibold text-gray-500 dark:text-gray-400 mr-1">
-              {plano.parcelamento}
-               </span>
-              )}
-              <span className="text-4xl font-bold text-gray-900 dark:text-white">R$ {plano.preco}</span>
-              <span className="text-gray-600 dark:text-gray-400 ml-1">/mês</span>
+          <div> {/* Envolvemos em uma div para controle */}
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{plano.nome}</h3>
+            {/* MUDANÇA 1: Adicionamos altura mínima à descrição */}
+            <p className="text-gray-600 dark:text-gray-400 mb-4 min-h-[20px]">{plano.descricao}</p>
           </div>
-          {plano.economia && <p className="text-sm text-green-600 dark:text-green-400 mb-4">{plano.economia}</p>}
+          <div className="mb-4 min-h-[50px]">
+            <div className="flex items-baseline whitespace-nowrap">
+              {plano.parcelamento && (
+                <span className="text-xl font-semibold text-gray-500 dark:text-gray-400 mr-1">
+                  {plano.parcelamento}
+                </span>
+              )}
+              <span className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">R$ {plano.preco}</span>
+              
+              {/* Sua lógica para não mostrar "/mês" no anual já está aqui e funcionando */}
+              {!isAnual && (
+                <span className="text-gray-600 dark:text-gray-400 ml-1">/mês</span>
+              )}
+            </div>
+            
+            {/* MUDANÇA 3: A frase de economia agora está dentro do grupo */}
+            {plano.economia && <p className="text-sm text-green-600 dark:text-green-400 mt-1">{plano.economia}</p>}
+          </div>
+          
+          {/* LISTA DE BENEFÍCIOS */}
           <ul className="space-y-2 mb-6 text-gray-600 dark:text-gray-300 flex-grow">
             {plano.beneficios.map((beneficio, index) => (
-              <li key={index} className="flex items-center">
-                <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <li key={index} className="flex items-start"> {/* Usar items-start para alinhar melhor com textos de múltiplas linhas */}
+                <svg className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
                 </svg>
-                {beneficio}
+                <span>{beneficio}</span> {/* Envolver o texto em um span para melhor controle */}
               </li>
             ))}
           </ul>
+
+          {/* BOTÃO DE ASSINAR */}
           <button 
             onClick={() => handleAssinarAgora(plano)}
             className="w-full mt-auto px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"

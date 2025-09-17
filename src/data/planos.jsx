@@ -68,7 +68,7 @@ export const planosAnuais = [
       nome: "Individual", 
       descricao: "Perfeito para você",
       preco: "24,90",
-      parcelamento: "12x de",
+      parcelamento: "12x",
       economia: "Economize R$ 60/ano",
       beneficios: [
         "Todas as especialidades",
@@ -86,7 +86,7 @@ export const planosAnuais = [
       descricao: "Individual + benefícios farmácia",
       preco: "39,90",
       valorPixFarma:"30,00",
-      parcelamento: "12x de",
+      parcelamento: "12x",
       economia: "Economize R$ 120/ano",
       beneficios: [
         "Tudo do Individual",
@@ -100,7 +100,7 @@ export const planosAnuais = [
       nome: "Família", 
       descricao: "Para toda a família",
       preco: "49,90",
-      parcelamento: "12x de",
+      parcelamento: "12x",
       economia: "Economize R$ 120/ano",
       beneficios: [
         "Duas licenças Adulto",
@@ -119,7 +119,7 @@ export const planosAnuais = [
       descricao: "Família + benefícios farmácia",
       preco: "79,90",
       valorPixFarma:"60,00",
-      parcelamento: "12x de",
+      parcelamento: "12x",
       economia: "Economize R$ 120/ano",
       beneficios: [
         "Tudo do Família",
