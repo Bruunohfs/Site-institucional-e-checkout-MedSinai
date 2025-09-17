@@ -175,11 +175,10 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Bloco 1: Link de Afiliado */}
           <div className="p-5 bg-green-50 dark:bg-gray-700/50 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Seu Link de Afiliado</h2>
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Seu Link de Parceiro</h2>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 mb-2">Compartilhe para rastrear suas vendas.</p>
             <CopyableInput textToCopy={`https://www.medsinai.com.br/?pid=${user?.id}`} />
           </div>
-
           {/* Bloco 2: Cupom de Desconto */}
           <div className="p-5 bg-green-50 dark:bg-gray-700/50 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Seu Cupom de Desconto</h2>

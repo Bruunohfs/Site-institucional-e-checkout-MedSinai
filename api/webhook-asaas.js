@@ -124,6 +124,7 @@ function formatDataForSupabase(payment, customerData) {
     data_vencimento: payment.dueDate,
     forma_pagamento: payment.billingType,
     data_pagamento: dataPagamentoFinal,
-    data_evento: new Date().toISOString()
+    data_evento: new Date().toISOString(),
+    id_cobranca_principal: payment.installment || payment.subscription || null
   };
 }

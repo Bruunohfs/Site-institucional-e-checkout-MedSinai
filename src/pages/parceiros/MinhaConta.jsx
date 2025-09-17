@@ -169,7 +169,7 @@ const onUpdatePassword = async (data) => {
              </div>
               )}
             <div className="text-right">
-              <button type="submit" className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+              <button type="submit" className="px-6 py-2 bg-gradient-to-r from-green-400 to-blue-400 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Salvar Alterações
               </button>
             </div>
@@ -209,7 +209,7 @@ const onUpdatePassword = async (data) => {
              </div>
               )}
             <div className="text-right">
-              <button type="submit" className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+              <button type="submit" className="px-6 py-2 bg-gradient-to-r from-green-400 to-blue-400 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                 Alterar Senha
               </button>
             </div>
