@@ -18,6 +18,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import GerenciarParceiros from './pages/admin/GerenciarParceiros';
 import GerenciarConteudo from './pages/admin/GerenciarConteudo';
 import VisaoGeralVendas from './pages/admin/VisaoGeralVendas';
+import MinhaContaPage from './pages/parceiros/MinhaConta.jsx';
+
 
 // Crie as rotas
 const router = createBrowserRouter([
@@ -47,6 +49,7 @@ const router = createBrowserRouter([
       { path: "dashboard", element: <DashboardPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'materiais', element: <SupportMaterialPage /> },
+      { path: 'minha-conta', element: <MinhaContaPage /> },
     ],
   },
 {

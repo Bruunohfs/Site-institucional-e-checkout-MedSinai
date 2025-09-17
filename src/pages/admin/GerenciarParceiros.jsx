@@ -56,14 +56,38 @@ export default function GerenciarParceiros() {
 
   const handleOpenEditModal = (parceiro) => { setSelectedParceiro(parceiro); setIsEditModalOpen(true); };
   const handleCloseEditModal = () => { setIsEditModalOpen(false); setSelectedParceiro(null); };
-  const handleSaveChanges = async (parceiroId, updatedData) => {
-    const { data: updatedUser, error: functionError } = await supabase.functions.invoke('update-partner', { body: { partnerId: parceiroId, updatedData } });
-    if (functionError) {
-      alert('Falha ao salvar as alterações.');
+  const handleSaveChanges = async (partnerId, updatedData) => {
+    const { data, error } = await supabase.functions.invoke('admin-update-partner', {
+      body: {
+        action: 'update_data',
+        partnerId,
+        updatedData,
+      },
+    });
+
+    if (error) {
+      alert(`Falha ao salvar as alterações: ${error.message}`);
     } else {
-      setParceiros(parceiros.map(p => p.id === parceiroId ? updatedUser.user : p));
+      // Atualiza a lista de parceiros com os novos dados
+      setParceiros(parceiros.map(p => (p.id === partnerId ? data.user : p)));
       handleCloseEditModal();
     }
+  };
+
+  // NOVA FUNÇÃO DE RESET DE SENHA - CHAMA A EDGE FUNCTION
+  const handleResetPassword = async (partnerId) => {
+    const { error } = await supabase.functions.invoke('admin-update-partner', {
+      body: {
+        action: 'reset_password',
+        partnerId,
+      },
+    });
+
+    if (error) {
+      alert(`Falha ao enviar link de reset: ${error.message}`);
+      return false;
+    }
+    return true;
   };
 
   const handleOpenAddModal = () => setIsAddModalOpen(true);
@@ -147,10 +171,16 @@ export default function GerenciarParceiros() {
           Novo Parceiro
         </button>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-400 dark:border-gray-700 overflow-hidden shadow-sm">
+     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-400 dark:border-gray-700 overflow-hidden shadow-sm">
         {renderContent()}
       </div>
-      <EditPartnerModal isOpen={isEditModalOpen} onClose={handleCloseEditModal} onSave={handleSaveChanges} parceiro={selectedParceiro} />
+      <EditPartnerModal 
+        isOpen={isEditModalOpen} 
+        onClose={handleCloseEditModal} 
+        onSave={handleSaveChanges} 
+        onResetPassword={handleResetPassword} // Passa a nova função para o modal
+        parceiro={selectedParceiro} 
+      />
       <AddPartnerModal isOpen={isAddModalOpen} onClose={handleCloseAddModal} onSave={handleCreatePartner} />
     </div>
   );
