@@ -1,90 +1,118 @@
 // src/pages/parceiros/AnalyticsPage.jsx
 
-import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/lib/supabaseClient.js';
-import { 
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
-} from 'recharts';
+import { useState, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { usePartnerData } from '@/hooks/usePartnerData';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// --- Componentes Auxiliares (sem alteração) ---
-const TAXA_COMISSAO = 0.4;
+// --- Componentes Auxiliares ---
 const ChartPlaceholder = () => ( <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md animate-pulse"><div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mb-4"></div><div className="h-64 bg-gray-300 dark:bg-gray-700 rounded"></div></div> );
-const COLORS = { 'Comissão Aprovada': '#10B981', 'Comissão Pendente': '#F59E0B', 'CANCELADA': '#EF4444', 'Outros': '#6B7280' };
-const statusMap = { 'CONFIRMED': 'Comissão Aprovada', 'RECEIVED': 'Comissão Aprovada', 'PENDING': 'Comissão Pendente', 'AWAITING_RISK_ANALYSIS': 'Comissão Pendente' };
 const FilterButton = ({ label, value, activeFilter, setFilter }) => { const isActive = activeFilter === value; return ( <button onClick={() => setFilter(value)} className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${ isActive ? 'bg-green-500 text-white border-green-500' : 'bg-transparent dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600' }`}>{label}</button> ); };
 
-// --- Função de Mapeamento de Nomes (sem alteração) ---
+// --- Mapeamento de Nomes de Plano (Reutilizado) ---
 const PLAN_MAP = [ { cleanName: 'Plano Família Plus 12x', keywords: ['Família Plus', '12x'] }, { cleanName: 'Plano Família 12x', keywords: ['Família', '12x'] }, { cleanName: 'Plano Individual Plus 12x', keywords: ['Individual Plus', '12x'] }, { cleanName: 'Plano Individual 12x', keywords: ['Individual', '12x'] }, { cleanName: 'Plano Família Plus', keywords: ['Família Plus'] }, { cleanName: 'Plano Família', keywords: ['Família'] }, { cleanName: 'Plano Individual Plus', keywords: ['Individual Plus'] }, { cleanName: 'Plano Individual', keywords: ['Individual'] }, ];
 const mapRawNameToClean = (rawName) => { if (!rawName) return 'Não Identificado'; const lowerCaseRawName = rawName.toLowerCase(); for (const plan of PLAN_MAP) { const allKeywordsMatch = plan.keywords.every(keyword => lowerCaseRawName.includes(keyword.toLowerCase())); if (allKeywordsMatch) return plan.cleanName; } return 'Outros'; };
 
-// --- Componente Principal ---
+// ===================================================================
+// ============ MAPEAMENTO DE CORES E STATUS (ATUALIZADO) ============
+// ===================================================================
+const COLORS = { 
+  'Pagamentos Concluidos': '#10B981', // Verde
+  'Pagamentos Pendentes': '#F59E0B', // Amarelo
+  'Pagamentos em Atraso': '#F97316', // Laranja (NOVO)
+  'CANCELADA': '#EF4444',         // Vermelho
+  'Outros': '#6B7280'             // Cinza
+};
+
+const STATUS_MAP_PIZZA = { 
+  'CONFIRMED': 'Pagamentos Concluidos', 
+  'RECEIVED': 'Pagamentos Concluidos', 
+  'PENDING': 'Pagamentos Pendentes', 
+  'AWAITING_RISK_ANALYSIS': 'Comissão Pendente',
+  'OVERDUE': 'Pagamentos em Atraso' // TRADUÇÃO (NOVO)
+};
+// ===================================================================
+
+
+// --- Componente Principal com Lógica Corrigida ---
 export default function AnalyticsPage() {
-  const [todasAsVendas, setTodasAsVendas] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useOutletContext();
+  const { loading, error, vendas } = usePartnerData(user?.id);
+  
   const [filtroData, setFiltroData] = useState('all');
 
-  useEffect(() => {
-    const fetchVendas = async () => {
-      setLoading(true);
-      const { data, error } = await supabase.from('vendas').select('created_at, nome_plano, valor, status_pagamento, id_cobranca_principal, id_pagamento').order('created_at', { ascending: true });
-      if (error) console.error("Erro ao buscar vendas:", error); else setTodasAsVendas(data || []);
-      setLoading(false);
-    };
-    fetchVendas();
-  }, []);
-
   const vendasFiltradas = useMemo(() => {
-    if (filtroData === 'all') return todasAsVendas;
+    if (filtroData === 'all' || !vendas) return vendas || [];
     const dataLimite = new Date();
     dataLimite.setDate(dataLimite.getDate() - parseInt(filtroData));
-    return todasAsVendas.filter(venda => new Date(venda.created_at) >= dataLimite);
-  }, [todasAsVendas, filtroData]);
+    return vendas.filter(v => new Date(v.created_at) >= dataLimite);
+  }, [vendas, filtroData]);
 
-  // ===================================================================
-  // ============ LÓGICA DE CONTAGEM ÚNICA CORRIGIDA ====================
-  // ===================================================================
-  const getVendaUnicaId = (venda) => venda.id_cobranca_principal || venda.id_pagamento;
+  const dadosGraficos = useMemo(() => {
+    if (!vendasFiltradas || vendasFiltradas.length === 0) {
+      return { linha: [], barra: [], pizza: [] };
+    }
 
-  const dataGraficoLinha = useMemo(() => {
-    const { dados } = vendasFiltradas.reduce((acc, venda) => {
-      const vendaId = getVendaUnicaId(venda);
-      if (vendaId && !acc.idsContados.has(vendaId)) {
-        const data = new Date(venda.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        acc.dados[data] = acc.dados[data] || { data, vendas: 0 };
-        acc.dados[data].vendas++;
-        acc.idsContados.add(vendaId);
-      }
-      return acc;
-    }, { dados: {}, idsContados: new Set() });
-    return Object.values(dados);
-  }, [vendasFiltradas]);
+    const getVendaUnicaId = (venda) => venda.id_cobranca_principal || venda.id_pagamento;
 
-  const dataGraficoBarra = useMemo(() => {
-    const { dados } = vendasFiltradas.reduce((acc, venda) => {
-      const vendaId = getVendaUnicaId(venda);
-      if (vendaId && !acc.idsContados.has(vendaId)) {
-        const planoMapeado = mapRawNameToClean(venda.nome_plano);
-        acc.dados[planoMapeado] = acc.dados[planoMapeado] || { plano: planoMapeado, quantidade: 0 };
-        acc.dados[planoMapeado].quantidade++;
-        acc.idsContados.add(vendaId);
-      }
-      return acc;
-    }, { dados: {}, idsContados: new Set() });
-    return Object.values(dados);
-  }, [vendasFiltradas]);
+    // --- LÓGICA CORRIGIDA PARA CONTAR APENAS VENDAS PAGAS ---
+    const reduceVendasPagasUnicas = (reducerFn) => {
+      const { dados } = vendasFiltradas.reduce((acc, venda) => {
+        const isPaga = venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED';
+        const vendaId = getVendaUnicaId(venda);
+        
+        // A MÁGICA ACONTECE AQUI: Só processa se a venda for PAGA e ÚNICA
+        if (isPaga && vendaId && !acc.idsContados.has(vendaId)) {
+          reducerFn(acc.dados, venda); // Aplica a lógica específica do gráfico
+          acc.idsContados.add(vendaId);
+        }
+        return acc;
+      }, { dados: {}, idsContados: new Set() });
+      return Object.values(dados);
+    };
 
-  const dataGraficoPizza = useMemo(() => {
+    // Gráfico de Linha (Vendas PAGAS por Dia)
+    const dadosLinha = reduceVendasPagasUnicas((dados, venda) => {
+      const data = new Date(venda.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      dados[data] = dados[data] || { data, vendas: 0 };
+      dados[data].vendas++;
+    });
+
+    // Gráfico de Barra (Distribuição de Planos PAGOS)
+    const dadosBarra = reduceVendasPagasUnicas((dados, venda) => {
+      const planoMapeado = mapRawNameToClean(venda.nome_plano);
+      dados[planoMapeado] = dados[planoMapeado] || { plano: planoMapeado, quantidade: 0 };
+      dados[planoMapeado].quantidade++;
+    });
+    // --- FIM DA LÓGICA CORRIGIDA ---
+
+    // Gráfico de Pizza (Comissão por Status) - Lógica inalterada, pois já estava correta
     const comissoesPorStatus = vendasFiltradas.reduce((acc, venda) => {
-      const status = statusMap[venda.status_pagamento] || venda.status_pagamento || 'Outros';
-      acc[status] = (acc[status] || 0) + (venda.valor * TAXA_COMISSAO);
+      const status = STATUS_MAP_PIZZA[venda.status_pagamento] || venda.status_pagamento || 'Outros';
+      acc[status] = (acc[status] || 0) + (venda.valor * 0.4);
       return acc;
     }, {});
-    return Object.entries(comissoesPorStatus).map(([name, value]) => ({ name, value }));
+
+    return {
+      linha: dadosLinha,
+      barra: dadosBarra,
+      pizza: Object.entries(comissoesPorStatus).map(([name, value]) => ({ name, value })),
+    };
   }, [vendasFiltradas]);
 
-  // --- Renderização (sem alterações) ---
-  if (loading) { return ( <div className="p-4 sm:p-6 lg:p-8"><h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-8">Análises e Gráficos</h1><div className="grid grid-cols-1 lg:grid-cols-2 gap-8"><ChartPlaceholder /><ChartPlaceholder /><ChartPlaceholder className="lg:col-span-2" /></div></div> ); }
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-8">Análises e Gráficos</h1>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <ChartPlaceholder /><ChartPlaceholder /><ChartPlaceholder className="lg:col-span-2" />
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) return <div className="p-8"><p className="text-red-500">{error}</p></div>;
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
@@ -95,18 +123,47 @@ export default function AnalyticsPage() {
           <FilterButton label="Todo o período" value="all" activeFilter={filtroData} setFilter={setFiltroData} />
         </div>
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Vendas por Dia</h2>
-          <ResponsiveContainer width="100%" height={300}><LineChart data={dataGraficoLinha}><CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.3)" /><XAxis dataKey="data" /><YAxis allowDecimals={false} /><Tooltip contentStyle={{ backgroundColor: 'rgb(42 42 42)', border: 'none' }} itemStyle={{color: '#eee'}} labelStyle={{ color: '#fff', fontWeight: 'bold' }} /><Legend /><Line type="monotone" dataKey="vendas" stroke="#10B981" strokeWidth={2} name="Nº de Vendas" /></LineChart></ResponsiveContainer>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Vendas Pagas por Dia</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={dadosGraficos.linha}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.3)" />
+              <XAxis dataKey="data" />
+              <YAxis allowDecimals={false} />
+              <Tooltip contentStyle={{ backgroundColor: 'rgb(42 42 42)', border: 'none' }} itemStyle={{color: '#eee'}} labelStyle={{ color: '#fff', fontWeight: 'bold' }} />
+              <Legend />
+              <Line type="monotone" dataKey="vendas" stroke="#10B981" strokeWidth={2} name="Nº de Vendas Pagas" />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
+
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Distribuição por Plano</h2>
-          <ResponsiveContainer width="100%" height={300}><BarChart data={dataGraficoBarra}><CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.3)" /><XAxis dataKey="plano" tick={{ fontSize: 12 }} interval={0} angle={-25} textAnchor="end" height={70} /><YAxis allowDecimals={false} /><Tooltip contentStyle={{ backgroundColor: 'rgb(42 42 42)', border: 'none' }} itemStyle={{color: '#eee'}} labelStyle={{ color: '#fff', fontWeight: 'bold' }} /><Legend /><Bar dataKey="quantidade" fill="#3B82F6" name="Quantidade de Vendas" /></BarChart></ResponsiveContainer>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Distribuição por Plano (Vendas Pagas)</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={dadosGraficos.barra}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.3)" />
+              <XAxis dataKey="plano" tick={{ fontSize: 12 }} interval={0} angle={-25} textAnchor="end" height={70} />
+              <YAxis allowDecimals={false} />
+              <Tooltip contentStyle={{ backgroundColor: 'rgb(42 42 42)', border: 'none' }} itemStyle={{color: '#eee'}} labelStyle={{ color: '#fff', fontWeight: 'bold' }} />
+              <Legend />
+              <Bar dataKey="quantidade" fill="#3B82F6" name="Nº de Vendas Pagas" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
+
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md lg:col-span-2">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Valor de Comissão por Status</h2>
-          <ResponsiveContainer width="100%" height={300}><PieChart><Pie data={dataGraficoPizza} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}><Cell key="cell-0" fill={COLORS['Comissão Aprovada']} /><Cell key="cell-1" fill={COLORS['Comissão Pendente']} /><Cell key="cell-2" fill={COLORS['CANCELADA']} /><Cell key="cell-3" fill={COLORS['Outros']} /></Pie><Tooltip formatter={(value) => `R$ ${value.toFixed(2).replace('.', ',')}`} contentStyle={{ backgroundColor: 'rgb(42 42 42)', border: 'none' }} itemStyle={{color: 'white', fontWeight: 'bold' }} /><Legend /></PieChart></ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={dadosGraficos.pizza} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                {dadosGraficos.pizza.map((entry) => ( <Cell key={`cell-${entry.name}`} fill={COLORS[entry.name] || COLORS.Outros} /> ))}
+              </Pie>
+              <Tooltip formatter={(value) => `R$ ${value.toFixed(2).replace('.', ',')}`} contentStyle={{ backgroundColor: 'rgb(42 42 42)', border: 'none' }} itemStyle={{color: 'white', fontWeight: 'bold' }} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
