@@ -1,9 +1,15 @@
 // supabase/functions/gerar-fechamentos/index.ts
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
 
-// Definição dos tipos para segurança e autocompletar
+// CABEÇALHOS DE CORS DIRETAMENTE AQUI - A SOLUÇÃO FUNCIONAL
+// Melhoria: Em vez de '*', vamos usar a origem da requisição dinamicamente,
+// mas com uma lista de permissão para segurança.
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://www.medsinai.com.br'
+];
+
 interface Venda {
   id_parceiro: string;
   status_pagamento: string;
@@ -11,31 +17,34 @@ interface Venda {
   valor: number;
 }
 
-Deno.serve(async (req ) => {
-  // Pré-validação para requisições OPTIONS (necessário para CORS)
+Deno.serve(async (req: Request ) => {
+  const requestOrigin = req.headers.get('Origin');
+
+  // Lógica de CORS diretamente aqui
+  const corsHeaders = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    // Se a origem estiver na lista, permita. Senão, não defina o cabeçalho.
+    'Access-Control-Allow-Origin': allowedOrigins.includes(requestOrigin!) ? requestOrigin! : ''
+  };
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // 1. Criar um cliente Supabase que pode ser usado dentro da função
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // 2. Determinar o Mês de Referência (Mês Passado)
     const hoje = new Date();
     const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
     const mesReferencia = new Date(primeiroDiaMesAtual);
-    mesReferencia.setMonth(mesReferencia.getMonth() - 1); // Vai para o mês passado
+    mesReferencia.setMonth(mesReferencia.getMonth() - 1);
 
-    const primeiroDiaMesPassado = mesReferencia.toISOString().slice(0, 10); // ex: "2025-09-01"
-    const ultimoDiaMesPassado = new Date(primeiroDiaMesAtual.getTime() - 1).toISOString(); // Pega o último milissegundo do mês passado
-
-    console.log(`Gerando fechamento para o período de ${primeiroDiaMesPassado} até ${ultimoDiaMesPassado}`);
-
-    // 3. Buscar todas as vendas PAGAS do mês passado
+    const primeiroDiaMesPassado = mesReferencia.toISOString().slice(0, 10);
+    
     const { data: vendas, error: vendasError } = await supabaseAdmin
       .from('vendas')
       .select('id_parceiro, status_pagamento, created_at, valor')
@@ -51,7 +60,6 @@ Deno.serve(async (req ) => {
       });
     }
 
-    // 4. Calcular a comissão total para cada parceiro
     const TAXA_COMISSAO = 0.4;
     const comissoesPorParceiro = vendas.reduce((acc, venda: Venda) => {
       if (venda.id_parceiro) {
@@ -60,12 +68,11 @@ Deno.serve(async (req ) => {
       return acc;
     }, {} as Record<string, number>);
 
-    // 5. Preparar os dados para inserção na tabela 'fechamentos'
     const fechamentosParaInserir = Object.entries(comissoesPorParceiro).map(([idParceiro, comissao]) => ({
       id_parceiro: idParceiro,
       mes_referencia: primeiroDiaMesPassado,
       valor_comissao_bruta: comissao,
-      status_pagamento: 'PENDENTE', // Sempre começa como pendente
+      status_pagamento: 'PENDENTE',
     }));
 
     if (fechamentosParaInserir.length === 0) {
@@ -75,15 +82,12 @@ Deno.serve(async (req ) => {
       });
     }
 
-    // 6. Inserir os novos fechamentos no banco de dados
-    // Usamos 'upsert' para evitar duplicatas. Se já existir um fechamento para aquele parceiro e mês, ele será atualizado.
     const { error: insertError } = await supabaseAdmin
       .from('fechamentos')
       .upsert(fechamentosParaInserir, { onConflict: 'id_parceiro, mes_referencia' });
 
     if (insertError) throw insertError;
 
-    // 7. Retornar sucesso
     return new Response(JSON.stringify({ message: `Fechamento gerado com sucesso para ${fechamentosParaInserir.length} parceiro(s).` }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
