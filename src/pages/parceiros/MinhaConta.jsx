@@ -96,6 +96,7 @@ export default function MinhaContaPage() {
       setInfoNotification({ show: true, message: `Erro ao atualizar dados: ${error.message}`, type: 'error' });
     } else {
       setInfoNotification({ show: true, message: 'Dados atualizados com sucesso!', type: 'success' });
+      window.dispatchEvent(new CustomEvent('profileUpdated'));
     }
     setTimeout(() => setInfoNotification({ show: false, message: '', type: '' }), 4000);
   };
