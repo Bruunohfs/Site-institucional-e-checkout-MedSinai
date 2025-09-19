@@ -1,35 +1,170 @@
-// src/pages/admin/FinanceiroAdminPage.jsx
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import RegistrarPagamentoModal from './RegistrarPagamentoModal';
-import { Link } from 'react-router-dom';
 
-// Ícones para a interface
-const ChatIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" /></svg>;
+// --- ÍCONES ---
 const DownloadIcon = ( ) => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg>;
+const ChevronDownIcon = (  ) => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>;
 
-// Funções de Estilo e Formatação
+// --- FUNÇÕES DE FORMATAÇÃO E ESTILO ---
 const STATUS_STYLES = {
   PAGO_TOTAL: 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400',
   PAGO_PARCIAL: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400',
   PENDENTE: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400',
   DEFAULT: 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'
 };
-const getStatusClasses = (status ) => STATUS_STYLES[status] || STATUS_STYLES.DEFAULT;
+const getStatusClasses = (status) => STATUS_STYLES[status] || STATUS_STYLES.DEFAULT;
 
 const formatCurrency = (value) => {
-  if (typeof value !== 'number') return 'R$ 0,00';
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const numberValue = Number(value);
+  if (isNaN(numberValue)) {
+    return (0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+  return numberValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
+
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
-  const userTimezoneOffset = date.getTimezoneOffset() * 60000;
-  const correctedDate = new Date(date.getTime() + userTimezoneOffset);
-  return correctedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  return new Date(year, month, 2).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 };
 
+const formatSimpleDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR');
+};
+
+// ===================================================================
+// ==> COMPONENTE DetalhesRow (VERSÃO FINAL CORRIGIDA) <==
+// ===================================================================
+function DetalhesRow({ fechamento }) {
+  const [vendas, setVendas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVendasDoMesCorretamente = async () => {
+      setLoading(true);
+      
+      const mesReferencia = new Date(fechamento.mes_referencia);
+      const primeiroDiaMes = new Date(mesReferencia.getUTCFullYear(), mesReferencia.getUTCMonth(), 1).toISOString();
+      const ultimoDiaMes = new Date(mesReferencia.getUTCFullYear(), mesReferencia.getUTCMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+
+      try {
+        // Query para vendas NÃO PARCELADAS
+        const { data: vendasNaoParceladas, error: error1 } = await supabase
+          .from('vendas')
+          .select('id, nome_cliente, nome_plano, valor, data_pagamento')
+          .eq('id_parceiro', fechamento.id_parceiro)
+          .in('status_pagamento', ['CONFIRMED', 'RECEIVED'])
+          .not('nome_plano', 'like', '%12x%')
+          .gte('data_pagamento', primeiroDiaMes)
+          .lte('data_pagamento', ultimoDiaMes);
+
+        if (error1) throw new Error(`Erro ao buscar vendas não parceladas: ${error1.message}`);
+
+        // Query para vendas PARCELADAS
+        const { data: vendasParceladas, error: error2 } = await supabase
+          .from('vendas')
+          .select('id, nome_cliente, nome_plano, valor, data_vencimento')
+          .eq('id_parceiro', fechamento.id_parceiro)
+          .in('status_pagamento', ['CONFIRMED', 'RECEIVED'])
+          .like('nome_plano', '%12x%')
+          .gte('data_vencimento', primeiroDiaMes)
+          .lte('data_vencimento', ultimoDiaMes);
+
+        if (error2) throw new Error(`Erro ao buscar vendas parceladas: ${error2.message}`);
+
+        // Junta os resultados
+        const todasAsVendas = [
+          ...(vendasNaoParceladas || []).map(v => ({ ...v, data_competencia: v.data_pagamento })),
+          ...(vendasParceladas || []).map(v => ({ ...v, data_competencia: v.data_vencimento }))
+        ];
+        
+        todasAsVendas.sort((a, b) => new Date(a.data_competencia) - new Date(b.data_competencia));
+        
+        setVendas(todasAsVendas);
+
+      } catch (error) {
+        console.error("Erro ao buscar vendas do extrato:", error);
+        setVendas([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVendasDoMesCorretamente();
+  }, [fechamento]);
+
+  return (
+    <tr className="bg-gray-50 dark:bg-gray-900/50">
+      <td colSpan="7" className="p-4 space-y-4">
+        {/* Seção de Observações e Comprovante */}
+        {(fechamento.observacoes || fechamento.url_comprovante) && (
+          <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <h4 className="font-bold text-md mb-3 text-gray-800 dark:text-white">Detalhes do Pagamento</h4>
+            <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+              {fechamento.observacoes && (
+                <div>
+                  <strong className="block mb-1">Observações:</strong>
+                  <p className="whitespace-pre-wrap p-2 bg-white dark:bg-gray-700 rounded">{fechamento.observacoes}</p>
+                </div>
+              )}
+              {fechamento.url_comprovante && (
+                <div>
+                  <strong className="block mb-1">Comprovante:</strong>
+                  <a href={fechamento.url_comprovante} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline">
+                    <DownloadIcon /> Baixar Comprovante
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Seção de Vendas Detalhadas */}
+        <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h4 className="font-bold text-md mb-3 text-gray-800 dark:text-white">Vendas Inclusas neste Fechamento</h4>
+          {loading ? (
+            <p className="text-gray-500">Carregando detalhes das vendas...</p>
+          ) : vendas.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-gray-500 dark:text-gray-400">
+                  <tr>
+                    <th className="py-2 px-3">Cliente</th>
+                    <th className="py-2 px-3">Plano</th>
+                    <th className="py-2 px-3 text-right">Valor da Venda</th>
+                    <th className="py-2 px-3 text-right">Comissão (40%)</th>
+                    <th className="py-2 px-3 text-right">Data de Competência</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vendas.map(venda => (
+                    <tr key={venda.id} className="border-t border-gray-200 dark:border-gray-700">
+                      <td className="py-2 px-3">{venda.nome_cliente}</td>
+                      <td className="py-2 px-3">{venda.nome_plano}</td>
+                      <td className="py-2 px-3 text-right">{formatCurrency(venda.valor)}</td>
+                      <td className="py-2 px-3 text-right font-semibold text-green-600">{formatCurrency(venda.valor * 0.4)}</td>
+                      <td className="py-2 px-3 text-right">{formatSimpleDate(venda.data_competencia)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500">Nenhuma venda encontrada para este período.</p>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// --- COMPONENTE PRINCIPAL ---
 export default function FinanceiroAdminPage() {
   const [fechamentos, setFechamentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +194,7 @@ export default function FinanceiroAdminPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleGerarFechamento = async () => {
-    if (!confirm('Tem certeza que deseja gerar o fechamento para o mês anterior?')) return;
+    if (!confirm('Tem certeza que deseja gerar o fechamento para o mês anterior? Esta ação calculará as comissões de todos os parceiros para as vendas confirmadas no último mês.')) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('gerar-fechamentos');
@@ -74,7 +209,10 @@ export default function FinanceiroAdminPage() {
     }
   };
 
-  const handleOpenModal = (fechamento) => { setSelectedFechamento(fechamento); setShowModal(true); };
+  const handleOpenModal = (fechamento) => { 
+    setSelectedFechamento(fechamento); 
+    setShowModal(true); 
+  };
   const handleCloseModal = () => { setShowModal(false); setSelectedFechamento(null); };
   const handleSaveSuccess = async () => { handleCloseModal(); setLoading(true); await fetchData(); };
   const toggleRowExpansion = (id) => { setExpandedRowId(expandedRowId === id ? null : id); };
@@ -86,32 +224,32 @@ export default function FinanceiroAdminPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financeiro - Admin</h1>
-        <button onClick={handleGerarFechamento} className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">
+        <button onClick={handleGerarFechamento} className="px-4 py-2 bg-gradient-to-r from-green-400 to-blue-400 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">
           Gerar Fechamento do Mês Anterior
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-400 dark:border-gray-700 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-100 dark:bg-gray-700/50">
+            <thead className="bg-gray-300 dark:bg-gray-700/50">
               <tr>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Mês Ref.</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Parceiro</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Comissão Bruta</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Valor Pago</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Status</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Detalhes</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300">Ações</th>
+                <th className="p-4 text-sm font-semibold text-gray-900 dark:text-gray-300">Mês Ref.</th>
+                <th className="p-4 text-sm font-semibold text-gray-900 dark:text-gray-300">Parceiro</th>
+                <th className="p-4 text-sm font-semibold text-gray-900 dark:text-gray-300">Comissão Bruta</th>
+                <th className="p-4 text-sm font-semibold text-gray-900 dark:text-gray-300">Valor Pago</th>
+                <th className="p-4 text-sm font-semibold text-gray-900 dark:text-gray-300">Status</th>
+                <th className="p-4 text-sm font-semibold text-gray-900 dark:text-gray-300">Detalhes</th>
+                <th className="p-4 text-sm font-semibold text-gray-900 dark:text-gray-300">Ações</th>
               </tr>
             </thead>
             <tbody>
               {fechamentos.length > 0 ? fechamentos.map(f => (
                 <React.Fragment key={f.id}>
-                  <tr className="border-t border-gray-200 dark:border-gray-700">
+                  <tr className="border-t border-gray-300 dark:border-gray-700">
                     <td className="p-4 font-medium text-gray-800 dark:text-white whitespace-nowrap">{formatDate(f.mes_referencia)}</td>
                     <td className="p-4 text-gray-600 dark:text-gray-300">{f.profiles?.nome_completo || 'Parceiro não encontrado'}</td>
-                    <td className="p-4 font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">{formatCurrency(f.valor_comissao_bruta)}</td>
+                    <td className="p-4 font-semibold text-black dark:text-white whitespace-nowrap">{formatCurrency(f.valor_comissao_bruta)}</td>
                     <td className="p-4 font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">{f.valor_pago ? formatCurrency(f.valor_pago) : '-'}</td>
                     <td className="p-4">
                       <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${getStatusClasses(f.status_pagamento)}`}>
@@ -119,43 +257,19 @@ export default function FinanceiroAdminPage() {
                       </span>
                     </td>
                     <td className="p-4">
-                      <button onClick={() => toggleRowExpansion(f.id)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" title="Ver observações">
-                        <ChatIcon />
+                      <button onClick={() => toggleRowExpansion(f.id)} title="Ver Detalhes" className={`p-1 rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform transform ${expandedRowId === f.id ? 'rotate-180' : ''}`}>
+                        <ChevronDownIcon />
                       </button>
                     </td>
                     <td className="p-4">
                       {f.status_pagamento !== 'PAGO_TOTAL' ? (
-                        <button onClick={() => handleOpenModal(f)} className="px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">
+                        <button onClick={() => handleOpenModal(f)} className="px-3 py-1 bg-gradient-to-r from-green-400 to-blue-400 text-white text-sm font-semibold rounded-md hover:bg-blue-700">
                           {f.status_pagamento === 'PENDENTE' ? 'Registrar' : 'Gerenciar'}
                         </button>
-                      ) : <span className="text-sm text-gray-500">Quitado</span>}
+                      ) : <span className="text-sm text-gray-900 dark:text-white">Quitado</span>}
                     </td>
                   </tr>
-                  {expandedRowId === f.id && (
-                    <tr className="bg-gray-50 dark:bg-gray-900/50">
-                      <td colSpan="7" className="p-4">
-                        <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2">
-                          {f.observacoes && (
-                            <div>
-                              <strong className="block mb-1">Observações:</strong>
-                              <p className="whitespace-pre-wrap p-2 bg-gray-100 dark:bg-gray-800 rounded">{f.observacoes}</p>
-                            </div>
-                          )}
-                          {f.url_comprovante && (
-                            <div>
-                              <strong className="block mb-1">Comprovante:</strong>
-                              <a href={f.url_comprovante} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:underline">
-                                <DownloadIcon /> Baixar Comprovante
-                              </a>
-                            </div>
-                          )}
-                          {!f.observacoes && !f.url_comprovante && (
-                            <p>Nenhum detalhe adicional.</p>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                  {expandedRowId === f.id && <DetalhesRow fechamento={f} />}
                 </React.Fragment>
               )) : (
                 <tr><td colSpan="7" className="text-center p-8 text-gray-500">Nenhum fechamento encontrado.</td></tr>
@@ -164,7 +278,6 @@ export default function FinanceiroAdminPage() {
           </table>
         </div>
       </div>
-      
       {showModal && selectedFechamento && (
         <RegistrarPagamentoModal fechamento={selectedFechamento} onClose={handleCloseModal} onSave={handleSaveSuccess} />
       )}

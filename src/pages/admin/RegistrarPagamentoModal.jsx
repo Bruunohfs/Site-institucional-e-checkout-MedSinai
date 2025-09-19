@@ -1,14 +1,16 @@
-// src/components/RegistrarPagamentoModal.jsx
+// src/pages/admin/RegistrarPagamentoModal.jsx
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function RegistrarPagamentoModal({ fechamento, onClose, onSave }) {
   // Calcula o valor restante a ser pago, considerando o que já foi pago
-  const valorRestante = (fechamento.valor_comissao_bruta || 0) - (fechamento.valor_pago || 0);
+  const valorJaPago = fechamento.valor_pago || 0;
+  const comissaoBruta = fechamento.valor_comissao_bruta || 0;
+  const valorRestante = comissaoBruta - valorJaPago;
 
   // Estados do formulário
-  const [valorPago, setValorPago] = useState(valorRestante > 0 ? valorRestante.toFixed(2) : '0.00');
+  const [valorASerPago, setValorASerPago] = useState(valorRestante > 0 ? valorRestante.toFixed(2) : '0.00');
   const [dataPagamento, setDataPagamento] = useState(new Date().toISOString().slice(0, 10));
   const [comprovante, setComprovante] = useState(null);
   const [observacoes, setObservacoes] = useState('');
@@ -21,7 +23,7 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
     setError('');
 
     try {
-      let comprovanteUrl = fechamento.url_comprovante; // Mantém o comprovante antigo se não for enviado um novo
+      let comprovanteUrl = fechamento.url_comprovante;
 
       // 1. Fazer upload do novo comprovante, se houver
       if (comprovante) {
@@ -39,20 +41,35 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
         comprovanteUrl = urlData.publicUrl;
       }
 
-      // 2. Calcular o novo valor total pago e o novo status
-      const novoValorPago = (fechamento.valor_pago || 0) + parseFloat(valorPago);
-      const novoStatus = novoValorPago >= fechamento.valor_comissao_bruta ? 'PAGO_TOTAL' : 'PAGO_PARCIAL';
+      // Acumula o valor pago
+      const novoTotalPago = valorJaPago + parseFloat(valorASerPago);
+      
+      // ===================================================================
+      // ==> CORREÇÃO DA COMPARAÇÃO DE PONTO FLUTUANTE <==
+      // ===================================================================
+      const TOLERANCIA = 0.001; // Define uma pequena margem de erro
+      let novoStatus;
 
-      // 3. Formatar as observações, acumulando as novas
+      // Compara a diferença absoluta entre os valores com a tolerância
+      if (Math.abs(comissaoBruta - novoTotalPago) < TOLERANCIA) {
+        novoStatus = 'PAGO_TOTAL';
+      } else if (novoTotalPago > 0) {
+        novoStatus = 'PAGO_PARCIAL';
+      } else {
+        novoStatus = 'PENDENTE';
+      }
+      // ===================================================================
+
+      // Formata as observações, acumulando as novas
       const novasObservacoes = observacoes
         ? (fechamento.observacoes ? `${fechamento.observacoes}\n\n--- Novo Pagamento em ${new Date().toLocaleDateString('pt-BR')} ---\n${observacoes}` : observacoes)
         : fechamento.observacoes;
 
-      // 4. Atualizar o registro na tabela 'fechamentos'
+      // Atualiza o registro na tabela 'fechamentos'
       const { error: updateError } = await supabase
         .from('fechamentos')
         .update({
-          valor_pago: novoValorPago,
+          valor_pago: novoTotalPago,
           data_pagamento: dataPagamento,
           status_pagamento: novoStatus,
           url_comprovante: comprovanteUrl,
@@ -113,8 +130,8 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
             <input
               type="number"
               step="0.01"
-              value={valorPago}
-              onChange={(e) => setValorPago(e.target.value)}
+              value={valorASerPago}
+              onChange={(e) => setValorASerPago(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-700 dark:text-white"
               required
             />

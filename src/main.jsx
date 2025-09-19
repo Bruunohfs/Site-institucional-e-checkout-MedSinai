@@ -21,6 +21,7 @@ import VisaoGeralVendas from './pages/admin/VisaoGeralVendas';
 import MinhaContaPage from './pages/parceiros/MinhaConta.jsx';
 import FinanceiroAdminPage from './pages/admin/FinanceiroAdminPage';
 import FinanceiroParceiroPage from './pages/parceiros/FinanceiroParceiroPage';
+import OportunidadesPage from './pages/parceiros/OportunidadesPage';
 
 
 // Crie as rotas
@@ -53,6 +54,7 @@ const router = createBrowserRouter([
       { path: 'materiais', element: <SupportMaterialPage /> },
       { path: 'minha-conta', element: <MinhaContaPage /> },
       { path: 'financeiro', element: <FinanceiroParceiroPage /> },
+      { path: 'oportunidades', element: <OportunidadesPage /> },
     ],
   },
 {
