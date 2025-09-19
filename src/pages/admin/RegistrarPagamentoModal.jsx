@@ -4,8 +4,11 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function RegistrarPagamentoModal({ fechamento, onClose, onSave }) {
+  // Calcula o valor restante a ser pago, considerando o que já foi pago
   const valorRestante = (fechamento.valor_comissao_bruta || 0) - (fechamento.valor_pago || 0);
-  const [valorPago, setValorPago] = useState(valorRestante.toFixed(2));
+
+  // Estados do formulário
+  const [valorPago, setValorPago] = useState(valorRestante > 0 ? valorRestante.toFixed(2) : '0.00');
   const [dataPagamento, setDataPagamento] = useState(new Date().toISOString().slice(0, 10));
   const [comprovante, setComprovante] = useState(null);
   const [observacoes, setObservacoes] = useState('');
@@ -18,49 +21,49 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
     setError('');
 
     try {
-      let comprovanteUrl = null;
-      // 1. Fazer upload do comprovante, se houver
+      let comprovanteUrl = fechamento.url_comprovante; // Mantém o comprovante antigo se não for enviado um novo
+
+      // 1. Fazer upload do novo comprovante, se houver
       if (comprovante) {
         const fileExt = comprovante.name.split('.').pop();
         const fileName = `${fechamento.id_parceiro}-${Date.now()}.${fileExt}`;
         const filePath = `comprovantes/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('materiais-publicos') // CERTIFIQUE-SE QUE ESSE BUCKET EXISTE!
+          .from('materiais-publicos')
           .upload(filePath, comprovante);
 
-        if (uploadError) {
-          console.error("Erro no Upload:", uploadError);
-          throw uploadError;
-        }
+        if (uploadError) throw uploadError;
 
-        // Pega a URL pública do arquivo
-         const { data: urlData } = supabase.storage
-          .from('materiais-publicos') // <-- NOME DO BUCKET CORRIGIDO
-          .getPublicUrl(filePath);
+        const { data: urlData } = supabase.storage.from('materiais-publicos').getPublicUrl(filePath);
         comprovanteUrl = urlData.publicUrl;
       }
 
-      // 2. Atualizar o registro na tabela 'fechamentos'
-      const status = parseFloat(valorPago) >= fechamento.valor_comissao_bruta ? 'PAGO_TOTAL' : 'PAGO_PARCIAL';
+      // 2. Calcular o novo valor total pago e o novo status
+      const novoValorPago = (fechamento.valor_pago || 0) + parseFloat(valorPago);
+      const novoStatus = novoValorPago >= fechamento.valor_comissao_bruta ? 'PAGO_TOTAL' : 'PAGO_PARCIAL';
 
+      // 3. Formatar as observações, acumulando as novas
+      const novasObservacoes = observacoes
+        ? (fechamento.observacoes ? `${fechamento.observacoes}\n\n--- Novo Pagamento em ${new Date().toLocaleDateString('pt-BR')} ---\n${observacoes}` : observacoes)
+        : fechamento.observacoes;
+
+      // 4. Atualizar o registro na tabela 'fechamentos'
       const { error: updateError } = await supabase
         .from('fechamentos')
         .update({
-          valor_pago: valorPago,
+          valor_pago: novoValorPago,
           data_pagamento: dataPagamento,
-          status_pagamento: status,
-          url_comprovante: comprovanteUrl || fechamento.url_comprovante,
-          observacoes: fechamento.observacoes 
-            ? `${fechamento.observacoes}\n--- Novo Pagamento ---\n${observacoes}` 
-            : observacoes,
+          status_pagamento: novoStatus,
+          url_comprovante: comprovanteUrl,
+          observacoes: novasObservacoes,
         })
         .eq('id', fechamento.id);
 
       if (updateError) throw updateError;
 
-      onSave(); // Chama a função para fechar o modal e recarregar a lista
-      
+      onSave(); // Fecha o modal e recarrega a lista na página principal
+
     } catch (err) {
       console.error("Erro ao salvar pagamento:", err);
       setError("Falha ao salvar. Verifique os dados e tente novamente.");
@@ -70,12 +73,43 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Registrar Pagamento</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Gerenciar Pagamento</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+        </div>
+
+        {/* --- BLOCO DE DADOS DE PAGAMENTO DO PARCEIRO --- */}
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-gray-700/50 rounded-lg border border-blue-200 dark:border-gray-600">
+          <h3 className="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">
+            Dados para Pagamento de: <span className="text-blue-600 dark:text-blue-400">{fechamento.profiles?.nome_completo}</span>
+          </h3>
+          <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2">
+            {fechamento.profiles?.chave_pix ? (
+              <div>
+                <p className="font-semibold">PIX ({fechamento.profiles.tipo_chave_pix || 'Não informado'})</p>
+                <p className="bg-gray-200 dark:bg-gray-800 p-2 rounded font-mono break-all">{fechamento.profiles.chave_pix}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500">Nenhuma chave PIX cadastrada.</p>
+            )}
+            
+            {fechamento.profiles?.nome_banco && (
+              <div className="pt-3 border-t border-blue-200 dark:border-gray-600 mt-3">
+                <p className="font-semibold">Transferência Bancária</p>
+                <p><strong>Banco:</strong> {fechamento.profiles.nome_banco}</p>
+                <p><strong>Agência:</strong> {fechamento.profiles.agencia}</p>
+                <p><strong>Conta:</strong> {fechamento.profiles.conta_corrente}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* --- FORMULÁRIO DE PAGAMENTO --- */}
         <form onSubmit={handleSave}>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor Pago</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Valor a Pagar Agora</label>
             <input
               type="number"
               step="0.01"
@@ -84,6 +118,7 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-700 dark:text-white"
               required
             />
+            <p className="text-xs text-gray-500 mt-1">Valor restante: {formatCurrency(valorRestante)}</p>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data do Pagamento</label>
@@ -96,7 +131,7 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Comprovante (Opcional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Anexar Novo Comprovante (Opcional)</label>
             <input
               type="file"
               onChange={(e) => setComprovante(e.target.files[0])}
@@ -109,6 +144,7 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
               rows="3"
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
+              placeholder="Ex: Motivo do pagamento parcial, etc."
               className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-700 dark:text-white"
             ></textarea>
           </div>
@@ -125,4 +161,10 @@ export default function RegistrarPagamentoModal({ fechamento, onClose, onSave })
       </div>
     </div>
   );
+}
+
+// Função auxiliar para formatar moeda
+function formatCurrency(value) {
+  if (typeof value !== 'number') return 'R$ 0,00';
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
