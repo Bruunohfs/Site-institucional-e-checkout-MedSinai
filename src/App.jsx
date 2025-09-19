@@ -519,49 +519,61 @@ const comoFuncionaSteps = [
 
 <section id="plans" className="py-16 px-6 bg-white dark:bg-gray-900">
   <div className="container mx-auto">
-    <div className="text-center mb-12">
+    
+    {/* Parte 1: Título e Parágrafo (ficam estáticos) */}
+    <div className="text-center mb-8">
       <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
         Escolha o Plano Ideal para Você
       </h2>
-      <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+      <p className="text-xl text-gray-600 dark:text-gray-400">
         Planos flexíveis que se adaptam às suas necessidades e orçamento.
       </p>
-               {/*BOTAO DE SELEÇÃO DE PLANO MENSAL E ANUAL*/}
-<div className="flex justify-center mb-8">
-  {/* 1. Container principal: relativo e com formato de pílula */}
-  <div className="relative inline-flex bg-gray-300 dark:bg-gray-700 rounded-full p-1">
-    
-    {/* 2. O fundo deslizante: absoluto, com transição e movido pelo estado 'isAnual' */}
-    <span
-      className={`absolute top-1 left-1 h-[calc(100%-0.5rem)] w-[calc(50%-0.25rem)] bg-green-400 dark:bg-green-500 rounded-full shadow-md transition-transform duration-300 ease-in-out
-             ${isAnual ? 'transform translate-x-full' : 'transform translate-x-0'}`}
-      aria-hidden="true"
-    />
+    </div>
 
-    {/* 3. Botões: agora são 'relative' para ficarem sobre o fundo deslizante */}
-    <button 
-      onClick={() => setIsAnual(false)}
-      className={`relative px-6 py-2 rounded-full text-sm font-semibold z-10 transition-colors duration-300
-                 ${!isAnual ? 'text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-800 dark:hover:text-white'}`}>
-      Mensal
-    </button>
+    {/* 
+      ===================================================================
+      ==> A MÁGICA FINAL ACONTECE AQUI <==
+      Esta div envolve APENAS o seletor e é ela que se torna sticky.
+      O 'top-16' (ou o valor que você precisar) cria o espaço para o seu header.
+      ===================================================================
+    */}
+    <div className="
+      sticky top-16 z-20 
+      py-4 
+      bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm 
+      -mx-6 px-6 mb-8
+      lg:static lg:bg-transparent lg:dark:bg-transparent lg:backdrop-blur-none 
+      lg:m-0 lg:p-0 lg:mb-12
+    ">
+      <div className="flex justify-center">
+        <div className="relative inline-flex bg-gray-300 dark:bg-gray-700 rounded-full p-1 shadow-inner">
+          <span
+            className={`absolute top-1 left-1 h-[calc(100%-0.5rem)] w-[calc(50%-0.25rem)] bg-green-400 dark:bg-green-500 rounded-full shadow-md transition-transform duration-300 ease-in-out
+                  ${isAnual ? 'transform translate-x-full' : 'transform translate-x-0'}`}
+            aria-hidden="true"
+          />
+          <button 
+            onClick={() => setIsAnual(false)}
+            className={`relative px-6 py-2 rounded-full text-sm font-semibold z-10 transition-colors duration-300
+                      ${!isAnual ? 'text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-800 dark:hover:text-white'}`}>
+            Mensal
+          </button>
+          <button 
+            onClick={() => setIsAnual(true)}
+            className={`relative px-6 py-2 rounded-full text-sm font-semibold z-10 transition-colors duration-300
+                      ${isAnual ? 'text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-800 dark:hover:text-white'}`}>
+            Anual
+          </button>
+        </div>
+      </div>
+    </div>
 
-    <button 
-      onClick={() => setIsAnual(true)}
-      className={`relative px-6 py-2 rounded-full text-sm font-semibold z-10 transition-colors duration-300
-                 ${isAnual ? 'text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-800 dark:hover:text-white'}`}>
-      Anual
-    </button>
-  </div>
-</div>
-</div>
-
+    {/* Parte 3: A Grade de Planos (continua normal) */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
       {planosAtivos.map((plano) => (
         <div key={plano.id} className="border-2 border-gray-300 dark:border-gray-700 rounded-2xl p-6 flex flex-col shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-          <div> {/* Envolvemos em uma div para controle */}
+          <div>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{plano.nome}</h3>
-            {/* MUDANÇA 1: Adicionamos altura mínima à descrição */}
             <p className="text-gray-600 dark:text-gray-400 mb-4 min-h-[20px]">{plano.descricao}</p>
           </div>
           <div className="mb-4 min-h-[50px]">
@@ -572,30 +584,22 @@ const comoFuncionaSteps = [
                 </span>
               )}
               <span className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">R$ {plano.preco}</span>
-              
-              {/* Sua lógica para não mostrar "/mês" no anual já está aqui e funcionando */}
               {!isAnual && (
                 <span className="text-gray-600 dark:text-gray-400 ml-1">/mês</span>
               )}
             </div>
-            
-            {/* MUDANÇA 3: A frase de economia agora está dentro do grupo */}
             {plano.economia && <p className="text-sm text-green-600 dark:text-green-400 mt-1">{plano.economia}</p>}
           </div>
-          
-          {/* LISTA DE BENEFÍCIOS */}
           <ul className="space-y-2 mb-6 text-gray-600 dark:text-gray-300 flex-grow">
             {plano.beneficios.map((beneficio, index) => (
-              <li key={index} className="flex items-start"> {/* Usar items-start para alinhar melhor com textos de múltiplas linhas */}
+              <li key={index} className="flex items-start">
                 <svg className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
                 </svg>
-                <span>{beneficio}</span> {/* Envolver o texto em um span para melhor controle */}
+                <span>{beneficio}</span>
               </li>
             ))}
           </ul>
-
-          {/* BOTÃO DE ASSINAR */}
           <button 
             onClick={() => handleAssinarAgora(plano)}
             className="w-full mt-auto px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
@@ -607,6 +611,7 @@ const comoFuncionaSteps = [
     </div>
   </div>
 </section>
+
 
     {/* FAQ PERGUNTAS E RESPOSTAS */}
 
