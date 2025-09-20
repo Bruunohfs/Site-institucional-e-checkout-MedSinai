@@ -1,3 +1,5 @@
+// src/layouts/DashboardLayout.jsx
+
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
@@ -7,7 +9,6 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Ícone do menu hambúrguer
 const MenuIcon = () => (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -21,8 +22,6 @@ export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
-  // --- 1. Variável para armazenar o cargo do usuário ---
-  // Usamos 'user' do estado, que é preenchido após a sessão ser verificada.
   const userRole = user?.user_metadata?.role;
 
   useEffect(() => {
@@ -51,8 +50,11 @@ export default function DashboardLayout() {
     return <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">Carregando...</div>;
   }
 
+  // ===================================================================
+  // ==> CORREÇÃO AQUI <==
+  // ===================================================================
   return (
-    <div className="flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+    <div className="flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-x-hidden">
       <Sidebar 
         user={user} 
         onLogout={handleLogout} 
@@ -63,11 +65,9 @@ export default function DashboardLayout() {
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* --- CABEÇALHO MOBILE COM INDICADOR DE ADMIN --- */}
         <header className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md">
           <h1 className="text-lg font-bold">MedSinai</h1>
           
-          {/* --- 2. Adicionando o indicador visual de Admin aqui --- */}
           <div className="flex items-center gap-2">
             {userRole === 'admin' && (
               <span className="text-xs font-bold text-green-600 bg-green-100 dark:bg-green-900/50 px-2 py-1 rounded-full">
@@ -81,7 +81,6 @@ export default function DashboardLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {/* Passamos o 'user' e o 'userRole' para as páginas filhas */}
           <Outlet context={{ user, userRole }} />
         </main>
       </div>

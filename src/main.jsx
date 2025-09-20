@@ -22,6 +22,7 @@ import MinhaContaPage from './pages/parceiros/MinhaConta.jsx';
 import FinanceiroAdminPage from './pages/admin/FinanceiroAdminPage';
 import FinanceiroParceiroPage from './pages/parceiros/FinanceiroParceiroPage';
 import OportunidadesPage from './pages/parceiros/OportunidadesPage';
+import CalculadoraPage from './pages/parceiros/CalculadoraPage';
 
 
 // Crie as rotas
@@ -55,6 +56,7 @@ const router = createBrowserRouter([
       { path: 'minha-conta', element: <MinhaContaPage /> },
       { path: 'financeiro', element: <FinanceiroParceiroPage /> },
       { path: 'oportunidades', element: <OportunidadesPage /> },
+      { path: 'calculadora', element: <CalculadoraPage /> },
     ],
   },
 {
