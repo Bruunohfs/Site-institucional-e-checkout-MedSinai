@@ -1,21 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button.jsx';
 import bannerImage from './assets/medsinai-banner.png';
 import './App.css';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import { Navigation, Autoplay } from 'swiper/modules' ;
 import 'swiper/css/navigation' ;
-import carrosselImg2 from './assets/carrossel-img-2.jpg';
-import carrosselImg3 from './assets/carrossel-img-3.jpeg';
 import { useNavigate } from 'react-router-dom';
 import { planosMensais, planosAnuais } from "@/data/planos";
 import useTracker from '@/hooks/useTracker';
 import parceirosCinemaImg from '@/assets/logos/logoscinema.png';
 import parceirosCashbackImg from '@/assets/logos/logosmarcas.png';
-import CountUp from 'react-countup';
 import { useSearchParams } from 'react-router-dom';
-import FadeIn from '@/components/ui/FadeIn'; 
+import beneficiosHero from './assets/beneficios-hero.jpg';
 
 
 
@@ -152,135 +148,54 @@ const comoFuncionaSteps = [
   return (
     <div className="w-full">
 
-     <section className="py-12 px-6 bg-gray-50 dark:bg-gray-900">
+<section className="relative py-12 px-6 bg-gray-50 dark:bg-gray-900 pb-24 lg:pb-32">
   <div className="container mx-auto">
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-      <div>
-        <h1 className="text-4xl lg:text-4,5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-          <span className="block">MedSinai: Sua Saúde Completa,</span> 
-          <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-           Seus Benefícios Ilimitados
-         </span>
-       </h1>
-        <p className="text-lg lg:text-xl text-gray-600 dark:text-gray-300 mb-8">
-          O super app que cuida da sua saúde e do seu bolso, com telemedicina, clube de vantagens exclusivo e muito mais.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <button 
-            onClick={() => scrollToSection('plans')}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
-          >
-            Ver Planos
-          </button>
-          <button 
-            onClick={openWhatsApp}
-            className="px-6 py-3 border border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 dark:text-green-400 dark:border-green-400 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-            </svg>
-            Fale com um Consultor
-          </button>
-        </div>
-      </div>
+    
+    {/* 
+      ESTRUTURA RESPONSIVA:
+      - Padrão (mobile): flex-col (empilhado)
+      - Telas grandes (lg): grid com 2 colunas
+    */}
+    <div className="flex flex-col lg:grid lg:grid-cols-2 gap-y-10 lg:gap-x-8 items-center">
+      
 
-            <div className="relative">
-
-            <Swiper
-              ref={swiperRef}
-              modules={[Navigation, Autoplay]}
-              spaceBetween={30}
-              slidesPerView={1}
-              navigation={false}
-              loop={true}
-              autoplay={{
-                delay: 5000,
-                disableOnInteraction: false
-            }}
-            className="rounded-2xl shadow-lg"
-            >
-              <SwiperSlide>
-                <img
-                src={bannerImage}
-                alt="MedSinai - Cuidado completo"
-                className="w-full h-full object-cover"
-                />
-                </SwiperSlide>
-                <SwiperSlide>
-                  <img
-                  src={carrosselImg2}
-                  alt="Clube de Vantagens"
-                  className="w-full h-full object-cover"
-                  />
-                  </SwiperSlide>
-                  <SwiperSlide>
-                    <img
-                    src={carrosselImg3}
-                    alt="Atendimento 24hrs"
-                    className="w-full h-full object-cover"
-                    />
-                  </SwiperSlide>
-                  </Swiper>
-                  
-                    <button
-                    onClick={() => swiperRef.current?.swiper.slidePrev()}
-                    className="absolute top-1/2 -translate-y-1/2 left-2 z-10 p-2 rounded-full bg-white/50 hover:bg-white/80 transition"
-                  >
-                   <svg xmlns="http://www.w3.org/2000/svg"  className="h-6 w-6 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                   </svg>
-                </button>
-                   <button
-                    onClick={(  ) => swiperRef.current?.swiper.slideNext()}
-                    className="absolute top-1/2 -translate-y-1/2 right-2 z-10 p-2 rounded-full bg-white/50 hover:bg-white/80 transition"
-                  >
-                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-               </button>
-                  </div>
-               </div>
-               {/* =================================================================== */}
-               {/* ============ NOVA SEÇÃO DE ESTATÍSTICAS (PROVA SOCIAL) ============ */}
-               {/* =================================================================== */}
-<div className="py-12">
-  <div className="container mx-auto">
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 border border-gray-300 dark:border-gray-600">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-        
-        {/* Estatística 1: Usuários */}
-        <div className="flex flex-col items-center">
-          <div className="flex items-center text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-            <span className="mr-1">+</span>
-            <CountUp end={1000000} duration={3} />
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">De usuários no Brasil</p>
-        </div>
-
-        {/* Estatística 2: Atendimento */}
-        <div className="flex flex-col items-center border-t-2 md:border-t-0 md:border-l-2 md:border-r-2 border-gray-200 dark:border-gray-700 py-4 md:py-0">
-          <div className="flex items-center text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-            <CountUp end={24} duration={3} suffix="hrs" />
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Atendimento</p>
-        </div>
-
-        {/* Estatística 3: Avaliação */}
-        <div className="flex flex-col items-center">
-          <div className="flex items-center text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-            <CountUp end={4.9} duration={3} decimals={1} separator="." />
-            <span className="text-yellow-400 ml-2">★★★</span>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Satisfação dos Usuarios</p>
-        </div>
-      </div>
-    </div>
+      <div className="text-left"> 
+  <p className="text-base font-semibold text-blue-500 dark:text-blue-400">
+    A telemedicina salva vidas
+  </p>
+<h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white my-4 leading-tight">
+  Tenha médicos 
+  <br className="hidden lg:block" /> disponíveis 24h por dia, 
+  <br className="hidden lg:block" /> aonde estiver!
+</h1>
+  <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+     Cuidado completo para sua família e seus pets, aonde estiver!
+     <br className="hidden lg:block" /> com especialistas a um clique, sem filas ou longas esperas.
+  </p>
+  
+  <div className="flex justify-start"> {/* 2. Remove 'justify-center' */}
+    <button 
+      onClick={() => scrollToSection('plans')}
+      className="px-24 py-3 bg-gradient-to-r from-green-400 to-blue-400 text-white rounded-lg font-bold hover:opacity-90 transition-opacity shadow-md"
+    >
+      Ver Planos
+    </button>
   </div>
 </div>
-        </div>
-      </section>
- <FadeIn>
-<section className="py-16 bg-white dark:bg-gray-900 sm:py-24">
+
+
+ <div className="w-full aspect-video rounded-2xl shadow-lg overflow-hidden">
+  <img
+    src={bannerImage}
+    alt="MedSinai - Saúde para toda a família"
+    className="w-full h-full object-cover" 
+  />
+</div>
+
+    </div>
+  </div>
+</section>
+<section className="py-16 bg-white dark:bg-gray-900 sm:py-0">
   <div className="container mx-auto px-4 sm:px-6 lg:px-8">
     {/* Título da Seção */}
     <div className="text-center mb-12">
@@ -304,41 +219,82 @@ const comoFuncionaSteps = [
     </div>
   </div>
 </section>
-</FadeIn>
+ <section id="services" className="py-16 bg-white dark:bg-gray-900 sm:py-24">
+    <div className="container mx-auto px-4">
+      
+      {/* Grid principal com duas colunas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
- <FadeIn>
-      <section id="services" className="py-16 px-6 bg-white dark:bg-gray-900">
-  <div className="container mx-auto">
-    <div className="text-center mb-12">
-      <h2 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-        <span className="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">Cuidado Completo em um Só App</span>
-      </h2>
-      <p className="text-xl text-gray-600 dark:text-gray-400">
-        Acesso a profissionais de saúde qualificados, atendimento 24h e benefícios exclusivos que cuidam da sua saúde e do seu bolso.
-      </p>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {[
-        { icon: "🩺", title: "Clínico Geral 24h", desc: "Atendimento médico disponível 24 horas por dia, 7 dias por semana, sem filas ou agendamento." },
-        { icon: "🧠", title: "Psicólogos", desc: "Cuidado integral da saúde mental com profissionais especializados." },
-        { icon: "🍎", title: "Nutricionistas", desc: "Acompanhamento personalizado para alcançar seus objetivos de saúde." },
-        { icon: "👶", title: "Pediatras", desc: "Cuidado especializado para a saúde de bebês, crianças e adolescentes." },
-        { icon: "♀️", title: "Ginecologistas", desc: "Atenção completa à saúde da mulher em todas as fases da vida." },
-        { icon: "✨", title: "Dermatologistas", desc: "Tratamento e prevenção para a saúde da sua pele, cabelos e unhas." },
-        { icon: "🐕", title: "Médicos Veterinários", desc: "Cuidado completo para seus cães e gatos, garantindo a saúde de toda a família." },
-        { icon: "💪", title: "Treinadores Físicos", desc: "Exercícios e orientações para manter seu corpo saudável e ativo." },
-        { icon: "👨‍👩‍👧‍👦", title: "Dependentes Inclusos", desc: "Filhos menores de 18 anos inclusos sem custo adicional." },
-      ].map((service, index ) => (
-        <div key={index} className="text-center p-6 rounded-lg border border-gray-300 dark:bg-gray-800 dark:border-gray-600 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-          <div className="text-4xl mb-4">{service.icon}</div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{service.title}</h3>
-          <p className="text-gray-600 dark:text-gray-400">{service.desc}</p>
+        {/* ================================================= */}
+        {/* === COLUNA DA ESQUERDA: IMAGEM (AGORA SIMPLES) === */}
+        {/* ================================================= */}
+        <div className="px-4 lg:px-0"> {/* Adicionado um padding para respiro no mobile */}
+          <img 
+            src={beneficiosHero} // Sua imagem com as especialidades
+            alt="Aplicativo MedSinai mostrando todas as especialidades disponíveis" 
+            className="rounded-2xl shadow-4xl w-full h-auto" 
+          />
         </div>
-      ))}
+
+        {/* COLUNA DA DIREITA: TEXTO E LISTA DE BENEFÍCIOS */}
+        <div>
+          {/* Título e Subtítulo */}
+          <div className="mb-10 text-center lg:text-left">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Saúde sem Complicações
+            </h2>
+            <p className="text-xm text-gray-600 dark:text-gray-400">
+              Descubra por que a MedSinai é a solução completa para o seu bem-estar e da sua família.
+            </p>
+          </div>
+
+          {/* Lista de Benefícios (Refinada) */}
+          <ul className="space-y-8">
+            
+            {/* Benefício 1: Atendimento Imediato (Ícone de Raio) */}
+            <li className="flex items-start">
+              <div className="flex-shrink-0 bg-green-100 dark:bg-green-900/50 p-3 rounded-full mr-5">
+                <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-1">Atendimento Imediato e Ilimitado</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Fale com Clínicos Gerais, Pediatras e Veterinários 24h por dia, sem agendamento, sem triagem e sem custos extras. É só chamar e ser atendido.
+                </p>
+              </div>
+            </li>
+
+            {/* Benefício 2: Mais Especialidades (Ícone de Calendário) */}
+            <li className="flex items-start">
+              <div className="flex-shrink-0 bg-green-100 dark:bg-green-900/50 p-3 rounded-full mr-5">
+                <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-1">Mais Especialistas à sua Disposição</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Acesso ilimitado a Psicólogos, Nutricionistas, Dermatologistas e muito mais, com a flexibilidade de agendar suas consultas no melhor horário para você.
+                </p>
+              </div>
+            </li>
+
+            {/* Benefício 3: Dependentes Inclusos (Ícone de Família) */}
+            <li className="flex items-start">
+              <div className="flex-shrink-0 bg-green-100 dark:bg-green-900/50 p-3 rounded-full mr-5">
+                <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M12 12a4 4 0 110-8 4 4 0 010 8z"></path></svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-1">Família Protegida, Sem Custo Adicional</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Inclua seus filhos e dependentes menores de 18 anos em seu plano sem pagar nada a mais por isso. O cuidado se estende a quem você mais ama.
+                </p>
+              </div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>
-</section></FadeIn>
+  </section>
 
 {/* =================================================================== */}
 {/* ================= NOOVA SEÇÃO: FAÇA O UPGRADE (AJUSTADA) =========== */}
@@ -471,7 +427,7 @@ const comoFuncionaSteps = [
       slidesPerView={1} // Padrão para telas pequenas
       loop={true}
       autoplay={{
-        delay: 8000,
+        delay: 5000,
         disableOnInteraction: true,
       }}
       breakpoints={{

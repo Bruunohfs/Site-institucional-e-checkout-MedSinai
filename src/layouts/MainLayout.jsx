@@ -8,6 +8,12 @@ import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
 // ===================================================================
 // =================== ÍCONES PARA O RODAPÉ ==========================
 // ===================================================================
+const UserIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>
+);
+
 const InstagramIcon = () => (
   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.27.058 2.15.298 2.92.598.78.3 1.45.75 2.01 1.31s1.01 1.23 1.31 2.01c.3.77.54 1.65.598 2.92.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.058 1.27-.298 2.15-.598 2.92-.3.78-.75 1.45-1.31 2.01s-1.23 1.01-2.01 1.31c-.77.3-1.65.54-2.92.598-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.27-.058-2.15-.298-2.92-.598-.78-.3-1.45-.75-2.01-1.31s-1.01-1.23-1.31-2.01c-.3-.77-.54-1.65-.598-2.92-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.058-1.27.298-2.15.598-2.92.3-.78.75-1.45 1.31-2.01s1.23-1.01 2.01-1.31c.77-.3 1.65-.54 2.92-.598C8.416 2.175 8.796 2.163 12 2.163zm0 1.44c-3.115 0-3.486.01-4.706.06-1.14.05-1.8.25-2.3.45-.55.23-.98.5-1.4.95-.45.45-.72.85-.95 1.4-.2.5-.4 1.16-.45 2.3-.05 1.22-.06 1.59-.06 4.706s.01 3.486.06 4.706c.05 1.14.25 1.8.45 2.3.23.55.5.98.95 1.4.45.45.85.72 1.4.95.5.2 1.16.4 2.3.45 1.22.05 1.59.06 4.706.06s3.486-.01 4.706-.06c1.14-.05 1.8-.25 2.3-.45.55-.23.98-.5 1.4-.95.45-.45.72-.85-.95-1.4.2-.5.4-1.16.45-2.3.05-1.22.06-1.59.06-4.706s-.01-3.486-.06-4.706c-.05-1.14-.25-1.8-.45-2.3-.23-.55-.5-.98-.95-1.4-.45-.45-.85-.72-1.4-.95-.5-.2-1.16-.4-2.3-.45-1.22-.05-1.59-.06-4.706-.06zM12 6.8c-2.86 0-5.18 2.32-5.18 5.18s2.32 5.18 5.18 5.18 5.18-2.32 5.18-5.18-2.32-5.18-5.18-5.18zm0 8.74c-1.96 0-3.56-1.6-3.56-3.56s1.6-3.56 3.56-3.56 3.56 1.6 3.56 3.56-1.6 3.56-3.56 3.56zm4.86-8.82c-.6 0-1.08.48-1.08 1.08s.48 1.08 1.08 1.08 1.08-.48 1.08-1.08-.48-1.08-1.08-1.08z" />
@@ -105,12 +111,12 @@ function MainLayout() {
   return (
     <div className={`min-h-screen w-full flex flex-col bg-gray-50 dark:bg-gray-900`}>
       <header className={`relative px-4 sm:px-6 py-4 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-gradient-to-r from-green-400 to-blue-400 shadow-lg' : 'bg-transparent'}`}>
-        <div className="w-full flex items-center justify-between gap-4">
+         <div className="container mx-auto w-full flex items-center justify-between gap-4">
           
-          {/* --- GRUPO DA ESQUERDA: Logo (Sempre visível) --- */}
+          {/* --- GRUPO DA ESQUERDA: Logo --- */}
           <Link to="/" className="flex items-center gap-x-3 flex-shrink-0">
             <img src={logo} alt="MedSinai Logo" className="h-10 w-auto" />
-            <span className={`hidden sm:block text-2xl font-bold ${navLinkTextColor}`}>
+            <span className={`text-2xl font-bold ${navLinkTextColor}`}> {/* <-- CLASSES REMOVIDAS AQUI */}
               MedSinai
             </span>
           </Link>
@@ -131,10 +137,10 @@ function MainLayout() {
                 Para Empresas
                 <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
               </Link>
-              <button onClick={openWhatsApp} className={`${navLinkClasses} group`}>
-                Contato
-                <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
-              </button>
+              <Link to="/sejaparceiro" onClick={handleLinkClick} className={`${navLinkClasses} group`}>
+              Seja um Parceiro
+              <HeartbeatLine className="opacity-0 group-hover:opacity-100" />
+            </Link>
             </nav>
           )}
 
@@ -147,12 +153,13 @@ function MainLayout() {
             {!isCheckoutPage && (
               <>
                 <div className="hidden lg:flex items-center gap-x-4">
-                  <button onClick={openWhatsApp} className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors whitespace-nowrap">
-                    Entre em Contato
-                  </button>
-                  <button onClick={() => handleNavigateAndScroll('plans')} className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors whitespace-nowrap">
-                    Assinar Agora
-                  </button>
+                  <Link 
+                  to="/parceiros/login" 
+                  className="flex items-center gap-x-2 px-3 py-2 rounded-lg bg-white text-green-600 font-bold hover:bg-gray-200 transition-colors whitespace-nowrap shadow-sm"
+                >
+                  <UserIcon />
+                  Portal do Parceiro
+                </Link>
                 </div>
 
                 <div className="lg:hidden">
@@ -181,16 +188,18 @@ function MainLayout() {
             <Link to="/empresas" onClick={handleLinkClick} className="block w-full text-left text-white font-medium py-2 hover:text-yellow-200 transition-colors">
               Para Empresas
             </Link>
-            <button onClick={openWhatsApp} className="block w-full text-left text-white font-medium py-2 hover:text-orange-200 transition-colors">
-              Contato
-            </button>
+            <Link to="/sejaparceiro" onClick={handleLinkClick} className="block w-full text-left text-white font-medium py-2 hover:text-yellow-200 transition-colors">
+              Seja um Parceiro
+            </Link>
             <div className="border-t border-white/20 pt-4 space-y-4">
-              <button onClick={openWhatsApp} className="w-full px-4 py-3 rounded-lg bg-white text-green-600 font-medium hover:bg-gray-100 transition-colors">
-                Entre em Contato
-              </button>
-              <button onClick={() => handleNavigateAndScroll('plans')} className="w-full px-4 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors">
-                Assinar Agora
-              </button>
+              <Link 
+                to="/parceiros/login" 
+                onClick={handleLinkClick} // Fecha o menu ao clicar
+                className="w-full flex items-center justify-center gap-x-2 px-4 py-3 rounded-lg bg-white text-green-600 font-medium hover:bg-gray-100 transition-colors"
+                >
+                <UserIcon />
+                Portal do Parceiro
+              </Link>
             </div>
           </div>
         </div>

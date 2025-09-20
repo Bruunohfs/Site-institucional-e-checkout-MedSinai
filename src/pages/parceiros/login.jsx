@@ -107,7 +107,7 @@ const handleLogin = async (e) => {
         </div>
 
         <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
-          Portal de Parceiros
+          Portal do Parceiro
         </h1>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -148,7 +148,7 @@ const handleLogin = async (e) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-2 font-semibold text-white bg-gradient-to-r from-green-400 to-blue-400 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-4 font-semibold text-white bg-gradient-to-r from-green-400 to-blue-400 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Entrando...' : 'Entrar'}
             </button>

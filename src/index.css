@@ -13,3 +13,41 @@
     font-family: 'Montserrat', sans-serif; /* <-- Sem as barras invertidas! */
   }
 }
+/* ================================================= */
+/* === ESTILIZAÇÃO AVANÇADA DA PAGINAÇÃO DO SWIPER === */
+/* ================================================= */
+
+/* 1. Posiciona o contêiner da paginação */
+.swiper-pagination {
+  position: absolute;
+  bottom: 20px !important; /* Distância da base */
+  left: 50% !important; /* Centraliza horizontalmente */
+  transform: translateX(-50%) !important; /* Ajuste fino da centralização */
+  width: auto !important; /* Largura automática para caber as bolinhas */
+  
+  /* (Opcional) Adiciona um fundo para destaque */
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(4px);
+  padding: 8px 16px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 2. Estilo para todas as bolinhas (inativas) */
+.swiper-pagination-bullet {
+  width: 14px; /* Tamanho maior */
+  height: 14px; /* Tamanho maior */
+  background-color: transparent;
+  border: 2px solid #514b63; /* Cinza mais escuro para melhor contraste */
+  opacity: 0.5;
+  transition: all 0.3s ease;
+  margin: 0 6px !important; /* Espaçamento entre as bolinhas */
+}
+
+/* 3. Estilo para a bolinha do slide ATIVO */
+.swiper-pagination-bullet-active {
+  background-color: #10B981; /* Verde mais vibrante */
+  border-color: #10B981;
+  opacity: 1;
+  transform: scale(1.1);
+}

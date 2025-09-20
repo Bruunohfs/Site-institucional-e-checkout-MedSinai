@@ -23,6 +23,7 @@ import FinanceiroAdminPage from './pages/admin/FinanceiroAdminPage';
 import FinanceiroParceiroPage from './pages/parceiros/FinanceiroParceiroPage';
 import OportunidadesPage from './pages/parceiros/OportunidadesPage';
 import CalculadoraPage from './pages/parceiros/CalculadoraPage';
+import ParceirosPage from './pages/ParceirosPage';
 
 
 // Crie as rotas
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { index: true, element: <App /> },
       { path: "empresas", element: <EmpresasPage /> },
       { path: "/pagamento/:tipoPlano/:idDoPlano", element: <CheckoutPage /> },
+      { path: "sejaparceiro", element: <ParceirosPage /> },
     ],
   },
   
