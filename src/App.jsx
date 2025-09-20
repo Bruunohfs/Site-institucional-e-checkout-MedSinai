@@ -169,7 +169,7 @@ const comoFuncionaSteps = [
   <br className="hidden lg:block" /> aonde estiver!
 </h1>
   <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-     Cuidado completo para sua família e seus pets, aonde estiver!
+     Cuidado completo para sua família e seus pets,
      <br className="hidden lg:block" /> com especialistas a um clique, sem filas ou longas esperas.
   </p>
   
