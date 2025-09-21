@@ -1,3 +1,5 @@
+// src/pages/partner/OportunidadesPage.jsx
+
 import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { usePartnerData } from '@/hooks/usePartnerData';
@@ -8,7 +10,7 @@ const StatCard = ({ title, value, icon }) => ( <div className="bg-white dark:bg-
 const formatSimpleDate = (dateString) => { if (!dateString) return 'N/A'; const date = new Date(dateString); const userTimezoneOffset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR'); };
 const formatCurrency = (value) => { if (typeof value !== 'number') return 'R$ 0,00'; return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
 
-const STATUS_STYLES = { 'Pendente': 'bg-yellow-300 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400', 'Atrasado': 'bg-red-400 text-red-800 dark:bg-red-500/20 dark:text-red-400', 'Cancelado': 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400', 'Com Problema': 'bg-red-200 text-red-900 dark:bg-red-500/30 dark:text-red-300', 'Default': 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' };
+const STATUS_STYLES = { 'Pendente': 'bg-yellow-300 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400', 'Atrasado': 'bg-orange-400 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400', 'Cancelado': 'bg-red-400 text-red-800 dark:bg-red-500/20 dark:text-red-400', 'Com Problema': 'bg-red-500 text-red-900 dark:bg-red-500/30 dark:text-red-300', 'Default': 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' };
 const STATUS_TRANSLATIONS = { 'PENDING': 'Pendente', 'OVERDUE': 'Atrasado', 'AWAITING_RISK_ANALYSIS': 'Pendente', 'REFUNDED': 'Cancelado', 'CHARGEBACK': 'Com Problema', 'CANCELLED': 'Cancelado' };
 const getStatusInfo = (status) => { const translated = STATUS_TRANSLATIONS[status] || 'Outro'; return { translated, style: STATUS_STYLES[translated] || STATUS_STYLES.Default }; };
 
@@ -21,49 +23,27 @@ export default function OportunidadesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITENS_POR_PAGINA = 20;
 
-  const oportunidades = useMemo(() => {
-    return vendas.filter(venda => 
-      venda.status_pagamento !== 'CONFIRMED' && venda.status_pagamento !== 'RECEIVED'
-    );
-  }, [vendas]);
-
-  const kpis = useMemo(() => {
-    return oportunidades.reduce((acc, venda) => {
-      acc.comissaoTotal += venda.valor * TAXA_COMISSAO;
-      return acc;
-    }, { comissaoTotal: 0 });
-  }, [oportunidades]);
-
-  const requestSort = (key) => { 
-    let direction = 'asc'; 
-    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc'; 
-    setSortConfig({ key, direction }); 
-    setCurrentPage(1);
-  };
+  const oportunidades = useMemo(() => { return vendas.filter(venda => venda.status_pagamento !== 'CONFIRMED' && venda.status_pagamento !== 'RECEIVED'); }, [vendas]);
+  const kpis = useMemo(() => { return oportunidades.reduce((acc, venda) => { acc.comissaoTotal += venda.valor * TAXA_COMISSAO; return acc; }, { comissaoTotal: 0 }); }, [oportunidades]);
+  const requestSort = (key) => { let direction = 'asc'; if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc'; setSortConfig({ key, direction }); setCurrentPage(1); };
 
   const oportunidadesProcessadas = useMemo(() => {
     return [...oportunidades]
       .filter(venda => {
         if (filtroStatus === 'todos') return true;
-        const statusTraduzido = getStatusInfo(venda.status_pagamento).translated.toLowerCase().replace(' ', '-');
-        return filtroStatus === statusTraduzido;
+        const statusInfo = getStatusInfo(venda.status_pagamento);
+        return statusInfo.translated.toLowerCase().replace(' ', '-') === filtroStatus;
       })
       .sort((a, b) => { 
-        const valA = a[sortConfig.key];
-        const valB = b[sortConfig.key];
-        if (valA === null || valA === undefined) return 1;
-        if (valB === null || valB === undefined) return -1;
+        const valA = a[sortConfig.key]; const valB = b[sortConfig.key];
+        if (valA === null || valA === undefined) return 1; if (valB === null || valB === undefined) return -1;
         if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1; 
         if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1; 
         return 0; 
       });
   }, [oportunidades, filtroStatus, sortConfig]);
 
-  const oportunidadesPaginadas = useMemo(() => {
-    const firstPageIndex = (currentPage - 1) * ITENS_POR_PAGINA;
-    return oportunidadesProcessadas.slice(firstPageIndex, firstPageIndex + ITENS_POR_PAGINA);
-  }, [oportunidadesProcessadas, currentPage]);
-
+  const oportunidadesPaginadas = useMemo(() => { const firstPageIndex = (currentPage - 1) * ITENS_POR_PAGINA; return oportunidadesProcessadas.slice(firstPageIndex, firstPageIndex + ITENS_POR_PAGINA); }, [oportunidadesProcessadas, currentPage]);
   const totalPages = Math.ceil(oportunidadesProcessadas.length / ITENS_POR_PAGINA);
 
   if (loading) return <div className="p-8"><p className="text-gray-700 dark:text-gray-300">Carregando suas oportunidades...</p></div>;
@@ -91,8 +71,12 @@ export default function OportunidadesPage() {
           <button onClick={() => setFiltroStatus('cancelado')} className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${filtroStatus === 'cancelado' ? 'bg-red-500 text-white border-red-400' : 'bg-transparent dark:bg-gray-700'}`}>Cancelados</button>
         </div>
 
+        {/* =================================================================== */}
+        {/* ==> A MÁGICA DA RESPONSIVIDADE ACONTECE AQUI <== */}
+        {/* =================================================================== */}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          {/* Tabela para Desktop */}
+          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 hidden md:table">
             <thead className="text-xs text-gray-700 uppercase bg-gray-300 dark:bg-gray-700 dark:text-gray-300">
               <tr>
                 <Th sortKey="created_at">Data</Th>
@@ -130,6 +114,44 @@ export default function OportunidadesPage() {
               )}
             </tbody>
           </table>
+
+          {/* Lista de Cartões para Mobile */}
+          <div className="divide-y divide-gray-200 dark:divide-gray-700 md:hidden">
+            {oportunidadesPaginadas.length > 0 ? (
+              oportunidadesPaginadas.map(venda => {
+                const statusInfo = getStatusInfo(venda.status_pagamento);
+                return (
+                  <div key={venda.id} className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <p className="font-bold text-lg text-gray-900 dark:text-white">{venda.nome_cliente}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{venda.nome_plano}</p>
+                      </div>
+                       <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${statusInfo.style}`}>
+                        {statusInfo.translated}
+                      </span>
+                    </div>
+                    <div className="text-sm space-y-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Contato:</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200 text-right">{venda.email_cliente || venda.telefone_cliente || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Comissão:</span>
+                        <span className="font-bold text-yellow-600 dark:text-yellow-400">{formatCurrency(venda.valor * TAXA_COMISSAO)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 dark:text-gray-400">Vencimento:</span>
+                        <span className="text-gray-700 dark:text-gray-300">{formatSimpleDate(venda.data_vencimento)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-10 px-6">Nenhuma oportunidade encontrada. Parabéns, todas as suas vendas foram pagas!</div>
+            )}
+          </div>
         </div>
         
         {totalPages > 1 && (

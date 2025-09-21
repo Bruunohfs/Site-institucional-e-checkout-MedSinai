@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useVendasData } from '@/hooks/useVendasData';
 
-// --- Componentes auxiliares (sem alterações) ---
+// --- Componentes e Funções Auxiliares (sem alterações) ---
 const KpiCard = ({ title, value, icon }) => ( <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center gap-4 shadow-sm"><div className="text-2xl md:text-3xl text-blue-500 dark:text-blue-400">{icon}</div><div className="flex-1 overflow-hidden"><h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</h3><p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">{value}</p></div></div> );
 const FilterButton = ({ label, value, activeFilter, setFilter }) => ( <button onClick={() => setFilter(value)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ${ activeFilter === value ? 'bg-gradient-to-r from-green-400 to-blue-400 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-000 dark:hover:bg-gray-600 border border-gray-400 dark:border-gray-600' }`}>{label}</button> );
 const formatCurrency = (value) => { if (typeof value !== 'number') return 'R$ 0,00'; return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
@@ -26,55 +26,17 @@ export default function VisaoGeralVendas() {
 
   const dadosFiltrados = useMemo(() => {
     if (!vendasComNomes) return { kpis: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 }, vendas: [] };
-
     let filtroMesAno = null;
     const agora = new Date();
     if (filtroPeriodo === 'month') { filtroMesAno = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`; } 
     else if (filtroPeriodo === 'custom' && mesCustomizado) { filtroMesAno = mesCustomizado; }
-
-    const vendasNoPeriodo = vendasComNomes.filter(venda => {
-      const dataCompetencia = new Date(venda.data_competencia);
-      if (filtroPeriodo === 'today') { return dataCompetencia.getFullYear() === agora.getFullYear() && dataCompetencia.getMonth() === agora.getMonth() && dataCompetencia.getDate() === agora.getDate(); }
-      if (filtroMesAno) { const mesAnoCompetencia = `${dataCompetencia.getFullYear()}-${String(dataCompetencia.getMonth() + 1).padStart(2, '0')}`; return mesAnoCompetencia === filtroMesAno; }
-      return true;
-    });
-
+    const vendasNoPeriodo = vendasComNomes.filter(venda => { const dataCompetencia = new Date(venda.data_competencia); if (filtroPeriodo === 'today') { return dataCompetencia.getFullYear() === agora.getFullYear() && dataCompetencia.getMonth() === agora.getMonth() && dataCompetencia.getDate() === agora.getDate(); } if (filtroMesAno) { const mesAnoCompetencia = `${dataCompetencia.getFullYear()}-${String(dataCompetencia.getMonth() + 1).padStart(2, '0')}`; return mesAnoCompetencia === filtroMesAno; } return true; });
     let vendasParaCalculo = [...vendasNoPeriodo];
-    if (filtroStatus !== 'todos') {
-      const statusMap = { pagos: ['CONFIRMED', 'RECEIVED'], pendentes: ['PENDING', 'AWAITING_RISK_ANALYSIS'], atrasados: ['OVERDUE'], problemas: ['REFUNDED', 'CHARGEBACK', 'CANCELLED'] };
-      vendasParaCalculo = vendasParaCalculo.filter(v => statusMap[filtroStatus]?.includes(v.status_pagamento));
-    }
-    
-    // ===================================================================
-    // ==> CORREÇÃO PARA CONTAR VENDAS ÚNICAS <==
-    // ===================================================================
+    if (filtroStatus !== 'todos') { const statusMap = { pagos: ['CONFIRMED', 'RECEIVED'], pendentes: ['PENDING', 'AWAITING_RISK_ANALYSIS'], atrasados: ['OVERDUE'], problemas: ['REFUNDED', 'CHARGEBACK', 'CANCELLED'] }; vendasParaCalculo = vendasParaCalculo.filter(v => statusMap[filtroStatus]?.includes(v.status_pagamento)); }
     const idsVendasUnicas = new Set();
-    const kpis = vendasParaCalculo.reduce((acc, venda) => {
-      const isPaga = venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED';
-      if (isPaga) {
-        acc.faturamento += venda.valor;
-        if (venda.id_parceiro) acc.comissaoAPagar += venda.valor * 0.4;
-        
-        // Adiciona o ID principal da cobrança ao Set. Se já existir, não faz nada.
-        const idUnico = venda.id_cobranca_principal || venda.id;
-        idsVendasUnicas.add(idUnico);
-      }
-      return acc;
-    }, { faturamento: 0, comissaoAPagar: 0 });
-
-    // O número de vendas confirmadas é o tamanho do Set.
+    const kpis = vendasParaCalculo.reduce((acc, venda) => { const isPaga = venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED'; if (isPaga) { acc.faturamento += venda.valor; if (venda.id_parceiro) acc.comissaoAPagar += venda.valor * 0.4; const idUnico = venda.id_cobranca_principal || venda.id; idsVendasUnicas.add(idUnico); } return acc; }, { faturamento: 0, comissaoAPagar: 0 });
     kpis.vendasConfirmadas = idsVendasUnicas.size;
-
-    vendasParaCalculo.sort((a, b) => {
-      const valA = a[sortConfig.key]; const valB = b[sortConfig.key];
-      if (valA === null || valA === undefined) return 1;
-      if (valB === null || valB === undefined) return -1;
-      if (typeof valA === 'number' && typeof valB === 'number') { return sortConfig.direction === 'asc' ? valA - valB : valB - valA; }
-      if (String(valA) < String(valB)) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (String(valA) > String(valB)) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-
+    vendasParaCalculo.sort((a, b) => { const valA = a[sortConfig.key]; const valB = b[sortConfig.key]; if (valA === null || valA === undefined) return 1; if (valB === null || valB === undefined) return -1; if (typeof valA === 'number' && typeof valB === 'number') { return sortConfig.direction === 'asc' ? valA - valB : valB - valA; } if (String(valA) < String(valB)) return sortConfig.direction === 'asc' ? -1 : 1; if (String(valA) > String(valB)) return sortConfig.direction === 'asc' ? 1 : -1; return 0; });
     return { kpis, vendas: vendasParaCalculo };
   }, [vendasComNomes, filtroPeriodo, mesCustomizado, filtroStatus, sortConfig]);
 
@@ -98,9 +60,6 @@ export default function VisaoGeralVendas() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 ">
         <KpiCard title="Faturamento" value={formatCurrency(dadosFiltrados.kpis.faturamento)} icon="💰" />
         <KpiCard title="Comissão a Pagar" value={formatCurrency(dadosFiltrados.kpis.comissaoAPagar)} icon="🏆" />
-        {/* =================================================================== */}
-        {/* ==> MUDANÇA NO TÍTULO DO KPI <== */}
-        {/* =================================================================== */}
         <KpiCard title="Nº de Vendas Únicas" value={dadosFiltrados.kpis.vendasConfirmadas.toString()} icon="✅" />
       </div>
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-400 dark:border-gray-700 overflow-hidden shadow-sm">
@@ -121,8 +80,12 @@ export default function VisaoGeralVendas() {
         {!loading && !error && (
           dadosFiltrados.vendas.length > 0 ? (
             <>
+              {/* =================================================================== */}
+              {/* ==> A MÁGICA DA RESPONSIVIDADE ACONTECE AQUI <== */}
+              {/* =================================================================== */}
               <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[1200px]">
+                {/* Tabela para Desktop */}
+                <table className="w-full text-left min-w-[1200px] hidden md:table">
                   <thead className="bg-gray-300 dark:bg-gray-700/50 border-b border-gray-400 dark:border-gray-600">
                     <tr>
                       <SortableHeader sortKey="created_at" sortConfig={sortConfig} requestSort={requestSort}>Contratação</SortableHeader>
@@ -136,17 +99,12 @@ export default function VisaoGeralVendas() {
                   </thead>
                   <tbody>
                     {vendasPaginadas.map(venda => {
-                      let parcela = "";
-                      if (venda.nome_plano?.includes("Parcela")) { const match = venda.nome_plano.match(/Parcela (\d+) de (\d+)/); if (match) parcela = `${match[1]}/${match[2]}`; }
                       const badge = getStatusBadge(venda);
                       return (
                         <tr key={venda.id} className="border-b border-gray-300 dark:border-gray-700 last:border-b-0 hover:bg-gray-300 dark:hover:bg-gray-700/50 transition-colors">
                           <td className="p-4 text-gray-700 dark:text-gray-300">{formatDate(venda.created_at)}</td>
                           <td className="p-4 text-gray-700 dark:text-gray-300">{venda.nome_cliente}</td>
-                          <td className="p-4">
-                            <div className="font-medium text-gray-800 dark:text-white">{venda.nome_plano}</div>
-                            {parcela && <div className="text-sm text-gray-500 dark:text-gray-400">Parcela {parcela}</div>}
-                          </td>
+                          <td className="p-4 font-medium text-gray-800 dark:text-white">{venda.nome_plano}</td>
                           <td className="p-4 font-semibold text-green-600 dark:text-green-400">{formatCurrency(venda.valor)}</td>
                           <td className="p-4 text-gray-700 dark:text-gray-300">{venda.nome_parceiro}</td>
                           <td className="p-4 font-medium text-gray-800 dark:text-white">{formatDate(venda.data_competencia)}</td>
@@ -156,7 +114,41 @@ export default function VisaoGeralVendas() {
                     })}
                   </tbody>
                 </table>
+
+                {/* Lista de Cartões para Mobile */}
+                <div className="divide-y divide-gray-200 dark:divide-gray-700 md:hidden">
+                  {vendasPaginadas.map(venda => {
+                    const badge = getStatusBadge(venda);
+                    return (
+                      <div key={venda.id} className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <p className="font-bold text-lg text-gray-900 dark:text-white">{venda.nome_cliente}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{venda.nome_plano}</p>
+                          </div>
+                          <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${badge.className}`}>
+                            {badge.label}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                          <div className="text-gray-500 dark:text-gray-400">Valor:</div>
+                          <div className="font-semibold text-green-600 dark:text-green-400 text-right">{formatCurrency(venda.valor)}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400">Competência:</div>
+                          <div className="text-gray-700 dark:text-gray-300 text-right">{formatDate(venda.data_competencia)}</div>
+
+                          <div className="text-gray-500 dark:text-gray-400">Parceiro:</div>
+                          <div className="text-gray-700 dark:text-gray-300 text-right">{venda.nome_parceiro || 'N/A'}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400">Contratação:</div>
+                          <div className="text-gray-700 dark:text-gray-300 text-right">{formatDate(venda.created_at)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+              
               {totalPages > 1 && ( <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700"> <span>Página {currentPage} de {totalPages}</span> <div className="flex gap-2"> <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Anterior</button> <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Próxima</button> </div> </div> )}
             </>
           ) : ( <div className="text-center py-10 text-gray-500 dark:text-gray-400">Nenhuma venda encontrada para os filtros selecionados.</div> )

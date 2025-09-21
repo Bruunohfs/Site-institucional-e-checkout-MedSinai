@@ -12,6 +12,8 @@ import parceirosCinemaImg from '@/assets/logos/logoscinema.png';
 import parceirosCashbackImg from '@/assets/logos/logosmarcas.png';
 import { useSearchParams } from 'react-router-dom';
 import beneficiosHero from './assets/beneficios-hero.jpg';
+import appImage from './assets/appmedsinai.png';
+import ServicesSection from './components/ServicesSection';
 
 
 
@@ -30,6 +32,8 @@ function App() {
   const whatsappNumber = "16992291295";
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
   const planosAtivos = isAnual ? planosAnuais : planosMensais;
+
+const especialidades = [ 'Clínico geral 24h', 'Psicólogo', 'Ginecologista', 'Nutricionista', 'Dermatologista', 'Personal Trainer', 'Pediatra', 'Médico veterinário' ];
 
   const handleAssinarAgora = (plano) => {
   const tipoPlano = isAnual ? 'anual' : 'mensal';
@@ -136,7 +140,7 @@ const comoFuncionaSteps = [
   {
     icon: "📱",
     title: "2. Baixe o App",
-    description: "Baixe o aplicativo Medsinai na App Store ou Google Play e insira seu código."
+    description: "Baixe o aplicativo Medsinai na App Store ou Play Store e insira seu código."
   },
   {
     icon: "💬",
@@ -148,7 +152,7 @@ const comoFuncionaSteps = [
   return (
     <div className="w-full">
 
-<section className="relative py-12 px-6 bg-gray-50 dark:bg-gray-900 pb-24 lg:pb-32">
+<section className="relative py-12 px-6 bg-gray-100 dark:bg-gray-800 pb-24 lg:pb-32">
   <div className="container mx-auto">
     
     {/* 
@@ -196,7 +200,7 @@ const comoFuncionaSteps = [
   </div>
 </section>
 
-<section className="py-16 bg-white dark:bg-gray-900 sm:py-0">
+<section className="py-16 bg-white dark:bg-gray-900 sm:py-20">
   <div className="container mx-auto px-4 sm:px-6 lg:px-8">
     {/* Título da Seção */}
     <div className="text-center mb-12">
@@ -220,86 +224,13 @@ const comoFuncionaSteps = [
     </div>
   </div>
 </section>
- <section id="services" className="py-16 bg-white dark:bg-gray-900 sm:py-24">
-  <div className="container mx-auto px-4">
-    
-    {/* ================================================= */}
-    {/* === NOVO BLOCO DE TÍTULO DA SEÇÃO === */}
-    {/* ================================================= */}
-    <div className="text-center mb-16">
-      <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        Saúde sem Complicações
-      </h2>
-      <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-        Descubra por que a MedSinai é a solução completa para o seu bem-estar e da sua família.
-      </p>
-    </div>
 
-    {/* Grid principal com duas colunas (agora sem o título interno) */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-      {/* COLUNA DA ESQUERDA: IMAGEM */}
-      <div>
-        <img 
-          src={beneficiosHero}
-          alt="Aplicativo MedSinai mostrando todas as especialidades disponíveis" 
-          className="rounded-2xl shadow-xl w-full h-auto"
-        />
-      </div>
-
-      {/* COLUNA DA DIREITA: APENAS A LISTA DE BENEFÍCIOS */}
-      <div>
-        <ul className="space-y-8">
-          
-          {/* Benefício 1: Atendimento Imediato */}
-          <li className="flex items-start">
-            <div className="flex-shrink-0 bg-green-100 dark:bg-green-900/50 p-3 rounded-full mr-5">
-              <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-1">Atendimento Imediato e Ilimitado</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Fale com Clínicos Gerais, Pediatras e Veterinários 24h por dia, sem agendamento, sem triagem e sem custos extras. É só chamar e ser atendido.
-              </p>
-            </div>
-          </li>
-
-          {/* Benefício 2: Mais Especialidades */}
-          <li className="flex items-start">
-            <div className="flex-shrink-0 bg-green-100 dark:bg-green-900/50 p-3 rounded-full mr-5">
-              <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-1">Mais Especialistas à sua Disposição</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Acesso ilimitado a Psicólogos, Nutricionistas, Dermatologistas e muito mais, com a flexibilidade de agendar suas consultas no melhor horário para você.
-              </p>
-            </div>
-          </li>
-
-          {/* Benefício 3: Dependentes Inclusos */}
-          <li className="flex items-start">
-            <div className="flex-shrink-0 bg-green-100 dark:bg-green-900/50 p-3 rounded-full mr-5">
-              <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M12 12a4 4 0 110-8 4 4 0 010 8z"></path></svg>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-1">Família Protegida, Sem Custo Adicional</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Inclua seus filhos e dependentes menores de 18 anos em seu plano sem pagar nada a mais por isso. O cuidado se estende a quem você mais ama.
-              </p>
-            </div>
-          </li>
-
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
+<ServicesSection />
 
 {/* =================================================================== */}
 {/* ================= NOOVA SEÇÃO: FAÇA O UPGRADE (AJUSTADA) =========== */}
 {/* =================================================================== */}
-<section className="py-16 px-6 bg-gray-50 dark:bg-gray-900">
+<section className="py-16 px-6 bg-white dark:bg-gray-900">
   <div className="container mx-auto">
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
       
@@ -352,7 +283,7 @@ const comoFuncionaSteps = [
  {/* =================================================================== */}
       {/* ============ NOVA SEÇÃO: CLUBE DE VANTAGENS (COM LOGOS LOCAIS) ====== */}
       {/* =================================================================== */}
-      <section className="py-16 bg-white dark:bg-gray-900 sm:py-24">
+      <section className="py-16 bg-gray-100 dark:bg-gray-800 sm:py-24">
   <div className="container mx-auto px-4">
     {/* Título Principal */}
     <div className="text-center mb-16">
@@ -503,7 +434,7 @@ const comoFuncionaSteps = [
   </div>
 </section>
 
-<section className="py-16 bg-white dark:bg-gray-900 sm:py-24">
+<section className="py-16 bg-gray-100 dark:bg-gray-800 sm:py-24">
   <div className="container mx-auto px-4">
     {/* Título da Seção */}
     <div className="text-center mb-12">
