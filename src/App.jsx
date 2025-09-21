@@ -152,49 +152,50 @@ const comoFuncionaSteps = [
   return (
     <div className="w-full">
 
-<section className="relative py-12 px-6 bg-gray-100 dark:bg-gray-800 pb-24 lg:pb-32">
-  <div className="container mx-auto">
-    
-    {/* 
-      ESTRUTURA RESPONSIVA:
-      - Padrão (mobile): flex-col (empilhado)
-      - Telas grandes (lg): grid com 2 colunas
-    */}
-    <div className="flex flex-col lg:grid lg:grid-cols-2 gap-y-10 lg:gap-x-8 items-center">
+<section className="relative bg-gray-100 dark:bg-gray-800 pt-12 pb-24 lg:pb-32">
+  <div className="container mx-auto px-0 lg:px-6">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-y-10 lg:gap-x-12 items-center">
       
+      {/* Coluna do Texto (sem alterações) */}
+      <div className="lg:col-span-2 text-left px-6 lg:px-0"> 
+        {/* ... conteúdo do texto ... */}
+        <p className="text-base font-semibold text-blue-500 dark:text-blue-400">
+          A telemedicina salva vidas
+        </p>
+        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white my-4 leading-tight">
+          Tenha médicos 
+          <br className="hidden lg:block" /> disponíveis 24h por dia, 
+          <br className="hidden lg:block" /> aonde estiver!
+        </h1>
+        <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
+          Cuidado completo para sua família e seus pets,
+          <br className="hidden lg:block" /> com especialistas a um clique, sem filas ou longas esperas.
+        </p>
+        <div className="flex justify-start">
+          <button 
+            onClick={() => scrollToSection('plans')}
+            className="px-24 py-3 bg-gradient-to-r from-green-400 to-blue-400 text-white rounded-lg font-bold hover:opacity-90 transition-opacity shadow-md"
+          >
+            Ver Planos
+          </button>
+        </div>
+      </div>
 
-      <div className="text-left"> 
-  <p className="text-base font-semibold text-blue-500 dark:text-blue-400">
-    A telemedicina salva vidas
-  </p>
-<h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white my-4 leading-tight">
-  Tenha médicos 
-  <br className="hidden lg:block" /> disponíveis 24h por dia, 
-  <br className="hidden lg:block" /> aonde estiver!
-</h1>
-  <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-     Cuidado completo para sua família e seus pets,
-     <br className="hidden lg:block" /> com especialistas a um clique, sem filas ou longas esperas.
-  </p>
-  
-  <div className="flex justify-start"> {/* 2. Remove 'justify-center' */}
-    <button 
-      onClick={() => scrollToSection('plans')}
-      className="px-24 py-3 bg-gradient-to-r from-green-400 to-blue-400 text-white rounded-lg font-bold hover:opacity-90 transition-opacity shadow-md"
-    >
-      Ver Planos
-    </button>
-  </div>
-</div>
-
-
- <div className="w-full aspect-video rounded-2xl shadow-lg overflow-hidden">
-  <img
-    src={bannerImage}
-    alt="MedSinai - Saúde para toda a família"
-    className="w-full h-full object-cover" 
-  />
-</div>
+      {/* Coluna da Imagem */}
+      <div className="lg:col-span-3 w-full aspect-video overflow-hidden rounded-none lg:rounded-2xl lg:shadow-lg">
+        {/* 
+          A MÁGICA ESTÁ AQUI:
+          - Usamos 'object-[25%_50%]' para definir o foco.
+          - 25% na horizontal: Puxa o ponto de foco para a esquerda do centro.
+          - 50% na vertical: Mantém o alinhamento vertical no centro.
+          - Você pode experimentar outros valores como 20%, 30%, 40% até achar o enquadramento perfeito!
+        */}
+        <img
+          src={bannerImage}
+          alt="MedSinai - Saúde para toda a família"
+          className="w-full h-full object-cover object-[35%_50%]" 
+        />
+      </div>
 
     </div>
   </div>
