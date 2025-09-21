@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import RegistrarPagamentoModal from './RegistrarPagamentoModal';
 
-// --- ÍCONES ---
+// --- ÍCONES (sem alterações) ---
 const DownloadIcon = ( ) => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg>;
-const ChevronDownIcon = (  ) => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>;
+const ChevronDownIcon = (   ) => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>;
 
-// --- FUNÇÕES DE FORMATAÇÃO E ESTILO ---
+// --- FUNÇÕES DE FORMATAÇÃO E ESTILO (sem alterações) ---
 const STATUS_STYLES = {
   PAGO_TOTAL: 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400',
   PAGO_PARCIAL: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400',
@@ -14,7 +14,6 @@ const STATUS_STYLES = {
   DEFAULT: 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'
 };
 const getStatusClasses = (status) => STATUS_STYLES[status] || STATUS_STYLES.DEFAULT;
-
 const formatCurrency = (value) => {
   const numberValue = Number(value);
   if (isNaN(numberValue)) {
@@ -22,7 +21,6 @@ const formatCurrency = (value) => {
   }
   return numberValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
-
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
@@ -30,7 +28,6 @@ const formatDate = (dateString) => {
   const month = date.getUTCMonth();
   return new Date(year, month, 2).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 };
-
 const formatSimpleDate = (dateString) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
@@ -38,9 +35,7 @@ const formatSimpleDate = (dateString) => {
   return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR');
 };
 
-// ===================================================================
-// ==> COMPONENTE DetalhesRow (VERSÃO FINAL CORRIGIDA) <==
-// ===================================================================
+// --- COMPONENTE DetalhesRow (sem alterações) ---
 function DetalhesRow({ fechamento }) {
   const [vendas, setVendas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +49,6 @@ function DetalhesRow({ fechamento }) {
       const ultimoDiaMes = new Date(mesReferencia.getUTCFullYear(), mesReferencia.getUTCMonth() + 1, 0, 23, 59, 59, 999).toISOString();
 
       try {
-        // Query para vendas NÃO PARCELADAS
         const { data: vendasNaoParceladas, error: error1 } = await supabase
           .from('vendas')
           .select('id, nome_cliente, nome_plano, valor, data_pagamento')
@@ -66,7 +60,6 @@ function DetalhesRow({ fechamento }) {
 
         if (error1) throw new Error(`Erro ao buscar vendas não parceladas: ${error1.message}`);
 
-        // Query para vendas PARCELADAS
         const { data: vendasParceladas, error: error2 } = await supabase
           .from('vendas')
           .select('id, nome_cliente, nome_plano, valor, data_vencimento')
@@ -78,7 +71,6 @@ function DetalhesRow({ fechamento }) {
 
         if (error2) throw new Error(`Erro ao buscar vendas parceladas: ${error2.message}`);
 
-        // Junta os resultados
         const todasAsVendas = [
           ...(vendasNaoParceladas || []).map(v => ({ ...v, data_competencia: v.data_pagamento })),
           ...(vendasParceladas || []).map(v => ({ ...v, data_competencia: v.data_vencimento }))
@@ -102,7 +94,6 @@ function DetalhesRow({ fechamento }) {
   return (
     <tr className="bg-gray-50 dark:bg-gray-900/50">
       <td colSpan="7" className="p-4 space-y-4">
-        {/* Seção de Observações e Comprovante */}
         {(fechamento.observacoes || fechamento.url_comprovante) && (
           <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
             <h4 className="font-bold text-md mb-3 text-gray-800 dark:text-white">Detalhes do Pagamento</h4>
@@ -124,8 +115,6 @@ function DetalhesRow({ fechamento }) {
             </div>
           </div>
         )}
-
-        {/* Seção de Vendas Detalhadas */}
         <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <h4 className="font-bold text-md mb-3 text-gray-800 dark:text-white">Vendas Inclusas neste Fechamento</h4>
           {loading ? (
@@ -164,7 +153,7 @@ function DetalhesRow({ fechamento }) {
   );
 }
 
-// --- COMPONENTE PRINCIPAL ---
+// --- COMPONENTE PRINCIPAL (COM ALTERAÇÕES) ---
 export default function FinanceiroAdminPage() {
   const [fechamentos, setFechamentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +161,16 @@ export default function FinanceiroAdminPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedFechamento, setSelectedFechamento] = useState(null);
   const [expandedRowId, setExpandedRowId] = useState(null);
+
+  // ===================================================================
+  // ==> ALTERAÇÃO 1: Adicionar estado para o seletor de mês <==
+  // ===================================================================
+  // Define o estado para o mês a ser gerado, inicializando com o mês anterior.
+  const [mesParaGerar, setMesParaGerar] = useState(() => {
+    const hoje = new Date();
+    hoje.setMonth(hoje.getMonth() - 1);
+    return hoje.toISOString().slice(0, 7); // Formato 'AAAA-MM'
+  });
 
   const fetchData = async () => {
     setLoading(true);
@@ -193,11 +192,20 @@ export default function FinanceiroAdminPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  // ===================================================================
+  // ==> ALTERAÇÃO 2: Modificar a função para usar o mês selecionado <==
+  // ===================================================================
   const handleGerarFechamento = async () => {
-    if (!confirm('Tem certeza que deseja gerar o fechamento para o mês anterior? Esta ação calculará as comissões de todos os parceiros para as vendas confirmadas no último mês.')) return;
+    const nomeMes = new Date(mesParaGerar + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    if (!confirm(`Tem certeza que deseja gerar o fechamento para ${nomeMes}? Esta ação calculará as comissões para as vendas confirmadas no mês selecionado.`)) return;
+    
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('gerar-fechamentos');
+      // Passa o mês selecionado como parâmetro para a Edge Function
+      const { data, error } = await supabase.functions.invoke('gerar-fechamentos', {
+        body: { mes: mesParaGerar } // Envia o mês no formato 'AAAA-MM'
+      });
+
       if (error) throw error;
       alert(data.message || 'Operação concluída!');
       await fetchData();
@@ -224,9 +232,23 @@ export default function FinanceiroAdminPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financeiro - Admin</h1>
-        <button onClick={handleGerarFechamento} className="px-4 py-2 bg-gradient-to-r from-green-400 to-blue-400 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition-colors">
-          Gerar Fechamento do Mês Anterior
-        </button>
+        
+        {/* =================================================================== */}
+        {/* ==> ALTERAÇÃO 3: Substituir o botão por um seletor de mês + botão <== */}
+        {/* =================================================================== */}
+        <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-900 p-3 rounded-lg border border-gray-300 dark:border-gray-700">
+          <label htmlFor="month-generator" className="font-medium text-gray-700 dark:text-gray-200">Mês para Fechamento:</label>
+          <input
+            type="month"
+            id="month-generator"
+            value={mesParaGerar}
+            onChange={(e) => setMesParaGerar(e.target.value)}
+            className="bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-sm shadow-sm"
+          />
+          <button onClick={handleGerarFechamento} className="px-4 py-2 bg-gradient-to-r from-green-400 to-blue-400 text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition-opacity">
+            Gerar Fechamento
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-400 dark:border-gray-700 overflow-hidden shadow-sm">

@@ -1,119 +1,157 @@
 // src/hooks/useVendasData.js
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient.js';
 
-// --- Funções de Mapeamento (sem alteração) ---
-const PLAN_MAP = [ { cleanName: 'Plano Família Plus 12x', keywords: ['Família Plus', '12x'] }, { cleanName: 'Plano Família 12x', keywords: ['Família', '12x'] }, { cleanName: 'Plano Individual Plus 12x', keywords: ['Individual Plus', '12x'] }, { cleanName: 'Plano Individual 12x', keywords: ['Individual', '12x'] }, { cleanName: 'Plano Família Plus', keywords: ['Família Plus'] }, { cleanName: 'Plano Família', keywords: ['Família'] }, { cleanName: 'Plano Individual Plus', keywords: ['Individual Plus'] }, { cleanName: 'Plano Individual', keywords: ['Individual'] }, ];
-const mapRawNameToClean = (rawName) => { if (!rawName) return 'Não Identificado'; const lowerCaseRawName = rawName.toLowerCase(); for (const plan of PLAN_MAP) { const allKeywordsMatch = plan.keywords.every(keyword => lowerCaseRawName.includes(keyword.toLowerCase())); if (allKeywordsMatch) return plan.cleanName; } return 'Outros'; };
+// --- Funções Auxiliares (sem alterações) ---
+function addMonths(date, months) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
+const mapRawNameToClean = (rawName) => {
+  const PLAN_MAP = [
+    { cleanName: 'Plano Família Plus 12x', keywords: ['Família Plus', '12x'] },
+    { cleanName: 'Plano Família 12x', keywords: ['Família', '12x'] },
+    { cleanName: 'Plano Individual Plus 12x', keywords: ['Individual Plus', '12x'] },
+    { cleanName: 'Plano Individual 12x', keywords: ['Individual', '12x'] },
+    { cleanName: 'Plano Família Plus', keywords: ['Família Plus'] },
+    { cleanName: 'Plano Família', keywords: ['Família'] },
+    { cleanName: 'Plano Individual Plus', keywords: ['Individual Plus'] },
+    { cleanName: 'Plano Individual', keywords: ['Individual'] },
+  ];
+  if (!rawName) return 'Não Identificado';
+  const lowerCaseRawName = rawName.toLowerCase();
+  for (const plan of PLAN_MAP) {
+    const allKeywordsMatch = plan.keywords.every(keyword =>
+      lowerCaseRawName.includes(keyword.toLowerCase())
+    );
+    if (allKeywordsMatch) return plan.cleanName;
+  }
+  return 'Outros';
+};
 
 export function useVendasData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [todasAsVendas, setTodasAsVendas] = useState([]);
-  const [parceiros, setParceiros] = useState({});
+  const [dadosProcessados, setDadosProcessados] = useState({
+    vendasComNomes: [],
+    kpisMes: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 },
+    kpisGeral: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 },
+    rankingParceirosMes: [],
+    resumoPlanosMes: [],
+    ultimasVendas: [], // <-- Garantir que o estado inicial tenha o array
+  });
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchAndProcessData = async () => {
       setLoading(true);
       setError('');
       try {
-        const { data: vendasData, error: vendasError } = await supabase.from('vendas').select('*, id_cobranca_principal, id_pagamento');
+        const { data: vendasData, error: vendasError } = await supabase
+          .from('vendas')
+          .select('*');
         if (vendasError) throw vendasError;
-        const { data: parceirosData, error: parceirosError } = await supabase.functions.invoke('list-partners');
+
+        const { data: parceirosData, error: parceirosError } =
+          await supabase.functions.invoke('list-partners');
         if (parceirosError) throw parceirosError;
+
         const mapaDeParceiros = {};
         if (parceirosData.users) {
-          parceirosData.users.forEach(user => {
-            mapaDeParceiros[user.id] = { nome: user.user_metadata?.nome || 'Parceiro Desconhecido', vendas: 0, faturamento: 0 };
+          parceirosData.users.forEach((user) => {
+            mapaDeParceiros[user.id] = {
+              nome: user.user_metadata?.nome || 'Parceiro Desconhecido',
+            };
           });
         }
-        setParceiros(mapaDeParceiros);
-        setTodasAsVendas(vendasData || []);
+
+        const agora = new Date();
+
+        const vendasCompletas = (vendasData || []).map(venda => ({
+          ...venda,
+          data_competencia: venda.data_vencimento || venda.data_pagamento || venda.created_at,
+          nome_parceiro: mapaDeParceiros[venda.id_parceiro]?.nome || 'Sem Parceiro',
+        }));
+
+        const primeiroDiaMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+        const TAXA_COMISSAO = 0.4;
+
+        const vendasPagasNoMes = vendasCompletas.filter((v) => {
+          const isPaga =
+            v.status_pagamento === 'CONFIRMED' ||
+            v.status_pagamento === 'RECEIVED';
+          const dataCompetencia = new Date(v.data_competencia);
+          return (
+            isPaga &&
+            dataCompetencia >= primeiroDiaMes &&
+            dataCompetencia <
+              new Date(agora.getFullYear(), agora.getMonth() + 1, 1)
+          );
+        });
+
+        const kpisMes = vendasPagasNoMes.reduce(
+          (acc, v) => {
+            acc.faturamento += v.valor;
+            if (v.id_parceiro) acc.comissaoAPagar += v.valor * TAXA_COMISSAO;
+            return acc;
+          },
+          { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: vendasPagasNoMes.length }
+        );
+
+        const rankingParceirosMes = Object.values(
+          vendasPagasNoMes.reduce((acc, v) => {
+            if (!v.id_parceiro) return acc;
+            if (!acc[v.id_parceiro]) {
+              acc[v.id_parceiro] = {
+                nome: v.nome_parceiro,
+                faturamento: 0,
+                vendas: 0,
+              };
+            }
+            acc[v.id_parceiro].faturamento += v.valor;
+            acc[v.id_parceiro].vendas += 1;
+            return acc;
+          }, {})
+        ).sort((a, b) => b.faturamento - a.faturamento);
+
+        const resumoPlanosMes = Object.entries(
+          vendasPagasNoMes.reduce((acc, v) => {
+            const nomePlano = mapRawNameToClean(v.nome_plano);
+            acc[nomePlano] = (acc[nomePlano] || 0) + 1;
+            return acc;
+          }, {})
+        )
+          .map(([nome, quantidade]) => ({ nome, quantidade }))
+          .sort((a, b) => b.quantidade - a.quantidade);
+
+        // ===================================================================
+        // ==> A CORREÇÃO ESTÁ AQUI: Adicionando a lógica de volta <==
+        // ===================================================================
+        const ultimasVendas = vendasCompletas
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // Ordena pela data de criação
+          .slice(0, 5); // Pega as 5 mais recentes
+
+        setDadosProcessados({
+          vendasComNomes: vendasCompletas, // Renomeado para clareza
+          kpisMes,
+          kpisGeral: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 }, // Pode ser removido se não usar
+          rankingParceirosMes,
+          resumoPlanosMes,
+          ultimasVendas, // <-- AQUI! Passando a variável calculada
+        });
+        
       } catch (err) {
-        console.error("Erro ao buscar dados no hook useVendasData:", err);
+        console.error('Erro ao buscar e processar dados:', err);
         setError('Não foi possível carregar os dados.');
       } finally {
         setLoading(false);
       }
     };
-    fetchInitialData();
+
+    fetchAndProcessData();
   }, []);
-
-  const dadosProcessados = useMemo(() => {
-    if (todasAsVendas.length === 0) {
-      return { vendasComNomes: [], kpisMes: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 }, kpisGeral: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 }, rankingParceirosMes: [], resumoPlanosMes: [], ultimasVendas: [], };
-    }
-
-    const agora = new Date();
-    const primeiroDiaMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-    const TAXA_COMISSAO = 0.4;
-
-    const vendasComNomes = todasAsVendas.map(venda => ({ ...venda, nome_parceiro: parceiros[venda.id_parceiro]?.nome || 'Sem Parceiro' }));
-
-    const calcularKpis = (vendasBase, dataInicio) => {
-      const kpis = { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 };
-      const idsVendasUnicasPagasNoPeriodo = new Set();
-      vendasBase.forEach(venda => {
-        const isPaga = venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED';
-        const dataPagamento = venda.data_pagamento ? new Date(venda.data_pagamento) : null;
-        if (isPaga && dataPagamento && dataPagamento >= dataInicio) {
-          kpis.faturamento += venda.valor;
-          if (venda.id_parceiro) {
-            kpis.comissaoAPagar += venda.valor * TAXA_COMISSAO;
-          }
-          const vendaId = venda.id_cobranca_principal || venda.id_pagamento;
-          if (vendaId) {
-            idsVendasUnicasPagasNoPeriodo.add(vendaId);
-          }
-        }
-      });
-      kpis.vendasConfirmadas = idsVendasUnicasPagasNoPeriodo.size;
-      return kpis;
-    };
-
-    const kpisMes = calcularKpis(vendasComNomes, primeiroDiaMes);
-    const kpisGeral = calcularKpis(vendasComNomes, new Date(0));
-
-    const resumoPlanos = {};
-    const rankingParceiros = JSON.parse(JSON.stringify(parceiros));
-    const idsVendasUnicasRanking = new Set();
-
-    vendasComNomes.forEach(venda => {
-        const isPaga = venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED';
-        const dataPagamento = venda.data_pagamento ? new Date(venda.data_pagamento) : null;
-
-        if (isPaga && dataPagamento && dataPagamento >= primeiroDiaMes) {
-            if (venda.id_parceiro && rankingParceiros[venda.id_parceiro]) {
-                rankingParceiros[venda.id_parceiro].faturamento += venda.valor;
-            }
-
-            const vendaId = venda.id_cobranca_principal || venda.id_pagamento;
-            if (vendaId && !idsVendasUnicasRanking.has(vendaId)) {
-                if (venda.id_parceiro && rankingParceiros[venda.id_parceiro]) {
-                    rankingParceiros[venda.id_parceiro].vendas += 1;
-                }
-                const nomePlano = mapRawNameToClean(venda.nome_plano);
-                resumoPlanos[nomePlano] = (resumoPlanos[nomePlano] || 0) + 1;
-                
-                idsVendasUnicasRanking.add(vendaId);
-            }
-        }
-    });
-
-    const rankingFinal = Object.values(rankingParceiros).filter(p => p.vendas > 0 || p.faturamento > 0).sort((a, b) => b.faturamento - a.faturamento);
-    const planosFinal = Object.entries(resumoPlanos).map(([nome, quantidade]) => ({ nome, quantidade })).sort((a, b) => b.quantidade - a.quantidade);
-    
-    // ===================================================================
-    // ==> CORREÇÃO: Ordenar últimas vendas por data_pagamento <==
-    // ===================================================================
-    const ultimasVendas = vendasComNomes
-      .filter(v => v.data_pagamento) // Garante que só entram vendas com data de pagamento
-      .sort((a, b) => new Date(b.data_pagamento) - new Date(a.data_pagamento)) // Ordena pela data de pagamento
-      .slice(0, 5);
-
-    return { vendasComNomes, kpisMes, kpisGeral, rankingParceirosMes: rankingFinal, resumoPlanosMes: planosFinal, ultimasVendas };
-  }, [todasAsVendas, parceiros]);
 
   return { loading, error, ...dadosProcessados };
 }

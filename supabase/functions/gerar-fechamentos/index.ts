@@ -23,46 +23,52 @@ Deno.serve(async (req ) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const hoje = new Date();
-    const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    
-    const mesReferencia = new Date(primeiroDiaMesAtual);
-    mesReferencia.setMonth(mesReferencia.getMonth() - 1);
-    
-    const primeiroDiaMesPassado = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth(), 1).toISOString();
-    const ultimoDiaMesPassado = new Date(mesReferencia.getFullYear(), mesReferencia.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
-    
     // =================================================================
-    // ==> CORREÇÃO DEFINITIVA: Duas queries separadas para clareza e precisão <==
+    // ==> ALTERAÇÃO 1: Ler o mês do corpo da requisição <==
     // =================================================================
+    const body = await req.json();
+    const mesSelecionado = body?.mes; // Espera o formato 'AAAA-MM'
 
-    // Query 1: Busca vendas NÃO PARCELADAS pagas no mês anterior
+    if (!mesSelecionado || !/^\d{4}-\d{2}$/.test(mesSelecionado)) {
+      throw new Error("Mês para geração do fechamento não foi especificado ou está em formato inválido. Esperado 'AAAA-MM'.");
+    }
+
+    // =================================================================
+    // ==> ALTERAÇÃO 2: Definir o período com base no mês recebido <==
+    // =================================================================
+    const [ano, mes] = mesSelecionado.split('-').map(Number);
+    // Usar UTC para consistência e evitar problemas de fuso horário
+    const primeiroDiaMesSelecionado = new Date(Date.UTC(ano, mes - 1, 1)).toISOString();
+    const ultimoDiaMesSelecionado = new Date(Date.UTC(ano, mes, 0, 23, 59, 59, 999)).toISOString();
+    const mesReferenciaParaBanco = primeiroDiaMesSelecionado; // Usar o primeiro dia do mês como referência
+
+    // Query 1: Busca vendas NÃO PARCELADAS pagas no mês selecionado
     const { data: vendasNaoParceladas, error: error1 } = await supabaseAdmin
       .from('vendas')
       .select('id_parceiro, valor')
       .in('status_pagamento', ['CONFIRMED', 'RECEIVED'])
-      .not('nome_plano', 'like', '%12x%') // Garante que não é parcelado
-      .gte('data_pagamento', primeiroDiaMesPassado)
-      .lte('data_pagamento', ultimoDiaMesPassado);
+      .not('nome_plano', 'ilike', '%12x%') // Usar 'ilike' para ser case-insensitive
+      .gte('data_pagamento', primeiroDiaMesSelecionado)
+      .lte('data_pagamento', ultimoDiaMesSelecionado);
 
     if (error1) throw new Error(`Erro ao buscar vendas não parceladas: ${error1.message}`);
 
-    // Query 2: Busca vendas PARCELADAS com vencimento no mês anterior
+    // Query 2: Busca vendas PARCELADAS com vencimento no mês selecionado
     const { data: vendasParceladas, error: error2 } = await supabaseAdmin
       .from('vendas')
       .select('id_parceiro, valor')
       .in('status_pagamento', ['CONFIRMED', 'RECEIVED'])
-      .like('nome_plano', '%12x%') // Garante que é parcelado
-      .gte('data_vencimento', primeiroDiaMesPassado)
-      .lte('data_vencimento', ultimoDiaMesPassado);
+      .like('nome_plano', '%12x%')
+      .gte('data_vencimento', primeiroDiaMesSelecionado)
+      .lte('data_vencimento', ultimoDiaMesSelecionado);
 
     if (error2) throw new Error(`Erro ao buscar vendas parceladas: ${error2.message}`);
 
-    // 3. Junta os resultados das duas queries
     const vendas = [...(vendasNaoParceladas || []), ...(vendasParceladas || [])];
 
     if (vendas.length === 0) {
-      return new Response(JSON.stringify({ message: 'Nenhuma comissão encontrada no mês anterior para gerar fechamentos.' }), {
+      const nomeMes = new Date(mesSelecionado + '-02T12:00:00Z').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+      return new Response(JSON.stringify({ message: `Nenhuma comissão encontrada em ${nomeMes} para gerar fechamentos.` }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
@@ -79,7 +85,7 @@ Deno.serve(async (req ) => {
 
     const fechamentosParaInserir = Object.entries(comissoesPorParceiro).map(([idParceiro, comissao]) => ({
       id_parceiro: idParceiro,
-      mes_referencia: primeiroDiaMesPassado,
+      mes_referencia: mesReferenciaParaBanco, // Usa a referência do mês selecionado
       valor_comissao_bruta: comissao,
       status_pagamento: 'PENDENTE',
     }));
