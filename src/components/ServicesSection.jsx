@@ -79,7 +79,7 @@ export default function ServicesSection() {
           className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center"
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
+          viewport={{ once: true, amount: 0.1 }}
           variants={containerVariants}
         >
           {/* NOVO Container para os elementos visuais, que herda a animação */}

@@ -12,6 +12,12 @@ import parceirosCinemaImg from '@/assets/logos/logoscinema.webp';
 import parceirosCashbackImg from '@/assets/logos/logosmarcas.webp';
 import { useSearchParams } from 'react-router-dom';
 import ServicesSection from './components/ServicesSection';
+import avatarJuliana from './assets/avatars/avatarjuliana.webp';
+import avatarCarlos from './assets/avatars/avatarcarlos.webp';
+import avatarMariana from './assets/avatars/avatarmariana.webp';
+import avatarRoberto from './assets/avatars/avatarroberto.webp';
+import avatarFernanda from './assets/avatars/avatarfernanda.webp';
+import avatarLucas from './assets/avatars/avatarlucas.webp';
 
 
 
@@ -65,43 +71,43 @@ const especialidades = [ 'Clínico geral 24h', 'Psicólogo', 'Ginecologista', 'N
   {
     name: "Juliana M.",
     role: "Mãe do Theo",
-    avatar: "https://i.pravatar.cc/150?img=1", // Foto aleatória de mulher
+    avatar: avatarJuliana,
     stars: 5,
     text: "Salvação para uma mãe! Falei com um pediatra às 2h da manhã sem sair de casa. A tranquilidade de ter um médico a qualquer hora não tem preço. Recomendo demais!"
   },
   {
     name: "Carlos S.",
-    role: "Profissional de TI, 48 anos",
-    avatar: "https://i.pravatar.cc/150?img=32", // Foto aleatória de homem
-    stars: 5,
-    text: "Consegui renovar minhas receitas de uso contínuo em uma consulta rápida por vídeo, sem precisar faltar ao trabalho. Economizei tempo e dinheiro. O serviço é prático e eficiente."
+    role: "Analista de Sistemas",
+    avatar: avatarCarlos,
+    stars: 4,
+    text: "Consegui renovar minhas receitas de uso contínuo em poucos minutos, sem precisar faltar ao trabalho. Foi super prático e economizei tempo e dinheiro."
   },
   {
     name: "Mariana L.",
-    role: "Estudante Universitária",
-    avatar: "https://i.pravatar.cc/150?img=25", // Foto aleatória de mulher jovem
+    role: "Estudante",
+    avatar: avatarMariana,
     stars: 5,
-    text: "Tive uma crise de ansiedade e consegui falar com um psicólogo na mesma hora. O acolhimento foi incrível e me ajudou a passar pelo momento. Cuidar da saúde mental ficou mais fácil."
+    text: "Decidi procurar um psicólogo pelo app e foi muito simples agendar a consulta. O atendimento tem me ajudado bastante a lidar com a ansiedade e organizar melhor meus dias."
   },
   {
     name: "Roberto F.",
     role: "Dono do Paçoca",
-    avatar: "https://i.pravatar.cc/150?img=60", // Foto aleatória de homem mais velho
+    avatar: avatarRoberto,
     stars: 5,
     text: "Meu cachorro comeu algo que não devia no fim de semana. Falei com um veterinário pelo app, que me orientou sobre o que fazer. O Paçoca ficou bem e eu, muito mais tranquilo."
   },
   {
     name: "Fernanda P.",
-    role: "Viajante Frequente",
-    avatar: "https://i.pravatar.cc/150?img=47", // Foto aleatória de mulher
+    role: "Advogada",
+    avatar: avatarFernanda,
     stars: 5,
-    text: "Estava em uma viagem a trabalho e tive uma reação alérgica. Um dermatologista me atendeu por vídeo e prescreveu a medicação, que comprei com desconto pelo app. Fantástico!"
+    text: "Durante uma viagem a trabalho, precisei de um dermatologista. Consegui agendar facilmente pelo app e ser atendida no horário que encaixava na minha agenda. O atendimento foi excelente e resolveu meu problema."
   },
   {
     name: "Lucas G.",
-    role: "Praticante de Musculação",
-    avatar: "https://i.pravatar.cc/150?img=12", // Foto aleatória de homem jovem
-    stars: 5,
+    role: "Motorista de Aplicativo",
+    avatar: avatarLucas,
+    stars: 4,
     text: "Tirei várias dúvidas sobre suplementação e dieta com a nutricionista. O acompanhamento ajuda muito a manter o foco e alcançar meus objetivos na academia. Valeu muito a pena!"
   }
 ];
@@ -442,59 +448,73 @@ const comoFuncionaSteps = [
         Milhares de vidas transformadas
       </h2>
       <p className="text-xl text-gray-600 dark:text-gray-400">
-        Veja o que nossos clientes estão dizendo sobre a MedSinai.
+        Veja o que alguns de nossos clientes estão dizendo sobre a MedSinai.
       </p>
     </div>
 
     {/* Carrossel Swiper */}
-    <Swiper
-      modules={[Navigation, Autoplay]}
-      spaceBetween={30} // Espaço entre os slides
-      slidesPerView={1} // Padrão para telas pequenas
-      loop={true}
-      autoplay={{
-        delay: 5000,
-        disableOnInteraction: true,
-      }}
-      breakpoints={{
-        // Quando a tela for >= 640px, mostra 2 slides
-        640: {
-          slidesPerView: 2,
-          spaceBetween: 20,
-        },
-        // Quando a tela for >= 1024px, mostra 3 slides
-        1024: {
-          slidesPerView: 3,
-          spaceBetween: 30,
-        },
-      }}
-      className="pb-10" // Adiciona um padding inferior para a navegação não cortar
-    >
-      {testimonials.map((testimonial, index) => (
-        <SwiperSlide key={index}>
-          <div className="h-full bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col">
-            <div className="flex-grow mb-6">
-              <div className="flex items-center mb-4">
-                {/* Estrelas de Avaliação */}
-                {[...Array(testimonial.stars)].map((_, i) => (
-                  <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              <p className="text-gray-600 dark:text-gray-300">"{testimonial.text}"</p>
-            </div>
-            <div className="flex items-center">
-              <img className="w-12 h-12 rounded-full object-cover mr-4" src={testimonial.avatar} alt={testimonial.name} />
-              <div>
-                <p className="font-bold text-gray-900 dark:text-white">{testimonial.name}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.role}</p>
-              </div>
-            </div>
+<Swiper
+  modules={[Navigation, Autoplay]}
+  spaceBetween={30}
+  slidesPerView={1}
+  loop={true}
+  autoplay={{
+    delay: 5000,
+    disableOnInteraction: true,
+  }}
+  breakpoints={{
+    640: {
+      slidesPerView: 2,
+      spaceBetween: 20,
+    },
+    1024: {
+      slidesPerView: 3,
+      spaceBetween: 30,
+    },
+  }}
+  className="pb-10"
+>
+  {testimonials.map((testimonial, index) => (
+    <SwiperSlide key={index}>
+      <div className="min-h-[300px] bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+        <div className="mb-6">
+          <div className="flex items-center mb-4">
+            {/* Estrelas */}
+            {[...Array(testimonial.stars)].map((_, i) => (
+              <svg
+                key={i}
+                className="w-5 h-5 text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            ))}
           </div>
-        </SwiperSlide>
-      ))}
-    </Swiper>
+          <p className="text-gray-600 dark:text-gray-300">
+            "{testimonial.text}"
+          </p>
+        </div>
+        <div className="flex items-center">
+          <img
+            className="w-12 h-12 rounded-full object-cover mr-4"
+            src={testimonial.avatar}
+            alt={testimonial.name}
+          />
+          <div>
+            <p className="font-bold text-gray-900 dark:text-white">
+              {testimonial.name}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {testimonial.role}
+            </p>
+          </div>
+        </div>
+      </div>
+    </SwiperSlide>
+  ))}
+</Swiper>
+
   </div>
 </section>
 
