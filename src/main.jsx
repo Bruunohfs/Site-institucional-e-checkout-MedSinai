@@ -25,6 +25,7 @@ import CalculadoraPage from './pages/parceiros/CalculadoraPage';
 import ParceirosPage from './pages/ParceirosPage';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade.jsx';
 import TermosDeUso from './pages/TermosDeUso.jsx';
+import { Analytics } from '@vercel/analytics/react';
 
 const GA_MEASUREMENT_ID = "G-Z1SN0XKENK";
 ReactGA.initialize(GA_MEASUREMENT_ID);
@@ -83,5 +84,6 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RouterProvider router={router} />
+    <Analytics />
   </React.StrictMode>,
 );
