@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import Sidebar from "../pages/parceiros/Sidebar.jsx";
+import useTracker from '@/hooks/useTracker';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -16,6 +17,7 @@ const MenuIcon = () => (
 );
 
 export default function DashboardLayout() {
+  useTracker();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();

@@ -2,8 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import './index.css';
-
-//componentes de layout e página
+import ReactGA from 'react-ga4';
 import MainLayout from './layouts/MainLayout.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx'; 
 import App from './App.jsx';
@@ -27,10 +26,12 @@ import ParceirosPage from './pages/ParceirosPage';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade.jsx';
 import TermosDeUso from './pages/TermosDeUso.jsx';
 
+const GA_MEASUREMENT_ID = "G-Z1SN0XKENK";
+ReactGA.initialize(GA_MEASUREMENT_ID);
 
-// Crie as rotas
+
+
 const router = createBrowserRouter([
-  // Rotas Públicas (com cabeçalho e rodapé principal)
   {
     path: "/",
     element: <MainLayout />,

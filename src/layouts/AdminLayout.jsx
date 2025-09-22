@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient.js'; // Já usando o alias!
 import AdminSidebar from '../pages/admin/AdminSidebar';
+import useTracker from '@/hooks/useTracker';
 
 // Ícone do menu hambúrguer
 const MenuIcon = () => (
@@ -13,6 +14,7 @@ const MenuIcon = () => (
 );
 
 export default function AdminLayout() {
+  useTracker();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
