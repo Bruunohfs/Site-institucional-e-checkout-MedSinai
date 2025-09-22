@@ -37,9 +37,9 @@ const useTracker = () => {
   useEffect(() => {
     // Envia um evento de "pageview" para o GA4 toda vez que a URL muda
     ReactGA.send({ 
-      hitType: "page_view", 
-      page: location.pathname + location.search + location.hash 
-    });
+    hitType: "pageview", // "pageview" tudo junto e em minúsculas
+    page: location.pathname + location.search + location.hash 
+  });
   }, [location]); // Este efeito roda toda vez que a 'location' muda.
 };
 

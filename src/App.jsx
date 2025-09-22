@@ -12,33 +12,53 @@ import parceirosCinemaImg from '@/assets/logos/logoscinema.webp';
 import parceirosCashbackImg from '@/assets/logos/logosmarcas.webp';
 import { useSearchParams } from 'react-router-dom';
 import ServicesSection from './components/ServicesSection';
-import avatarJuliana from './assets/avatars/avatarjuliana.webp';
-import avatarCarlos from './assets/avatars/avatarcarlos.webp';
-import avatarMariana from './assets/avatars/avatarmariana.webp';
-import avatarRoberto from './assets/avatars/avatarroberto.webp';
-import avatarFernanda from './assets/avatars/avatarfernanda.webp';
-import avatarLucas from './assets/avatars/avatarlucas.webp';
-
-
-
+import TestimonialModal from './components/TestimonialModal';
+import { supabase } from '@/lib/supabaseClient';
 
 
 function App() {
   useTracker();
   const [searchParams] = useSearchParams();
+  const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState(false);
   const partnerIdFromUrl = searchParams.get('pid');
   const navigate = useNavigate();
   const [isAnual, setIsAnual] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const swiperRef = useRef(null);
   const [openFaq, setOpenFaq] = useState(null);
+  const [dynamicTestimonials, setDynamicTestimonials] = useState([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+
+  useEffect(() => {
+    const fetchApprovedTestimonials = async () => {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('*')
+        .eq('is_approved', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Erro ao buscar depoimentos:", error);
+        setDynamicTestimonials([]); 
+      } else {
+        const formattedData = data.map(item => ({
+          name: item.name,
+          role: item.occupation || 'Cliente MedSinai',
+          avatar: item.image_url || 'https://i.pravatar.cc/150', // Fallback genérico
+          stars: item.stars,
+          text: item.body,
+        } ));
+        setDynamicTestimonials(formattedData);
+      }
+      setLoadingTestimonials(false);
+    };
+
+    fetchApprovedTestimonials();
+  }, []);
 
   const whatsappNumber = "16992291295";
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
   const planosAtivos = isAnual ? planosAnuais : planosMensais;
-
-const especialidades = [ 'Clínico geral 24h', 'Psicólogo', 'Ginecologista', 'Nutricionista', 'Dermatologista', 'Personal Trainer', 'Pediatra', 'Médico veterinário' ];
-
   const handleAssinarAgora = (plano) => {
   const tipoPlano = isAnual ? 'anual' : 'mensal';
   const idDoPlano = plano.nome.toLowerCase().replace(/ /g, '-');
@@ -66,51 +86,6 @@ const especialidades = [ 'Clínico geral 24h', 'Psicólogo', 'Ginecologista', 'N
     window.open(whatsappUrl, '_blank');
     setIsMobileMenuOpen(false);
   };
-
-  const testimonials = [
-  {
-    name: "Juliana M.",
-    role: "Mãe do Theo",
-    avatar: avatarJuliana,
-    stars: 5,
-    text: "Salvação para uma mãe! Falei com um pediatra às 2h da manhã sem sair de casa. A tranquilidade de ter um médico a qualquer hora não tem preço. Recomendo demais!"
-  },
-  {
-    name: "Carlos S.",
-    role: "Analista de Sistemas",
-    avatar: avatarCarlos,
-    stars: 4,
-    text: "Consegui renovar minhas receitas de uso contínuo em poucos minutos, sem precisar faltar ao trabalho. Foi super prático e economizei tempo e dinheiro."
-  },
-  {
-    name: "Mariana L.",
-    role: "Estudante",
-    avatar: avatarMariana,
-    stars: 5,
-    text: "Decidi procurar um psicólogo pelo app e foi muito simples agendar a consulta. O atendimento tem me ajudado bastante a lidar com a ansiedade e organizar melhor meus dias."
-  },
-  {
-    name: "Roberto F.",
-    role: "Dono do Paçoca",
-    avatar: avatarRoberto,
-    stars: 5,
-    text: "Meu cachorro comeu algo que não devia no fim de semana. Falei com um veterinário pelo app, que me orientou sobre o que fazer. O Paçoca ficou bem e eu, muito mais tranquilo."
-  },
-  {
-    name: "Fernanda P.",
-    role: "Advogada",
-    avatar: avatarFernanda,
-    stars: 5,
-    text: "Durante uma viagem a trabalho, precisei de um dermatologista. Consegui agendar facilmente pelo app e ser atendida no horário que encaixava na minha agenda. O atendimento foi excelente e resolveu meu problema."
-  },
-  {
-    name: "Lucas G.",
-    role: "Motorista de Aplicativo",
-    avatar: avatarLucas,
-    stars: 4,
-    text: "Tirei várias dúvidas sobre suplementação e dieta com a nutricionista. O acompanhamento ajuda muito a manter o foco e alcançar meus objetivos na academia. Valeu muito a pena!"
-  }
-];
 
 const faqData = [
   {
@@ -440,83 +415,75 @@ const comoFuncionaSteps = [
   </div>
 </section>
 
-<section className="py-16 bg-gray-100 dark:bg-gray-800 sm:py-24">
-  <div className="container mx-auto px-4">
-    {/* Título da Seção */}
-    <div className="text-center mb-12">
-      <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        Milhares de vidas transformadas
-      </h2>
-      <p className="text-xl text-gray-600 dark:text-gray-400">
-        Veja o que alguns de nossos clientes estão dizendo sobre a MedSinai.
-      </p>
-    </div>
-
-    {/* Carrossel Swiper */}
-<Swiper
-  modules={[Navigation, Autoplay]}
-  spaceBetween={30}
-  slidesPerView={1}
-  loop={true}
-  autoplay={{
-    delay: 5000,
-    disableOnInteraction: true,
-  }}
-  breakpoints={{
-    640: {
-      slidesPerView: 2,
-      spaceBetween: 20,
-    },
-    1024: {
-      slidesPerView: 3,
-      spaceBetween: 30,
-    },
-  }}
-  className="pb-10"
->
-  {testimonials.map((testimonial, index) => (
-    <SwiperSlide key={index}>
-      <div className="min-h-[300px] bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
-        <div className="mb-6">
-          <div className="flex items-center mb-4">
-            {/* Estrelas */}
-            {[...Array(testimonial.stars)].map((_, i) => (
-              <svg
-                key={i}
-                className="w-5 h-5 text-yellow-400"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            ))}
+            <section className="py-16 bg-gray-100 dark:bg-gray-800 sm:py-24">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Milhares de vidas transformadas
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400">
+              Veja o que alguns de nossos clientes estão dizendo sobre a MedSinai.
+            </p>
           </div>
-          <p className="text-gray-600 dark:text-gray-300">
-            "{testimonial.text}"
+
+          {/* ✨ PASSO 4: Usar os dados dinâmicos no Swiper */}
+          {loadingTestimonials ? (
+            <p className="text-center">Carregando depoimentos...</p>
+          ) : (
+            <Swiper
+              // ... (suas configurações do Swiper)
+              modules={[Navigation, Autoplay]}
+              spaceBetween={30}
+              slidesPerView={1}
+              loop={dynamicTestimonials.length > 2} // Ativa o loop apenas se houver slides suficientes
+              autoplay={{ delay: 5000, disableOnInteraction: true }}
+              breakpoints={{ 640: { slidesPerView: 2, spaceBetween: 20 }, 1024: { slidesPerView: 3, spaceBetween: 30 } }}
+              className="pb-10"
+            >
+              {dynamicTestimonials.map((testimonial, index) => (
+                <SwiperSlide key={index}>
+                  <div className="min-h-[300px] bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+                    {/* ... (o conteúdo do card continua o mesmo) ... */}
+                    <div className="mb-6">
+                      <div className="flex items-center mb-4">
+                        {[...Array(testimonial.stars)].map((_, i) => (
+                          <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                        ))}
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300">"{testimonial.text}"</p>
+                    </div>
+                    <div className="flex items-center">
+                      <img className="w-12 h-12 rounded-full object-cover mr-4" src={testimonial.avatar} alt={testimonial.name} />
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white">{testimonial.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
+        </div>
+      </section>
+
+      {/* Seção do CTA para enviar depoimento */}
+      <section className="bg-gray-100 dark:bg-gray-800 pb-16 sm:pb-24">
+        <div className="container mx-auto px-4 text-center">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            Gostou do nosso serviço?
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
+            Sua história pode inspirar outras pessoas a cuidarem melhor da saúde. Adoraríamos ouvir sua experiência com a MedSinai.
           </p>
+          <button 
+            onClick={() => setIsTestimonialModalOpen(true)}
+            className="inline-block px-10 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-md"
+          >
+            Enviar meu Depoimento
+          </button>
         </div>
-        <div className="flex items-center">
-          <img
-            className="w-12 h-12 rounded-full object-cover mr-4"
-            src={testimonial.avatar}
-            alt={testimonial.name}
-          />
-          <div>
-            <p className="font-bold text-gray-900 dark:text-white">
-              {testimonial.name}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {testimonial.role}
-            </p>
-          </div>
-        </div>
-      </div>
-    </SwiperSlide>
-  ))}
-</Swiper>
-
-  </div>
-</section>
+      </section>
 
     {/* FAQ PERGUNTAS E RESPOSTAS */}
 
@@ -571,6 +538,10 @@ const comoFuncionaSteps = [
     </div>
   </div>
 </section>
+        <TestimonialModal 
+        isOpen={isTestimonialModalOpen} 
+        onClose={() => setIsTestimonialModalOpen(false)} 
+      />
     </div>
   )
 }
