@@ -79,14 +79,14 @@ function GerenciarDepoimentos() {
         {/* =================================================================== */}
         {/* =================== ÁREA RESPONSIVA COMEÇA AQUI =================== */}
         {/* =================================================================== */}
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700">
           {loading && <p className="p-4 text-center">Carregando depoimentos...</p>}
           {error && <p className="p-4 text-red-500 text-center">{error}</p>}
           
           {/* Tabela para Desktop (escondida em telas pequenas) */}
           <div className="hidden md:block">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+              <thead className="bg-gray-300 dark:bg-gray-700/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cliente</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Depoimento</th>
@@ -95,7 +95,7 @@ function GerenciarDepoimentos() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-gray-300 dark:divide-gray-700">
                 {testimonials.map((testimonial) => (
                   <React.Fragment key={testimonial.id}>
                     <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">

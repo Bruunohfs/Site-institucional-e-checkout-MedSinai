@@ -1,25 +1,21 @@
-import React, { useEffect, useRef } from 'react'; 
-import { useForm, ValidationError } from '@formspree/react';
+import React, { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient'; // Verifique se o caminho está correto
 import { IMaskInput } from 'react-imask';
 
-// Novas imagens sugeridas para a página de parceiros
-import parceiroHeroImg from '../assets/parceiro-hero.webp'; // Sugestão: Imagem de uma pessoa trabalhando de forma flexível (notebook em um café, etc.)
-import parceiroPortalImg from '../assets/parceiro-portal.webp'; // Sugestão: Um print ou montagem da tela do portal do parceiro
+// Imagens e Ícones (mantidos como no seu código original)
+import parceiroHeroImg from '../assets/parceiro-hero.webp';
+import parceiroPortalImg from '../assets/parceiro-portal.webp';
 
-// Ícone de check (reutilizado)
 const CheckIcon = () => (
   <svg className="w-6 h-6 text-green-500 flex-shrink-0 mr-3" fill="currentColor" viewBox="0 0 20 20">
     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
   </svg>
 );
-
-// Ícone de cifrão para a seção de ganhos
 const MoneyIcon = () => (
     <svg className="w-8 h-8 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
 );
-
 const LaptopIcon = () => (
     <svg className="w-8 h-8 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -27,7 +23,48 @@ const LaptopIcon = () => (
 );
 
 function ParceirosPage() {
-  // Lista de benefícios para ser um parceiro MedSinai
+  // ===================================================================
+  // ==> NOVA LÓGICA DO FORMULÁRIO COM SUPABASE <==
+  // ===================================================================
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    experiencia: ''
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [formMessage, setFormMessage] = useState(null);
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handlePhoneChange = (value) => {
+    setFormData(prev => ({ ...prev, telefone: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setFormMessage(null);
+
+    const { error } = await supabase.from('leads_parceiros').insert([formData]);
+
+    setSubmitting(false);
+
+    if (error) {
+      console.error('Erro ao enviar cadastro:', error);
+      setFormMessage({ type: 'error', text: 'Houve um erro ao enviar seu cadastro. Tente novamente.' });
+    } else {
+      setFormMessage({ type: 'success', text: 'Cadastro enviado com sucesso! Nossa equipe analisará seu perfil e entrará em contato em breve.' });
+      setFormData({ nome: '', email: '', telefone: '', experiencia: '' });
+    }
+  };
+  // ===================================================================
+  // ==> FIM DA NOVA LÓGICA <==
+  // ===================================================================
+
   const beneficiosParceiro = [
     "Comissões recorrentes e atrativas em todos os planos vendidos.",
     "Acesso a um portal exclusivo para gerenciar suas vendas e comissões.",
@@ -37,23 +74,12 @@ function ParceirosPage() {
     "Treinamento e suporte contínuo da nossa equipe.",
     "Faça parte de um mercado em plena expansão: o de saúde e bem-estar."
   ];
-
-  // Configuração do formulário com Formspree (use um NOVO código de formulário)
-  // É recomendado criar um novo formulário no Formspree para os parceiros
-  const [state, handleSubmit] = useForm("mnnberrp");
-  const formRef = useRef();
-
-  useEffect(() => {
-    if (state.succeeded) {
-      alert("Cadastro enviado com sucesso! Nossa equipe analisará seu perfil e entrará em contato em breve. Bem-vindo ao time MedSinai!");
-      formRef.current.reset();
-    }
-  }, [state.succeeded]);
   
   return (
     <div className="bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
       <title>Seja um Parceiro | MedSinai</title>
 
+      {/* ... O restante do seu JSX (seções Hero, Benefícios, etc.) permanece o mesmo ... */}
       {/* SEÇÃO 1: HERO */}
       <section className="py-20 px-6 bg-gray-100 dark:bg-gray-800">
         <div className="container mx-auto">
@@ -136,64 +162,62 @@ function ParceirosPage() {
         </div>
       </section>
 
-      {/* SEÇÃO 4: FORMULÁRIO DE CADASTRO */}
+      {/* =================================================================== */}
+      {/* ==> SEÇÃO 4: FORMULÁRIO ATUALIZADO <== */}
+      {/* =================================================================== */}
       <section id="formulario-parceiro" className="py-20 px-6 bg-gray-50 dark:bg-gray-900">
-  <div className="container mx-auto">
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-      
-      {/* Coluna da Esquerda: Texto Motivacional */}
-      <div className="text-center lg:text-left">
-        <h2 className="text-3xl font-bold mb-4 leading-tight">
-          Levar saúde a quem precisa nunca foi tão simples.
-        </h2>
-        <p className="text-lg text-gray-700 dark:text-gray-300">
-          Junte-se a centenas de parceiros que estão transformando o acesso à saúde no Brasil e sendo recompensados por isso. O próximo passo é seu.
-        </p>
-      </div>
+        <div className="container mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="text-center lg:text-left">
+              <h2 className="text-3xl font-bold mb-4 leading-tight">
+                Levar saúde a quem precisa nunca foi tão simples.
+              </h2>
+              <p className="text-lg text-gray-700 dark:text-gray-300">
+                Junte-se a centenas de parceiros que estão transformando o acesso à saúde no Brasil e sendo recompensados por isso. O próximo passo é seu.
+              </p>
+            </div>
+            <div className="bg-gray-300 dark:bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-300 dark:border-gray-700">
+              <h3 className="text-3xl font-bold mb-6 text-center">Cadastre-se para ser um Parceiro</h3>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="nome" className="block text-sm font-medium mb-2">Seu Nome Completo*</label>
+                  <input id="nome" type="text" required value={formData.nome} onChange={handleInputChange} className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium mb-2">E-mail*</label>
+                  <input id="email" type="email" required value={formData.email} onChange={handleInputChange} className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" />
+                </div>
+                <div>
+                  <label htmlFor="telefone" className="block text-sm font-medium mb-2">Seu WhatsApp (com DDD)*</label>
+                  <IMaskInput
+                    mask={[{ mask: '(00) 0000-0000' }, { mask: '(00) 00000-0000' }]}
+                    id="telefone"
+                    required
+                    value={formData.telefone}
+                    onAccept={handlePhoneChange}
+                    className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="experiencia" className="block text-sm font-medium mb-2">Como você pretende vender os planos MedSinai?*</label>
+                  <textarea id="experiencia" rows="4" required value={formData.experiencia} onChange={handleInputChange} className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" placeholder="Ex: Redes sociais, indicação para amigos, porta a porta..."></textarea>
+                </div>
 
-      {/* Coluna da Direita: Formulário */}
-      <div className="bg-gray-300 dark:bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-300 dark:border-gray-700">
-        <h3 className="text-3xl font-bold mb-6 text-center">Cadastre-se para ser um Parceiro</h3>
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="nome" className="block text-sm font-medium mb-2">Seu Nome Completo*</label>
-            <input id="nome" type="text" name="nome" required className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" />
-            <ValidationError prefix="Nome" field="nome" errors={state.errors} className="text-red-500 text-sm mt-1" />
-          </div>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">E-mail*</label>
-            <input id="email" type="email" name="email" required className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" />
-            <ValidationError prefix="Email" field="email" errors={state.errors} className="text-red-500 text-sm mt-1" />
-          </div>
-          <div>
-            <label htmlFor="telefone" className="block text-sm font-medium mb-2">Seu WhatsApp (com DDD)*</label>
-            <IMaskInput
-              mask={[
-                { mask: '(00) 0000-0000' },
-                { mask: '(00) 00000-0000' }
-              ]}
-              id="telefone"
-              name="telefone"
-              required
-              className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
-              placeholder="(00) 00000-0000"
-            />
-            <ValidationError prefix="Telefone" field="telefone" errors={state.errors} className="text-red-500 text-sm mt-1" />
-          </div>
-          <div>
-            <label htmlFor="experiencia" className="block text-sm font-medium mb-2">Como você pretende vender os planos MedSinai?*</label>
-            <textarea id="experiencia" name="experiencia" rows="4" required className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" placeholder="Ex: Redes sociais, indicação para amigos, porta a porta..."></textarea>
-            <ValidationError prefix="Experiencia" field="experiencia" errors={state.errors} className="text-red-500 text-sm mt-1" />
-          </div>
-          <button type="submit" disabled={state.submitting} className="w-full px-8 py-2 bg-green-600 text-white rounded-lg font-semibold text-lg hover:bg-green-700 transition-colors disabled:bg-gray-400">
-            {state.submitting ? "Enviando Cadastro..." : "Quero Ser Parceiro"}
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-</section>
+                {formMessage && (
+                  <div className={`p-3 rounded-lg text-center text-sm font-medium ${formMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {formMessage.text}
+                  </div>
+                )}
 
+                <button type="submit" disabled={submitting} className="w-full px-8 py-2 bg-green-600 text-white rounded-lg font-semibold text-lg hover:bg-green-700 transition-colors disabled:bg-gray-400">
+                  {submitting ? "Enviando Cadastro..." : "Quero Ser Parceiro"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

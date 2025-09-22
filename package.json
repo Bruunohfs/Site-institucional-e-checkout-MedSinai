@@ -16,6 +16,7 @@
     "@vercel/analytics": "^1.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.23.16",
     "imask": "^7.6.1",
     "react": "^19.1.1",

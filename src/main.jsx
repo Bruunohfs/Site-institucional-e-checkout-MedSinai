@@ -18,6 +18,8 @@ import GerenciarParceiros from './pages/admin/GerenciarParceiros';
 import GerenciarConteudo from './pages/admin/GerenciarConteudo';
 import VisaoGeralVendas from './pages/admin/VisaoGeralVendas';
 import GerenciarDepoimentos from './pages/admin/GerenciarDepoimentos';
+import GerenciarLeadsEmpresas from './pages/admin/GerenciarLeadsEmpresas';
+import GerenciarLeadsParceiros from './pages/admin/GerenciarLeadsParceiros';
 import MinhaContaPage from './pages/parceiros/MinhaConta.jsx';
 import FinanceiroAdminPage from './pages/admin/FinanceiroAdminPage';
 import FinanceiroParceiroPage from './pages/parceiros/FinanceiroParceiroPage';
@@ -79,6 +81,8 @@ const router = createBrowserRouter([
       { path: "vendas", element: <VisaoGeralVendas /> },
       { path: "financeiro", element: <FinanceiroAdminPage /> },
       { path: "depoimentos", element: <GerenciarDepoimentos /> },
+      { path: "leads-empresas", element: <GerenciarLeadsEmpresas /> },
+      { path: "leads-parceiros", element: <GerenciarLeadsParceiros /> },
     ]
   }
 ]);

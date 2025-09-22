@@ -1,12 +1,13 @@
-import React, { useEffect, useRef } from 'react'; 
-import { useForm, ValidationError } from '@formspree/react';
+import React, { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient'; // Verifique se o caminho para seu cliente supabase está correto
+
+// Imagens (mantive as que você já usava)
 import empresa1 from '../assets/empresa1.jpg';
 import empresa2 from '../assets/empresa2.jpg';
 import empresa3 from '../assets/empresa3.webp';
-import bemEstarCorporativoImg from '../assets/nr01img.webp'; 
+import bemEstarCorporativoImg from '../assets/nr01img.webp';
 
-
-// Ícone de check para usar nas listas de vantagens
+// Ícone de check (mantido como estava)
 const CheckIcon = () => (
   <svg className="w-6 h-6 text-green-500 flex-shrink-0 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -14,7 +15,49 @@ const CheckIcon = () => (
  );
 
 function EmpresasPage() {
-  // Dados para a seção de Vantagens
+  // ===================================================================
+  // ==> NOVA LÓGICA DO FORMULÁRIO COM SUPABASE <==
+  // ===================================================================
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    nome_empresa: '' // Corresponde à coluna do Supabase
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [formMessage, setFormMessage] = useState(null); // { type: 'success' | 'error', text: '...' }
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setFormMessage(null);
+
+    // Envia os dados para a tabela 'leads_empresas'
+    const { error } = await supabase
+      .from('leads_empresas')
+      .insert([formData]);
+
+    setSubmitting(false);
+
+    if (error) {
+      console.error('Erro ao enviar formulário:', error);
+      setFormMessage({ type: 'error', text: 'Houve um erro ao enviar sua mensagem. Por favor, tente novamente.' });
+    } else {
+      setFormMessage({ type: 'success', text: 'Obrigado! Sua mensagem foi enviada com sucesso. Em breve nossa equipe entrará em contato.' });
+      // Limpa o formulário após o envio bem-sucedido
+      setFormData({ nome: '', email: '', telefone: '', nome_empresa: '' });
+    }
+  };
+  // ===================================================================
+  // ==> FIM DA NOVA LÓGICA <==
+  // ===================================================================
+
+  // Dados para a seção de Vantagens (mantidos como estavam)
   const vantagensColaborador = [
     "Carência Zero.",
     "Consultas com tempo máximo de espera de 10 minutos com Clínico Geral ",
@@ -35,7 +78,7 @@ function EmpresasPage() {
     "Zero burocracia para implementação."
   ];
 
-  // Função para abrir o WhatsApp
+  // Função para abrir o WhatsApp (mantida como estava)
   const openWhatsApp = () => {
     const phoneNumber = "16992291295";
     const message = "Olá! Gostaria de saber mais sobre os planos empresariais da MedSinai.";
@@ -43,26 +86,14 @@ function EmpresasPage() {
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank' );
   };
 
-  // Configuração do formulário com Formspree
-  const [state, handleSubmit] = useForm("xandevky"); // CODIGO DO FORMS
-  const formRef = useRef();
-
-  useEffect(() => {
-    if (state.succeeded) {
-      // Mostra um alerta de sucesso
-      alert("Obrigado! Sua mensagem foi enviada com sucesso. Em breve nossa equipe entrará em contato");
-      // Limpa o formulário
-      formRef.current.reset();
-    }
-  }, [state.succeeded]);
-  
   return (
     <div className="bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
       <title>Para Empresas | MedSinai Telemedicina</title>
 
       {/* SEÇÃO 1: HERO */}
       <section className="py-20 px-6 bg-gray-300 dark:bg-gray-900">
-        <div className="container mx-auto">
+        {/* ... seu código JSX para esta seção permanece o mesmo ... */}
+         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl lg:text-4,5xl font-bold mb-6 leading-tight">
@@ -90,8 +121,9 @@ function EmpresasPage() {
         </div>
       </section>
 
-      {/* SEÇÃO 2: CUIDAR DA SAÚDE */}
-      <section className="py-20 px-6">
+      {/* ... outras seções da página permanecem as mesmas ... */}
+       {/* SEÇÃO 2: CUIDAR DA SAÚDE */}
+       <section className="py-20 px-6">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -219,8 +251,10 @@ function EmpresasPage() {
         </div>
       </section>
 
-      {/* SEÇÃO 5: FORMULÁRIO */}
-      <section className="py-50 px-6 bg-gray-50 dark:bg-gray-900">
+      {/* =================================================================== */}
+      {/* ==> SEÇÃO 5: FORMULÁRIO ATUALIZADO <== */}
+      {/* =================================================================== */}
+      <section className="py-20 px-6 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
@@ -233,29 +267,49 @@ function EmpresasPage() {
             </div>
             <div className="bg-gray-300 dark:bg-gray-800 p-8 rounded-2xl shadow-lg">
               <h3 className="text-3xl font-bold mb-6 text-center">Fale com a gente</h3>
-              <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="nome" className="block text-sm font-medium mb-1">Nome*</label>
-                  <input id="nome" type="text" name="nome" required className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" />
-                  <ValidationError prefix="Nome" field="nome" errors={state.errors} className="text-red-500 text-sm mt-1" />
+                  <input id="nome" type="text" required
+                    className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    value={formData.nome}
+                    onChange={handleInputChange}
+                  />
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium mb-1">E-mail Corporativo*</label>
-                  <input id="email" type="email" name="email" required className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" />
-                  <ValidationError prefix="Email" field="email" errors={state.errors} className="text-red-500 text-sm mt-1" />
+                  <input id="email" type="email" required
+                    className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                  />
                 </div>
                 <div>
                   <label htmlFor="telefone" className="block text-sm font-medium mb-1">Número de telefone*</label>
-                  <input id="telefone" type="tel" name="telefone" required className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" />
-                  <ValidationError prefix="Telefone" field="telefone" errors={state.errors} className="text-red-500 text-sm mt-1" />
+                  <input id="telefone" type="tel" required
+                    className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    value={formData.telefone}
+                    onChange={handleInputChange}
+                  />
                 </div>
                 <div>
-                  <label htmlFor="empresa" className="block text-sm font-medium mb-1">Nome da empresa*</label>
-                  <input id="empresa" type="text" name="empresa" required className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600" />
-                  <ValidationError prefix="Empresa" field="empresa" errors={state.errors} className="text-red-500 text-sm mt-1" />
+                  <label htmlFor="nome_empresa" className="block text-sm font-medium mb-1">Nome da empresa*</label>
+                  <input id="nome_empresa" type="text" required
+                    className="w-full p-3 rounded-lg border bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                    value={formData.nome_empresa}
+                    onChange={handleInputChange}
+                  />
                 </div>
-                <button type="submit" disabled={state.submitting} className="w-full px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
-                  {state.submitting ? "Enviando..." : "Enviar"}
+
+                {/* Mensagem de feedback (sucesso ou erro) */}
+                {formMessage && (
+                  <div className={`p-3 rounded-lg text-center text-sm font-medium ${formMessage.type === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'}`}>
+                    {formMessage.text}
+                  </div>
+                )}
+
+                <button type="submit" disabled={submitting} className="w-full px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                  {submitting ? "Enviando..." : "Enviar"}
                 </button>
               </form>
             </div>
