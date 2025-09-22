@@ -230,6 +230,7 @@ export default function FinanceiroAdminPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      <title>Financeiro | Painel Admin MedSinai</title>
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financeiro - Admin</h1>
         

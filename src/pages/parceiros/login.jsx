@@ -87,7 +87,7 @@ const handleLogin = async (e) => {
   return (
     // A div principal agora tem cores de fundo que mudam com o tema
     <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
-      
+      <title>Login | Portal do Parceiro MedSinai</title>
       {/* --- 4. BOTÃO DE TEMA POSICIONADO NO CANTO --- */}
       <div className="absolute top-4 right-4">
         <button 

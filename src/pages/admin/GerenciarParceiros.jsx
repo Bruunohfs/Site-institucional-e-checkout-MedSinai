@@ -123,6 +123,7 @@ export default function GerenciarParceiros() {
     
     return (
       <div className="overflow-x-auto">
+        <title>Gerenciar Parceiros | Painel Admin MedSinai</title>
         <table className="w-full text-left">
           <thead className="bg-gray-400 dark:bg-gray-700/50">
             <tr>

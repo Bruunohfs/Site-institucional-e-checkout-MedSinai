@@ -38,7 +38,7 @@ const MaterialCard = ({ material, onPreviewSelect }) => {
       onClick={handleCardClick}
     >
       <div className="relative w-full h-48 group">
-        {/* Camada de overlay com ícone de "ver" */}
+        <title>Material de Apoio | Portal do Parceiro MedSinai</title>
         {!isText && (
           <div className="absolute inset-0 bg-black/50 flex justify-center items-center transition-opacity opacity-0 group-hover:opacity-100">
             <EyeIcon />

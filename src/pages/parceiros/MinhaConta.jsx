@@ -140,6 +140,7 @@ export default function MinhaContaPage() {
 
   return (
     <div className="notranslate p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+      <title>Minha Conta | Portal do Parceiro MedSinai</title>
       <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-8">Minha Conta</h1>
       <div className="space-y-8">
         {/* Seção de Dados Pessoais */}

@@ -38,6 +38,7 @@ export default function DashboardPage() {
 
   return (
     <div className="notranslate">
+      <title>Dashboard | Portal do Parceiro MedSinai</title>
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Minhas Comissões Aprovadas</h1>

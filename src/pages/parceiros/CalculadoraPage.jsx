@@ -39,6 +39,7 @@ export default function CalculadoraPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-12">
+      <title>Calculadora | Portal do Parceiro MedSinai</title>
       
       <button onClick={() => setShowHelp(true)} className="fixed top-6 right-4 sm:right-6 lg:right-8 z-40 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors" aria-label="Ajuda">
         <HelpIcon />

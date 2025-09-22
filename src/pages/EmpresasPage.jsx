@@ -58,6 +58,7 @@ function EmpresasPage() {
   
   return (
     <div className="bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
+      <title>Para Empresas | MedSinai Telemedicina</title>
 
       {/* SEÇÃO 1: HERO */}
       <section className="py-20 px-6 bg-gray-300 dark:bg-gray-900">

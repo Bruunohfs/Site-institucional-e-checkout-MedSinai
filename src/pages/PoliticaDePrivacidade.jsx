@@ -17,6 +17,7 @@ const Section = ({ title, children }) => (
 function PoliticaDePrivacidade() {
   return (
     <div className="bg-white dark:bg-gray-900 py-16 lg:py-24 px-6">
+      <title>Política de Privacidade | MedSinai</title>
       <div className="container mx-auto max-w-4xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">

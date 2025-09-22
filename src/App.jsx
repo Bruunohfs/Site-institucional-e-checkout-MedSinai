@@ -149,6 +149,7 @@ const comoFuncionaSteps = [
 
   return (
     <div className="w-full">
+    <title>MedSinai | Telemedicina para Você e sua Família</title>
 
 <section className="relative bg-gray-100 dark:bg-gray-800 pt-12 pb-24 lg:pb-32">
   <div className="container mx-auto px-0 lg:px-6">

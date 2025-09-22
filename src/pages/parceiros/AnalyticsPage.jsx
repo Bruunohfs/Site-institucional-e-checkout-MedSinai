@@ -85,6 +85,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      <title>Análises | Portal do Parceiro MedSinai</title>
       <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Análises e Gráficos</h1>
         <div className="flex flex-wrap gap-3">

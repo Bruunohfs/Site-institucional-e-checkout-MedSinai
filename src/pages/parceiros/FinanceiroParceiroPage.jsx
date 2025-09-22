@@ -94,6 +94,7 @@ export default function FinanceiroParceiroPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      <title>Financeiro | Portal do Parceiro MedSinai</title>
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Meu Financeiro</h1>
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-400 dark:border-gray-700 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">

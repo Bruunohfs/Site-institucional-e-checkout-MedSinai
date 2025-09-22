@@ -120,6 +120,7 @@ export default function GerenciarConteudo() {
 
   return (
     <div>
+      <title>Gerenciar Conteudos | Painel Admin MedSinai</title>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gerenciar Conteúdo</h1>
         <button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-green-400 to-blue-400 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm">

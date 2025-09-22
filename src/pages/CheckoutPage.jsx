@@ -199,6 +199,7 @@ if (tipoPlano === 'anual' && planoSelecionado) {
 
 return (
   <div className="notranslate">
+  <title>Finalizar Pagamento | MedSinai</title>
   <div className="bg-gray-100 dark:bg-gray-900 min-h-screen py-12 px-4">
     <div className="container mx-auto">
       

@@ -19,6 +19,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="notranslate">
+      <title>Dashboard | Painel Admin MedSinai</title>
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Dashboard do Administrador</h1>
       <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Resumo do Mês Atual</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
