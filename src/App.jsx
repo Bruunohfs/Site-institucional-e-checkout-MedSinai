@@ -8,8 +8,8 @@ import 'swiper/css/navigation' ;
 import { useNavigate } from 'react-router-dom';
 import { planosMensais, planosAnuais } from "@/data/planos";
 import useTracker from '@/hooks/useTracker';
-import parceirosCinemaImg from '@/assets/logos/logoscinema.png';
-import parceirosCashbackImg from '@/assets/logos/logosmarcas.png';
+import parceirosCinemaImg from '@/assets/logos/logoscinema.webp';
+import parceirosCashbackImg from '@/assets/logos/logosmarcas.webp';
 import { useSearchParams } from 'react-router-dom';
 import ServicesSection from './components/ServicesSection';
 

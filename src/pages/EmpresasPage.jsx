@@ -3,7 +3,7 @@ import { useForm, ValidationError } from '@formspree/react';
 import empresa1 from '../assets/empresa1.jpg';
 import empresa2 from '../assets/empresa2.jpg';
 import empresa3 from '../assets/empresa3.webp';
-import bemEstarCorporativoImg from '../assets/nr01img.png'; 
+import bemEstarCorporativoImg from '../assets/nr01img.webp'; 
 
 
 // Ícone de check para usar nas listas de vantagens

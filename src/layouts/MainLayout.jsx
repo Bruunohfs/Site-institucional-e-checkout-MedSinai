@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate, ScrollRestoration } from 'react-router-dom';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo.webp';
 import HeartbeatLine from '@/components/ui/HeartbeatLine';
 import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
 

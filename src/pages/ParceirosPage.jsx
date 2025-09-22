@@ -3,8 +3,8 @@ import { useForm, ValidationError } from '@formspree/react';
 import { IMaskInput } from 'react-imask';
 
 // Novas imagens sugeridas para a página de parceiros
-import parceiroHeroImg from '../assets/parceiro-hero.jpg'; // Sugestão: Imagem de uma pessoa trabalhando de forma flexível (notebook em um café, etc.)
-import parceiroPortalImg from '../assets/parceiro-portal.png'; // Sugestão: Um print ou montagem da tela do portal do parceiro
+import parceiroHeroImg from '../assets/parceiro-hero.webp'; // Sugestão: Imagem de uma pessoa trabalhando de forma flexível (notebook em um café, etc.)
+import parceiroPortalImg from '../assets/parceiro-portal.webp'; // Sugestão: Um print ou montagem da tela do portal do parceiro
 
 // Ícone de check (reutilizado)
 const CheckIcon = () => (
