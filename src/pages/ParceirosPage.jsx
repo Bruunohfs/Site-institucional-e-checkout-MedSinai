@@ -129,7 +129,7 @@ function ParceirosPage() {
               </p>
             </div>
             <div>
-              <img src={parceiroPortalImg} alt="Dashboard do Portal do Parceiro MedSinai" className="rounded-2xl shadow-lg" />
+              <img src={parceiroPortalImg} alt="Dashboard do Portal do Parceiro MedSinai" loading="lazy" className="rounded-2xl shadow-lg" />
             </div>
           </div>
         </div>

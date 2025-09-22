@@ -98,8 +98,8 @@ export default function ServicesSection() {
             />
             
             {/* Celulares agora usam variants */}
-            <motion.img src={celularDireitoImg} alt="App Medsinai no celular" className="absolute w-64 object-contain z-10" variants={rightPhoneVariants} />
-            <motion.img src={celularEsquerdoImg} alt="App Medsinai no celular" className="absolute w-64 object-contain z-20" variants={leftPhoneVariants} />
+            <motion.img src={celularDireitoImg} alt="App Medsinai no celular" loading="lazy" className="absolute w-64 object-contain z-10" variants={rightPhoneVariants} />
+            <motion.img src={celularEsquerdoImg} alt="App Medsinai no celular" loading="lazy" className="absolute w-64 object-contain z-20" variants={leftPhoneVariants} />
           </motion.div>
 
           {/* Coluna de Especialidades */}

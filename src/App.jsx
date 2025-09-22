@@ -309,7 +309,7 @@ const comoFuncionaSteps = [
         <div>
           <img 
             src={parceirosCinemaImg} 
-            alt="Parceiros de cinema: Cinemark, Cinépolis, Moviecom, GrupoCine, Cineart" 
+            alt="Parceiros de cinema: Cinemark, Cinépolis, Moviecom, GrupoCine, Cineart" loading="lazy"
             className="rounded-2xl shadow-lg transform hover:scale-105nom transition-transform duration-300"
           />
         </div>
@@ -328,7 +328,7 @@ const comoFuncionaSteps = [
         <div className="lg:order-first">
           <img 
             src={parceirosCashbackImg} 
-            alt="Parceiros de cashback: Nike, Netshoes, Kabum, Electrolux, Natura, Casas Bahia, Gol" 
+            alt="Parceiros de cashback: Nike, Netshoes, Kabum, Electrolux, Natura, Casas Bahia, Gol" loading="lazy"
             className="rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300"
           />
         </div>

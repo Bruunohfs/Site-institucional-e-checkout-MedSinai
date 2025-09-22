@@ -94,7 +94,7 @@ function EmpresasPage() {
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <img src={empresa2} alt="Colaboradora usando o app MedSinai" className="rounded-2xl shadow-lg" />
+              <img src={empresa2} alt="Colaboradora usando o app MedSinai" loading="lazy" className="rounded-2xl shadow-lg" />
             </div>
             <div>
               <h2 className="text-4xl font-bold mb-8">Cuidar da saúde do colaborador é cuidar da saúde da empresa</h2>
@@ -181,7 +181,7 @@ function EmpresasPage() {
       <div className="relative flex justify-center lg:order-last"> {/* Garante que este bloco venha por último */}
         <img 
           src={bemEstarCorporativoImg} // Troquei para a imagem 3, que parece mais adequada
-          alt="Profissional sorrindo, representando bem-estar no trabalho"
+          alt="Profissional sorrindo, representando bem-estar no trabalho" loading="lazy" 
           className="rounded-2xl shadow-lg w-full max-w-md object-cover aspect-[4/5]"
         />
         <div className="absolute -bottom-8 bg-green-600 dark:bg-green-500 text-white p-6 rounded-xl shadow-2xl max-w-sm mx-auto">
@@ -201,7 +201,7 @@ function EmpresasPage() {
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <img src={empresa3} alt="Equipe de profissionais de saúde MedSinai" className="rounded-2xl shadow-lg" />
+              <img src={empresa3} alt="Equipe de profissionais de saúde MedSinai" loading="lazy" className="rounded-2xl shadow-lg" />
             </div>
             <div>
               <h2 className="text-4xl font-bold mb-6 leading-tight">
