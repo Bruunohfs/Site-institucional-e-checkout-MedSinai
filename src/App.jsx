@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import bannerImage from './assets/medsinai-banner.png';
+import bannerImage from './assets/bannermedsinai.webp';
 import './App.css';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
@@ -11,8 +11,6 @@ import useTracker from '@/hooks/useTracker';
 import parceirosCinemaImg from '@/assets/logos/logoscinema.png';
 import parceirosCashbackImg from '@/assets/logos/logosmarcas.png';
 import { useSearchParams } from 'react-router-dom';
-import beneficiosHero from './assets/beneficios-hero.jpg';
-import appImage from './assets/appmedsinai.png';
 import ServicesSection from './components/ServicesSection';
 
 

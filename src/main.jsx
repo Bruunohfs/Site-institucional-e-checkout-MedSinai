@@ -24,6 +24,8 @@ import FinanceiroParceiroPage from './pages/parceiros/FinanceiroParceiroPage';
 import OportunidadesPage from './pages/parceiros/OportunidadesPage';
 import CalculadoraPage from './pages/parceiros/CalculadoraPage';
 import ParceirosPage from './pages/ParceirosPage';
+import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade.jsx';
+import TermosDeUso from './pages/TermosDeUso.jsx';
 
 
 // Crie as rotas
@@ -37,6 +39,8 @@ const router = createBrowserRouter([
       { path: "empresas", element: <EmpresasPage /> },
       { path: "/pagamento/:tipoPlano/:idDoPlano", element: <CheckoutPage /> },
       { path: "sejaparceiro", element: <ParceirosPage /> },
+      { path: "termos-de-uso", element: <TermosDeUso /> },
+      { path: "politica-de-privacidade", element: <PoliticaDePrivacidade /> },
     ],
   },
   

@@ -1,8 +1,8 @@
 // src/components/ServicesSection.jsx (VERSÃO FINAL COM ANIMAÇÃO ORQUESTRADA)
 
 import { motion } from "framer-motion";
-import celularEsquerdoImg from "@/assets/celular-esquerdo.png";
-import celularDireitoImg from "@/assets/celular-direito.png";
+import celularEsquerdoImg from "@/assets/celular-esquerdo.webp";
+import celularDireitoImg from "@/assets/celular-direito.webp";
 
 const especialidadesData = [
   { title: "Clínico Geral 24h", description: "Atendimento médico disponível 24 horas por dia, 7 dias por semana, sem filas ou agendamento." },

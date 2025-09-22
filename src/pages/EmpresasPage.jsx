@@ -3,6 +3,8 @@ import { useForm, ValidationError } from '@formspree/react';
 import empresa1 from '../assets/empresa1.jpg';
 import empresa2 from '../assets/empresa2.jpg';
 import empresa3 from '../assets/empresa3.webp';
+import bemEstarCorporativoImg from '../assets/nr01img.png'; 
+
 
 // Ícone de check para usar nas listas de vantagens
 const CheckIcon = () => (
@@ -139,6 +141,60 @@ function EmpresasPage() {
           </div>
         </div>
       </section>
+
+
+<section className="py-20 px-6 bg-white dark:bg-gray-900">
+  <div className="container mx-auto">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      
+      {/* Coluna da Esquerda: Conteúdo Informativo (AGORA NA ESQUERDA) */}
+      <div className="lg:order-first"> {/* Garante que este bloco venha primeiro */}
+        <p className="text-sm font-bold text-green-600 dark:text-green-400 uppercase mb-2">BEM-ESTAR QUE GERA RESULTADOS</p>
+        <h2 className="text-4xl font-bold mb-6 leading-tight">
+          Saia na frente com uma cultura de cuidado integral
+        </h2>
+        <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+          As novas diretrizes de saúde ocupacional (NR-01) mostram uma tendência clara: o futuro do trabalho é cuidar também da saúde mental. Empresas que investem no bem-estar psicossocial de suas equipes não apenas se adequam às novas normas, mas também constroem um ambiente mais produtivo e inovador.
+        </p>
+        
+        <ul className="space-y-4 mb-8">
+          <li className="flex items-start">
+            <CheckIcon />
+            <div>
+              <strong className="text-gray-900 dark:text-white">Equipes mais fortes:</strong> Oferecer suporte à saúde mental, como acesso a psicólogos, fortalece a resiliência e o engajamento dos seus colaboradores.
+            </div>
+          </li>
+          <li className="flex items-start">
+            <CheckIcon />
+            <div>
+              <strong className="text-gray-900 dark:text-white">Solução descomplicada:</strong> Com a MedSinai, sua empresa se alinha a essa nova realidade de forma simples, oferecendo um benefício moderno e valorizado por todos.
+            </div>
+          </li>
+        </ul>
+
+        <button onClick={openWhatsApp} className="px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors">
+          Conheça a solução para sua equipe
+        </button>
+      </div>
+
+      {/* Coluna da Direita: Imagem e Destaque (AGORA NA DIREITA) */}
+      <div className="relative flex justify-center lg:order-last"> {/* Garante que este bloco venha por último */}
+        <img 
+          src={bemEstarCorporativoImg} // Troquei para a imagem 3, que parece mais adequada
+          alt="Profissional sorrindo, representando bem-estar no trabalho"
+          className="rounded-2xl shadow-lg w-full max-w-md object-cover aspect-[4/5]"
+        />
+        <div className="absolute -bottom-8 bg-green-600 dark:bg-green-500 text-white p-6 rounded-xl shadow-2xl max-w-sm mx-auto">
+          <h4 className="text-xl font-bold mb-2">O Futuro é Cuidar</h4>
+          <p className="text-sm text-green-100">
+            A NR-01 reforça a importância do bem-estar psicossocial. Esteja à frente, transformando o cuidado em vantagem competitiva.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
 
       {/* SEÇÃO 4: EQUIPE PRÓPRIA */}
       <section className="py-20 px-6">

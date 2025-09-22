@@ -4,7 +4,6 @@ import logo from '@/assets/logo.png';
 import HeartbeatLine from '@/components/ui/HeartbeatLine';
 import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
 
-
 // ===================================================================
 // =================== ÍCONES PARA O RODAPÉ ==========================
 // ===================================================================
@@ -14,9 +13,10 @@ const UserIcon = () => (
   </svg>
 );
 
+// VERSÃO CORRIGIDA DO ÍCONE DO INSTAGRAM
 const InstagramIcon = () => (
-  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.27.058 2.15.298 2.92.598.78.3 1.45.75 2.01 1.31s1.01 1.23 1.31 2.01c.3.77.54 1.65.598 2.92.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.058 1.27-.298 2.15-.598 2.92-.3.78-.75 1.45-1.31 2.01s-1.23 1.01-2.01 1.31c-.77.3-1.65.54-2.92.598-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.27-.058-2.15-.298-2.92-.598-.78-.3-1.45-.75-2.01-1.31s-1.01-1.23-1.31-2.01c-.3-.77-.54-1.65-.598-2.92-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.058-1.27.298-2.15.598-2.92.3-.78.75-1.45 1.31-2.01s1.23-1.01 2.01-1.31c.77-.3 1.65-.54 2.92-.598C8.416 2.175 8.796 2.163 12 2.163zm0 1.44c-3.115 0-3.486.01-4.706.06-1.14.05-1.8.25-2.3.45-.55.23-.98.5-1.4.95-.45.45-.72.85-.95 1.4-.2.5-.4 1.16-.45 2.3-.05 1.22-.06 1.59-.06 4.706s.01 3.486.06 4.706c.05 1.14.25 1.8.45 2.3.23.55.5.98.95 1.4.45.45.85.72 1.4.95.5.2 1.16.4 2.3.45 1.22.05 1.59.06 4.706.06s3.486-.01 4.706-.06c1.14-.05 1.8-.25 2.3-.45.55-.23.98-.5 1.4-.95.45-.45.72-.85-.95-1.4.2-.5.4-1.16.45-2.3.05-1.22.06-1.59.06-4.706s-.01-3.486-.06-4.706c-.05-1.14-.25-1.8-.45-2.3-.23-.55-.5-.98-.95-1.4-.45-.45-.85-.72-1.4-.95-.5-.2-1.16-.4-2.3-.45-1.22-.05-1.59-.06-4.706-.06zM12 6.8c-2.86 0-5.18 2.32-5.18 5.18s2.32 5.18 5.18 5.18 5.18-2.32 5.18-5.18-2.32-5.18-5.18-5.18zm0 8.74c-1.96 0-3.56-1.6-3.56-3.56s1.6-3.56 3.56-3.56 3.56 1.6 3.56 3.56-1.6 3.56-3.56 3.56zm4.86-8.82c-.6 0-1.08.48-1.08 1.08s.48 1.08 1.08 1.08 1.08-.48 1.08-1.08-.48-1.08-1.08-1.08z" />
+  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.012-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 016.08 2.525c.636-.247 1.363-.416 2.427-.465C9.53 2.013 9.884 2 12.315 2zM12 7a5 5 0 100 10 5 5 0 000-10zm0 8a3 3 0 110-6 3 3 0 010 6zm5.25-9.75a1.25 1.25 0 100-2.5 1.25 1.25 0 000 2.5z" clipRule="evenodd" />
   </svg>
 );
 
@@ -40,7 +40,6 @@ function MainLayout() {
   const navigate = useNavigate();
   const mobileMenuIconColor = isScrolled ? 'bg-white' : 'bg-gray-800 dark:bg-white';
 
-  // Lógica para detectar se a página atual é a de checkout
   const isCheckoutPage = location.pathname.startsWith('/pagamento');
 
   useEffect(() => {
@@ -101,7 +100,7 @@ function MainLayout() {
   const openWhatsApp = () => {
     const whatsappNumber = "16992291295";
     const whatsappUrl = `https://wa.me/${whatsappNumber}`;
-    window.open(whatsappUrl, '_blank'   );
+    window.open(whatsappUrl, '_blank'     );
     setIsMobileMenuOpen(false);
   };
 
@@ -113,16 +112,13 @@ function MainLayout() {
       <header className={`relative px-4 sm:px-6 py-4 sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-gradient-to-r from-green-400 to-blue-400 shadow-lg' : 'bg-transparent'}`}>
          <div className="container mx-auto w-full flex items-center justify-between gap-4">
           
-          {/* --- GRUPO DA ESQUERDA: Logo --- */}
           <Link to="/" className="flex items-center gap-x-3 flex-shrink-0">
             <img src={logo} alt="MedSinai Logo" className="h-10 w-auto" />
-            <span className={`text-2xl font-bold ${navLinkTextColor}`}> {/* <-- CLASSES REMOVIDAS AQUI */}
+            <span className={`text-2xl font-bold ${navLinkTextColor}`}>
               MedSinai
             </span>
           </Link>
           
-          {/* --- GRUPO DO CENTRO (Desktop): Navegação Principal --- */}
-          {/* Este bloco só aparece se NÃO for a página de checkout */}
           {!isCheckoutPage && (
             <nav className="hidden lg:flex items-center gap-x-8">
               <button onClick={() => handleNavigateAndScroll('services')} className={`${navLinkClasses} group`}>
@@ -144,12 +140,9 @@ function MainLayout() {
             </nav>
           )}
 
-          {/* --- GRUPO DA DIREITA: Ações e Menus --- */}
           <div className="flex items-center gap-x-2 sm:gap-x-4">
-            {/* ThemeSwitcher sempre visível */}
             <ThemeSwitcher theme={theme} onThemeSwitch={handleThemeSwitch} />
 
-            {/* Este bloco só aparece se NÃO for a página de checkout */}
             {!isCheckoutPage && (
               <>
                 <div className="hidden lg:flex items-center gap-x-4">
@@ -176,7 +169,6 @@ function MainLayout() {
           </div>
         </div>
 
-        {/* --- Menu Dropdown Mobile --- */}
         <div className={`lg:hidden absolute top-full left-0 w-full bg-gradient-to-r from-green-400 to-blue-400 shadow-lg transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-screen py-4' : 'max-h-0 py-0 overflow-hidden'}`}>
           <div className="px-6 space-y-4">
             <button onClick={() => handleNavigateAndScroll('services')} className="block w-full text-left text-white font-medium py-2 hover:text-yellow-200 transition-colors">
@@ -194,7 +186,7 @@ function MainLayout() {
             <div className="border-t border-white/20 pt-4 space-y-4">
               <Link 
                 to="/parceiros/login" 
-                onClick={handleLinkClick} // Fecha o menu ao clicar
+                onClick={handleLinkClick}
                 className="w-full flex items-center justify-center gap-x-2 px-4 py-3 rounded-lg bg-white text-green-600 font-medium hover:bg-gray-100 transition-colors"
                 >
                 <UserIcon />
@@ -210,7 +202,6 @@ function MainLayout() {
         <ScrollRestoration />
       </main>
 
-      {/* O rodapé só aparece se NÃO for a página de checkout */}
       {!isCheckoutPage && (
         <footer className="bg-gray-800 dark:bg-gray-900 text-gray-300">
           <div className="container mx-auto py-12 px-6">
@@ -221,11 +212,15 @@ function MainLayout() {
               </div>
               <div>
                 <h3 className="font-bold text-white mb-4">Navegação</h3>
+                {/* =================================================================== */}
+                {/* =================== NAVEGAÇÃO ATUALIZADA AQUI ===================== */}
+                {/* =================================================================== */}
                 <ul className="space-y-2">
                   <li><button onClick={() => handleNavigateAndScroll('services')} className="hover:text-white transition-colors">Especialidades</button></li>
                   <li><button onClick={() => handleNavigateAndScroll('plans')} className="hover:text-white transition-colors">Planos</button></li>
                   <li><Link to="/empresas" onClick={handleLinkClick} className="hover:text-white transition-colors">Para Empresas</Link></li>
-                  <li><button onClick={() => handleNavigateAndScroll('faq')} className="hover:text-white transition-colors">Dúvidas Frequentes</button></li>
+                  <li><Link to="/sejaparceiro" onClick={handleLinkClick} className="hover:text-white transition-colors">Seja um Parceiro</Link></li>
+                  <li><Link to="/parceiros/login" onClick={handleLinkClick} className="hover:text-white transition-colors">Portal do Parceiro</Link></li>
                 </ul>
               </div>
               <div>
@@ -238,8 +233,8 @@ function MainLayout() {
               <div>
                 <h3 className="font-bold text-white mb-4">Siga-nos</h3>
                 <div className="flex space-x-4">
-                  <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><InstagramIcon /></a>
-                  <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FacebookIcon /></a>
+                  <a href="https://www.instagram.com/medsinai/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><InstagramIcon /></a>
+                  <a href="https://www.facebook.com/profile.php?id=61580940337404" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors"><FacebookIcon /></a>
                   <a href="#" onClick={openWhatsApp} className="hover:text-white transition-colors"><WhatsAppIcon /></a>
                 </div>
               </div>
@@ -247,8 +242,8 @@ function MainLayout() {
           </div>
           <div className="bg-gray-900 dark:bg-black/50 py-4 px-6">
             <div className="container mx-auto text-center text-gray-500 text-sm">
-              <p>&copy; {new Date().getFullYear()} MedSinai. Todos os direitos reservados.</p>
-              <p className="mt-1">CNPJ: XX.XXX.XXX/0001-XX</p>
+              <p>&copy; {new Date( ).getFullYear()} MedSinai. Todos os direitos reservados.</p>
+              <p className="mt-1">CNPJ: 35.202.378/0001-52</p>
             </div>
           </div>
         </footer>
