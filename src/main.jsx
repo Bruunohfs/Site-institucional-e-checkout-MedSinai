@@ -1,6 +1,8 @@
+// src/main.jsx - VERSÃO CORRIGIDA PARA REMOVER O LAYOUT DAS LANDING PAGES
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, ScrollRestoration } from "react-router-dom"; // Importe ScrollRestoration aqui
 import './index.css';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import ReactGA from 'react-ga4';
@@ -37,9 +39,8 @@ import { Analytics } from '@vercel/analytics/react';
 const GA_MEASUREMENT_ID = "G-Z1SN0XKENK";
 ReactGA.initialize(GA_MEASUREMENT_ID);
 
-//*apenas para atualizar*// 
-
 const router = createBrowserRouter([
+  // --- ROTAS COM O LAYOUT PRINCIPAL (CABEÇALHO E RODAPÉ) ---
   {
     path: "/",
     element: <MainLayout />,
@@ -50,24 +51,52 @@ const router = createBrowserRouter([
       { path: "sejaparceiro", element: <ParceirosPage /> },
       { path: "termos-de-uso", element: <TermosDeUso /> },
       { path: "politica-de-privacidade", element: <PoliticaDePrivacidade /> },
-      { path: "escritorio", element: <LandingPageEsc /> },
-      { path: "comercio", element: <LandingPageCom /> },
-      { path: "industria", element: <LandingPageInd /> },
+      // As landing pages foram removidas daqui
     ],
   },
   
-  // Rota de Login do Parceiro (página inteira, sem layout)
+  // --- ROTAS DE PÁGINA INTEIRA (SEM LAYOUT) ---
+
+  // Landing Pages (agora sem o MainLayout)
+  {
+    path: "/escritorio",
+    element: (
+      <>
+        <LandingPageEsc />
+        <ScrollRestoration />
+      </>
+    ),
+  },
+  {
+    path: "/comercio",
+    element: (
+      <>
+        <LandingPageCom />
+        <ScrollRestoration />
+      </>
+    ),
+  },
+  {
+    path: "/industria",
+    element: (
+      <>
+        <LandingPageInd />
+        <ScrollRestoration />
+      </>
+    ),
+  },
+
+  // Rota de Login do Parceiro
   {
     path: "/parceiros/login",
     element: <LoginPage />,
   },
 
-  // --- NOVA ESTRUTURA DE ROTAS DO DASHBOARD ---
+  // --- ROTAS DO DASHBOARD DO PARCEIRO ---
   {
     path: "/parceiros",
-    element: <DashboardLayout />, // O DashboardLayout é o PAI
+    element: <DashboardLayout />,
     children: [
-
       { path: "dashboard", element: <DashboardPage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'materiais', element: <SupportMaterialPage /> },
@@ -77,12 +106,13 @@ const router = createBrowserRouter([
       { path: 'calculadora', element: <CalculadoraPage /> },
     ],
   },
-{
+
+  // --- ROTAS DO DASHBOARD DO ADMIN ---
+  {
     path: "/admin",
     element: <AdminLayout />,
     children: [
       { index: true, element: <AdminDashboard /> },
-      // Futuramente, as outras rotas de admin virão aqui:
       { path: "parceiros", element: <GerenciarParceiros /> },
       { path: "conteudo", element: <GerenciarConteudo /> },
       { path: "vendas", element: <VisaoGeralVendas /> },
