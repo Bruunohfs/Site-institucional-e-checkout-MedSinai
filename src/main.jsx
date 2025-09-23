@@ -9,6 +9,9 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
 import App from './App.jsx';
 import EmpresasPage from './pages/EmpresasPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx';
+import LandingPageEsc from './pages/LandingPageescritorio.jsx';
+import LandingPageCom from './pages/LandingPagecomercio.jsx';
+import LandingPageInd from './pages/LandingPageindustria.jsx';
 import LoginPage from './pages/parceiros/login.jsx';
 import DashboardPage from './pages/parceiros/dashboard.jsx'; 
 import AnalyticsPage from './pages/parceiros/AnalyticsPage';
@@ -47,6 +50,9 @@ const router = createBrowserRouter([
       { path: "sejaparceiro", element: <ParceirosPage /> },
       { path: "termos-de-uso", element: <TermosDeUso /> },
       { path: "politica-de-privacidade", element: <PoliticaDePrivacidade /> },
+      { path: "escritorio", element: <LandingPageEsc /> },
+      { path: "comercio", element: <LandingPageCom /> },
+      { path: "industria", element: <LandingPageInd /> },
     ],
   },
   
