@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+// ===================================================================
+// ==> CAMINHO DE IMPORTAÇÃO CORRIGIDO USANDO ALIAS '@' <==
+// ===================================================================
+import { useNotification } from '@/components/notifications/NotificationContext';
 
 export default function EditMaterialModal({ material, isOpen, onClose, onSave }) {
   const [titulo, setTitulo] = useState('');
@@ -6,7 +10,8 @@ export default function EditMaterialModal({ material, isOpen, onClose, onSave })
   const [conteudoTexto, setConteudoTexto] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Preenche o formulário quando o modal abre com um novo material
+  const { addNotification } = useNotification();
+
   useEffect(() => {
     if (material) {
       setTitulo(material.titulo || '');
@@ -27,10 +32,12 @@ export default function EditMaterialModal({ material, isOpen, onClose, onSave })
     
     const success = await onSave(material.id, updatedData);
     setLoading(false);
+    
     if (success) {
+      addNotification('Material atualizado com sucesso!', 'success');
       onClose();
     } else {
-      alert('Falha ao atualizar o material.');
+      addNotification('Falha ao atualizar o material. Tente novamente.', 'error');
     }
   };
 
@@ -50,7 +57,6 @@ export default function EditMaterialModal({ material, isOpen, onClose, onSave })
             <textarea id="descricao-edit" value={descricao} onChange={(e) => setDescricao(e.target.value)} rows="3" className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"></textarea>
           </div>
 
-          {/* Só mostra o campo de texto se o material for do tipo 'texto' */}
           {material.tipo === 'texto' && (
             <div>
               <label htmlFor="conteudo-texto-edit" className="block text-sm font-medium text-gray-300 mb-1">Conteúdo do Texto</label>

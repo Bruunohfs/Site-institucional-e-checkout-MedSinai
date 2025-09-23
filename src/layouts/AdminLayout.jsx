@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient.js'; // Já usando o alias!
+import { supabase } from '@/lib/supabaseClient.js';
 import AdminSidebar from '../pages/admin/AdminSidebar';
 import useTracker from '@/hooks/useTracker';
+
+// =====> NOVAS IMPORTAÇÕES <=====
+import { NotificationProvider } from '../components/notifications/NotificationContext';
+import NotificationContainer from '../components/notifications/NotificationContainer';
 
 // Ícone do menu hambúrguer
 const MenuIcon = () => (
@@ -18,11 +22,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // --- 1. ADICIONAR ESTADO PARA O MENU MOBILE ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Lógica de tema (sem alterações)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
   useEffect(() => {
@@ -39,7 +39,6 @@ export default function AdminLayout() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Lógica de segurança (sem alterações)
   useEffect(() => {
     const fetchSessionAndCheckRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -67,33 +66,39 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-      {/* --- 2. PASSAR AS PROPS DE CONTROLE DO MENU PARA O SIDEBAR --- */}
-      <AdminSidebar 
-        user={user} 
-        onLogout={handleLogout}
-        theme={theme}
-        onThemeSwitch={handleThemeSwitch}
-        isOpen={isMobileMenuOpen}
-        setIsOpen={setIsMobileMenuOpen}
-      />
+    // =====> ENVOLVA TUDO COM O PROVIDER <=====
+    <NotificationProvider>
+      <div className="flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+        
+        {/* =====> ADICIONE O CONTAINER AQUI, LOGO NO INÍCIO <===== */}
+        <NotificationContainer />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* --- 3. ADICIONAR O CABEÇALHO MOBILE --- */}
-        <header className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md border-b dark:border-gray-700">
-          <div>
-            <h1 className="text-lg font-bold">MedSinai</h1>
-            <p className="text-xs font-semibold text-blue-400">PAINEL ADMIN</p>
-          </div>
-          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-md text-gray-500 dark:text-gray-400">
-            <MenuIcon />
-          </button>
-        </header>
+        <AdminSidebar 
+          user={user} 
+          onLogout={handleLogout}
+          theme={theme}
+          onThemeSwitch={handleThemeSwitch}
+          isOpen={isMobileMenuOpen}
+          setIsOpen={setIsMobileMenuOpen}
+        />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <Outlet context={{ user }} />
-        </main>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <header className="md:hidden flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-md border-b dark:border-gray-700">
+            <div>
+              <h1 className="text-lg font-bold">MedSinai</h1>
+              <p className="text-xs font-semibold text-blue-400">PAINEL ADMIN</p>
+            </div>
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-md text-gray-500 dark:text-gray-400">
+              <MenuIcon />
+            </button>
+          </header>
+
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            {/* O Outlet agora está dentro do Provider, então todas as páginas filhas terão acesso ao contexto */}
+            <Outlet context={{ user }} />
+          </main>
+        </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }
