@@ -1,4 +1,3 @@
-// /src/pages/LandingPageComercio.jsx
 
 import React from 'react';
 import logo from '@/assets/logo.webp'; // Importando o logo

@@ -1,4 +1,3 @@
-// /src/pages/LandingPageIndustria.jsx
 
 import React from 'react';
 import logo from '@/assets/logo.webp'; // Verifique se o caminho do seu logo está correto

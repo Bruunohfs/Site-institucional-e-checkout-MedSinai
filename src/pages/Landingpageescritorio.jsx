@@ -1,4 +1,3 @@
-// /src/pages/Landingpageescritorio.jsx
 
 import React from 'react';
 import logo from '@/assets/logo.webp';
