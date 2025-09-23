@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import './index.css';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import ReactGA from 'react-ga4';
 import MainLayout from './layouts/MainLayout.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx'; 
@@ -91,5 +92,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RouterProvider router={router} />
     <Analytics />
+    <SpeedInsights />
   </React.StrictMode>,
 );
