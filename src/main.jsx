@@ -15,7 +15,7 @@ import AdminLayout from './layouts/AdminLayout';
 // Landing Pages
 import LandingPageEsc from './pages/Landingpages/LandingPageEscritorio.jsx';
 import LandingPageCom from './pages/Landingpages/LandingPageComercio.jsx';
-import LandingPageInd from './pages/landingpages/LandingPageIndustria.jsx';
+import LandingPageInd from './pages/Landingpages/LandingPageIndustria.jsx';
 
 // Páginas Principais
 import App from './App.jsx';
