@@ -37,7 +37,7 @@ import { Analytics } from '@vercel/analytics/react';
 const GA_MEASUREMENT_ID = "G-Z1SN0XKENK";
 ReactGA.initialize(GA_MEASUREMENT_ID);
 
-
+//*apenas para atualizar*// 
 
 const router = createBrowserRouter([
   {
