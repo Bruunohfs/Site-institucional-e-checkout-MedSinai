@@ -57,60 +57,52 @@ export default async function handler(req, res) {
 // --- FUNÇÕES DE LÓGICA (SEPARADAS PARA ORGANIZAÇÃO) ---
 
 async function upsertSubscription(subscription) {
-  const clienteInternoId = await ensureCustomerExists(subscription.customer);
+  const clienteInternoId = await ensureCustomerExists(subscription.customer, subscription.customerEmail); // Passamos o email também
   if (!clienteInternoId) {
-    console.warn(`Não foi possível encontrar ou criar o cliente ${subscription.customer}. Pulando a sincronização da assinatura ${subscription.id}.`);
+    console.warn(`Não foi possível encontrar ou criar o cliente para a assinatura ${subscription.id}. Pulando sincronização.`);
     return;
   }
 
-  // ===================================================================
-  // ==> CORREÇÃO DO FORMATO DA DATA APLICADA AQUI <==
-  // ===================================================================
-  // 1. Pega a data no formato "DD/MM/AAAA" que vem do Asaas.
-  const dataStringAsaas = subscription.dateCreated; // Ex: "23/09/2025"
-  
-  // 2. Quebra a string em partes [DD, MM, AAAA].
-  const partesData = dataStringAsaas.split('/'); 
-  
-  // 3. Remonta a data no formato que o Supabase entende: "AAAA-MM-DD".
+  const dataStringAsaas = subscription.dateCreated;
+  const partesData = dataStringAsaas.split('/');
   const dataFormatoISO = `${partesData[2]}-${partesData[1]}-${partesData[0]}`;
-  // ===================================================================
 
+  // ===================================================================
+  // ==> CORREÇÃO 2: Preenchendo o campo id_plano <==
+  // ===================================================================
   const { error: subError } = await supabase.from('assinaturas').upsert({
     id_asaas: subscription.id,
     id_cliente: clienteInternoId,
+    id_plano: subscription.description, // Usamos a descrição da assinatura como o "ID do plano"
     status: subscription.status,
     metodo_pagamento: subscription.billingType,
     valor: subscription.value,
-    data_criacao: dataFormatoISO, // 4. Usa a data já formatada.
+    data_criacao: dataFormatoISO,
     ciclo: subscription.cycle,
   }, { onConflict: 'id_asaas' });
+  // ===================================================================
 
   if (subError) throw new Error(`Erro no upsert da assinatura: ${JSON.stringify(subError)}`);
   console.log(`Assinatura ${subscription.id} sincronizada.`);
 }
 
 async function ensureCustomerExists(customerIdAsaas) {
-  // Tenta encontrar o cliente no nosso banco
+  // 1. Tenta encontrar o cliente APENAS pelo seu ID único do Asaas.
   const { data: clienteExistente } = await supabase
     .from('clientes')
     .select('id')
-    .eq('id_asaas', customerIdAsaas)
+    .eq('id_asaas', customerIdAsaas) // A busca agora é simples e direta.
     .single();
 
   if (clienteExistente) {
     return clienteExistente.id;
   }
 
+  // 2. Se não encontrou, busca no Asaas e cria localmente.
   try {
     console.warn(`Cliente ${customerIdAsaas} não encontrado localmente. Buscando no Asaas para criar...`);
     const customerData = await getCustomerData(customerIdAsaas);
     
-    // ===================================================================
-    // ==> CORREÇÃO APLICADA AQUI <==
-    // ===================================================================
-    // O objeto de inserção agora contém apenas os campos que estamos preenchendo.
-    // O Supabase/Postgres irá gerar o 'id' (uuid) automaticamente.
     const dadosCliente = {
       id_asaas: customerData.id,
       nome: customerData.name,
@@ -120,19 +112,15 @@ async function ensureCustomerExists(customerIdAsaas) {
 
     const { data: novoCliente, error: insertError } = await supabase
       .from('clientes')
-      .insert(dadosCliente) // Usamos o novo objeto
+      .insert(dadosCliente)
       .select('id')
       .single();
-    // ===================================================================
 
     if (insertError) throw insertError;
     
     console.log(`Cliente ${customerData.id} criado dinamicamente no Supabase.`);
     return novoCliente.id;
   } catch (error) {
-    // Sua pergunta: "pode ter dado esse erro pq o cliente nao esta mais la?"
-    // Resposta: Sim! Se você deletou o cliente no Asaas, a chamada getCustomerData(customerIdAsaas) vai falhar.
-    // Este 'catch' vai pegar esse erro e impedir que o webhook quebre. A mensagem de erro será útil.
     console.error(`Falha crítica ao tentar criar o cliente ${customerIdAsaas}:`, error.message);
     return null;
   }
