@@ -2,9 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import './index.css';
-import { SpeedInsights } from '@vercel/speed-insights/react';
-import { Analytics } from '@vercel/analytics/react';
-import ReactGA from 'react-ga4';
+import AnalyticsWrapper from './components/AnalyticsWrapper.jsx';
 
 // Layouts
 import MainLayout from './layouts/MainLayout.jsx';
@@ -45,9 +43,6 @@ import GerenciarLeadsEmpresas from './pages/admin/GerenciarLeadsEmpresas';
 import GerenciarLeadsParceiros from './pages/admin/GerenciarLeadsParceiros';
 import FinanceiroAdminPage from './pages/admin/FinanceiroAdminPage';
 import GerenciarClientes from './pages/admin/GerenciarClientes';
-
-const GA_MEASUREMENT_ID = "G-Z1SN0XKENK";
-ReactGA.initialize(GA_MEASUREMENT_ID);
 
 const router = createBrowserRouter([
   // --- ROTAS COM O LAYOUT PRINCIPAL (CABEÇALHO E RODAPÉ) ---
@@ -110,7 +105,6 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RouterProvider router={router} />
-    <Analytics />
-    <SpeedInsights />
+    <AnalyticsWrapper />
   </React.StrictMode>,
 );
