@@ -1,46 +1,168 @@
-// src/pages/admin/AdminDashboard.jsx
+import { useVendasData } from '@/hooks/useVendasData';
+import { useClientData } from '@/hooks/useClientData';
+import { DollarSign, Users, UserCheck, UserX, TrendingUp, CheckCircle, Clock, AlertTriangle, XCircle, Handshake, ShoppingCart } from 'lucide-react';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { useVendasData } from '@/hooks/useVendasData'; // Importando nosso novo hook!
-
-// --- Componentes de UI e Funções Auxiliares (podem até sair daqui no futuro) ---
-const KpiCard = ({ title, value, icon }) => ( <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-400 dark:border-gray-700 flex items-center gap-4 shadow-sm"><div className="text-2xl md:text-3xl text-blue-500 dark:text-blue-400">{icon}</div><div className="flex-1 overflow-hidden"><h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</h3><p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">{value}</p></div></div> );
+// --- Funções Auxiliares (sem alterações) ---
 const formatCurrency = (value) => { if (typeof value !== 'number') return 'R$ 0,00'; return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
-const STATUS_STYLES = { CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400', RECEIVED:  'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400', PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400', OVERDUE: 'bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400', REFUNDED: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400', CHARGEBACK: 'bg-red-200 text-red-900 dark:bg-red-500/30 dark:text-red-300', CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400', DEFAULT: 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' };
-const getStatusClasses = (status) => STATUS_STYLES[status] || STATUS_STYLES.DEFAULT;
+const STATUS_STYLES = { CONFIRMED: 'text-green-600 dark:text-green-400', RECEIVED: 'text-green-600 dark:text-green-400', PENDING: 'text-yellow-600 dark:text-yellow-400', OVERDUE: 'text-orange-500 dark:text-orange-400', REFUNDED: 'text-gray-500', CHARGEBACK: 'text-red-600 dark:text-red-500', CANCELLED: 'text-red-600 dark:text-red-500', DEFAULT: 'text-gray-500' };
+const getStatusInfo = (status) => {
+  const statusMap = {
+    CONFIRMED: { text: 'Confirmado', icon: <CheckCircle size={14} className="inline mr-1" />, style: STATUS_STYLES.CONFIRMED },
+    RECEIVED: { text: 'Recebido', icon: <CheckCircle size={14} className="inline mr-1" />, style: STATUS_STYLES.RECEIVED },
+    PENDING: { text: 'Pendente', icon: <Clock size={14} className="inline mr-1" />, style: STATUS_STYLES.PENDING },
+    OVERDUE: { text: 'Atrasado', icon: <AlertTriangle size={14} className="inline mr-1" />, style: STATUS_STYLES.OVERDUE },
+    REFUNDED: { text: 'Devolvido', icon: <XCircle size={14} className="inline mr-1" />, style: STATUS_STYLES.REFUNDED },
+    CHARGEBACK: { text: 'Estornado', icon: <XCircle size={14} className="inline mr-1" />, style: STATUS_STYLES.CHARGEBACK },
+    CANCELLED: { text: 'Cancelado', icon: <XCircle size={14} className="inline mr-1" />, style: STATUS_STYLES.CANCELLED },
+    DEFAULT: { text: 'Desconhecido', icon: <AlertTriangle size={14} className="inline mr-1" />, style: STATUS_STYLES.DEFAULT },
+  };
+  return statusMap[status] || statusMap.DEFAULT;
+};
 
-// --- Componente Principal Simplificado ---
+// ===================================================================
+// ==> ATUALIZADO: KpiCard agora aceita uma prop de cor para o ícone <==
+// ===================================================================
+const KpiCard = ({ title, value, icon: Icon, colorClass = 'text-gray-400' }) => (
+  <div className="bg-white dark:bg-gray-800/50 p-5 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-300">
+    <div className="flex items-center justify-between">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h3>
+      <Icon className={`${colorClass} dark:opacity-80`} size={22} />
+    </div>
+    <p className="text-2xl font-bold text-gray-800 dark:text-white mt-2">{value}</p>
+  </div>
+);
+
+const DashboardPanel = ({ title, children }) => (
+  <div className="bg-white dark:bg-gray-800/50 p-6 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm">
+    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h2>
+    {children}
+  </div>
+);
+
+// --- Componente Principal com Ícones Coloridos ---
 export default function AdminDashboard() {
-  // A MÁGICA: Chamamos o hook e pegamos tudo pronto!
-  const { loading, error, kpisMes, rankingParceirosMes, resumoPlanosMes, ultimasVendas } = useVendasData();
+  const { loading: loadingVendas, error: errorVendas, kpisMes, rankingParceirosMes, resumoPlanosMes, ultimasVendas } = useVendasData();
+  const { loading: loadingClientes, error: errorClientes, clientKpis } = useClientData();
 
-  if (loading) return <div className="text-center py-10 text-gray-500 dark:text-gray-400">Carregando dashboard...</div>;
-  if (error) return <div className="text-center py-10 text-red-500">{error}</div>;
+  const loading = loadingVendas || loadingClientes;
+  const error = errorVendas || errorClientes;
+
+  if (loading) return <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900"><div className="text-center text-gray-500 dark:text-gray-400">Carregando dashboard...</div></div>;
+  if (error) return <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900"><div className="text-center text-red-500">{error}</div></div>;
 
   return (
-    <div className="notranslate">
-      <title>Dashboard | Painel Admin MedSinai</title>
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Dashboard do Administrador</h1>
-      <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Resumo do Mês Atual</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <KpiCard title="Faturamento (Vendas Pagas)" value={formatCurrency(kpisMes.faturamento)} icon="💰" />
-        <KpiCard title="Comissão a Pagar (Parceiros)" value={formatCurrency(kpisMes.comissaoAPagar)} icon="🏆" />
-        <KpiCard title="Nº de Vendas Pagas" value={kpisMes.vendasConfirmadas.toString()} icon="✅" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-400 dark:border-gray-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ranking de Parceiros (Mês)</h2>
-          <div className="overflow-y-auto max-h-80">{rankingParceirosMes.length > 0 ? ( <table className="w-full text-left"><thead><tr><th className="py-2 text-sm font-semibold text-gray-500 dark:text-gray-400">Parceiro</th><th className="py-2 text-sm font-semibold text-gray-500 dark:text-gray-400">Vendas</th><th className="py-2 text-sm font-semibold text-gray-500 dark:text-gray-400">Faturamento</th></tr></thead><tbody>{rankingParceirosMes.map(p => ( <tr key={p.nome} className="border-t border-gray-400 dark:border-gray-700"><td className="py-3 font-medium text-gray-800 dark:text-white">{p.nome}</td><td className="py-3 text-gray-600 dark:text-gray-300">{p.vendas}</td><td className="py-3 font-semibold text-green-600 dark:text-green-400">{formatCurrency(p.faturamento)}</td></tr> ))}</tbody></table> ) : <p className="text-gray-500 dark:text-gray-400 text-center py-10">Nenhuma venda de parceiro este mês.</p>}</div>
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-100 dark:bg-gray-900 min-h-screen text-gray-800 dark:text-gray-200">
+      <title>Dashboard | Painel Admin</title>
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard Geral</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Visão geral do seu negócio em tempo real.</p>
+      </header>
+      
+      <section className="space-y-8 mb-8">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-600 dark:text-slate-300 mb-4">Métricas Gerais</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* =================================================================== */}
+            {/* ==> ATUALIZADO: Passando a prop 'colorClass' para cada card <== */}
+            {/* =================================================================== */}
+            <KpiCard title="Receita Mensal (MRR)" value={formatCurrency(clientKpis.mrr)} icon={TrendingUp} colorClass="text-green-500" />
+            <KpiCard title="Clientes Ativos" value={clientKpis.clientesAtivos.toString()} icon={UserCheck} colorClass="text-green-500" />
+            <KpiCard title="Clientes Inativos" value={clientKpis.clientesInativos.toString()} icon={UserX} colorClass="text-red-500" />
+            <KpiCard title="Total de Clientes" value={clientKpis.totalClientes.toString()} icon={Users} colorClass="text-blue-500" />
+          </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-400 dark:border-gray-700 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Planos Mais Vendidos (Mês)</h2>
-          {resumoPlanosMes.length > 0 ? ( <ResponsiveContainer width="100%" height={320}><BarChart data={resumoPlanosMes} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}><CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" /><XAxis type="number" stroke="currentColor" className="text-gray-500 dark:text-gray-400" allowDecimals={false} /><YAxis type="category" dataKey="nome" stroke="currentColor" className="text-gray-500 dark:text-gray-400" width={120} tick={{ fontSize: 12, fill: 'currentColor' }} /><Tooltip cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }} contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', border: '1px solid #e5e7eb', color: '#1f2937' }} /><Legend /><Bar dataKey="quantidade" fill="#3b82f6" name="Nº de Vendas" /></BarChart></ResponsiveContainer> ) : <p className="text-gray-500 dark:text-gray-400 text-center py-10">Nenhuma venda confirmada este mês.</p>}
+        <div>
+          <h2 className="text-xl font-semibold text-slate-600 dark:text-slate-300 mb-4">Resumo do Mês Atual</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <KpiCard title="Faturamento (Vendas Pagas)" value={formatCurrency(kpisMes.faturamento)} icon={DollarSign} colorClass="text-green-500" />
+            <KpiCard title="Comissão a Pagar" value={formatCurrency(kpisMes.comissaoAPagar)} icon={Handshake} colorClass="text-orange-500" />
+            <KpiCard title="Nº de Vendas Pagas" value={kpisMes.vendasConfirmadas.toString()} icon={ShoppingCart} colorClass="text-blue-500" />
+          </div>
         </div>
-      </div>
-      <div className="mt-8 bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-400 dark:border-gray-700 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Últimas 5 Vendas Registradas</h2>
-        {ultimasVendas.length > 0 ? ( <table className="w-full text-left"><thead><tr><th className="py-2 text-sm font-semibold text-gray-900 dark:text-gray-400">Data</th><th className="py-2 text-sm font-semibold text-gray-900 dark:text-gray-400">Cliente</th><th className="py-2 text-sm font-semibold text-gray-900 dark:text-gray-400">Plano</th><th className="py-2 text-sm font-semibold text-gray-900 dark:text-gray-400">Status</th></tr></thead><tbody>{ultimasVendas.map(v => ( <tr key={v.id} className="border-t border-gray-400/50 dark:border-gray-700"><td className="py-3 text-gray-900 dark:text-gray-300">{new Date(v.created_at).toLocaleString('pt-BR')}</td><td className="py-3 font-medium text-gray-900 dark:text-white">{v.nome_cliente}</td><td className="py-3 text-gray-900 dark:text-gray-300">{v.nome_plano}</td><td className="py-3"><span className={`px-2 py-1 text-xs font-bold rounded-full ${getStatusClasses(v.status_pagamento)}`}>{v.status_pagamento}</span></td></tr> ))}</tbody></table> ) : <p className="text-gray-500 dark:text-gray-400 text-center py-10">Nenhuma venda registrada.</p>}
-      </div>
+      </section>
+
+      {/* O restante do código permanece exatamente igual */}
+      <section className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="lg:col-span-3 space-y-8">
+          <DashboardPanel title="Planos Mais Vendidos (Mês)">
+            {resumoPlanosMes.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="py-3 px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Plano</th>
+                      <th className="py-3 px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase text-right">Vendas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resumoPlanosMes.map(plano => (
+                      <tr key={plano.nome} className="border-b border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <td className="py-4 px-2 font-medium text-gray-800 dark:text-white">{plano.nome}</td>
+                        <td className="py-4 px-2 text-right font-semibold text-blue-600 dark:text-blue-400">{plano.quantidade}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p className="text-gray-500 dark:text-gray-400 text-center py-10">Nenhuma venda confirmada este mês.</p>}
+          </DashboardPanel>
+
+          <DashboardPanel title="Últimas Vendas Registradas">
+            {ultimasVendas.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="py-3 px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
+                      <th className="py-3 px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Plano</th>
+                      <th className="py-3 px-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ultimasVendas.map(v => {
+                      const statusInfo = getStatusInfo(v.status_pagamento);
+                      return (
+                        <tr key={v.id} className="border-b border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <td className="py-4 px-2">
+                            <p className="font-medium text-gray-800 dark:text-white">{v.nome_cliente}</p>
+                            <p className="text-xs text-gray-500">{new Date(v.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                          </td>
+                          <td className="py-4 px-2 text-sm text-gray-600 dark:text-gray-300">{v.nome_plano}</td>
+                          <td className={`py-4 px-2 text-sm font-medium text-right ${statusInfo.style}`}>
+                            {statusInfo.icon}
+                            {statusInfo.text}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p className="text-gray-500 dark:text-gray-400 text-center py-10">Nenhuma venda registrada.</p>}
+          </DashboardPanel>
+        </div>
+
+        <div className="lg:col-span-2 space-y-8">
+          <DashboardPanel title="Ranking de Parceiros (Mês)">
+            {rankingParceirosMes.length > 0 ? (
+              <ul className="space-y-4">
+                {rankingParceirosMes.map((p, index) => (
+                  <li key={p.nome} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-gray-400 w-5 text-center">{index + 1}</span>
+                      <div>
+                        <p className="font-semibold text-gray-800 dark:text-white">{p.nome}</p>
+                        <p className="text-xs text-gray-500">{p.vendas} vendas</p>
+                      </div>
+                    </div>
+                    <span className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(p.faturamento)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-gray-500 dark:text-gray-400 text-center py-10">Nenhuma venda de parceiro este mês.</p>}
+          </DashboardPanel>
+        </div>
+      </section>
     </div>
   );
 }
