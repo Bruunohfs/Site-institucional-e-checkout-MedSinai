@@ -1,16 +1,62 @@
-// src/pages/partner/OportunidadesPage.jsx
+// src/pages/parceiros/OportunidadesPage.jsx - ATUALIZADO COM DESIGN PROFISSIONAL
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { usePartnerData } from '@/hooks/usePartnerData';
+// ==> ATUALIZAÇÃO 1: Importando os ícones da Lucide <==
+import { Target, Hourglass, ArrowDownUp } from 'lucide-react';
 
-// --- Componentes e Funções Auxiliares ---
+// --- Constantes e Funções Auxiliares ---
 const TAXA_COMISSAO = 0.4;
-const StatCard = ({ title, value, icon }) => ( <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-400 dark:border-gray-600 flex items-center gap-4"><div className="text-3xl">{icon}</div><div><h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h3><p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p></div></div> );
-const formatSimpleDate = (dateString) => { if (!dateString) return 'N/A'; const date = new Date(dateString); const userTimezoneOffset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR'); };
 const formatCurrency = (value) => { if (typeof value !== 'number') return 'R$ 0,00'; return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+const formatSimpleDate = (dateString) => { if (!dateString) return 'N/A'; const date = new Date(dateString); const userTimezoneOffset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR'); };
 
-const STATUS_STYLES = { 'Pendente': 'bg-yellow-300 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-400', 'Atrasado': 'bg-orange-400 text-orange-800 dark:bg-orange-500/20 dark:text-orange-400', 'Cancelado': 'bg-red-400 text-red-800 dark:bg-red-500/20 dark:text-red-400', 'Com Problema': 'bg-red-500 text-red-900 dark:bg-red-500/30 dark:text-red-300', 'Default': 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300' };
+// ==> ATUALIZAÇÃO 2: Componente KpiCard com novo design <==
+const KpiCard = ({ title, value, icon, colorClass }) => (
+  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm flex items-center gap-4">
+    <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full ${colorClass} bg-opacity-10`}>
+      {icon}
+    </div>
+    <div className="flex-1 overflow-hidden">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">{value}</p>
+    </div>
+  </div>
+);
+
+// ==> ATUALIZAÇÃO 3: Componente FilterButton com novo design <==
+const FilterButton = ({ label, onClick, isActive }) => (
+  <button
+    onClick={onClick}
+    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500
+      ${isActive
+        ? 'bg-blue-600 text-white shadow-sm'
+        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
+      }`}
+  >
+    {label}
+  </button>
+);
+
+// ==> ATUALIZAÇÃO 4: Componente SortableHeader com ícone melhor <==
+const SortableHeader = ({ children, sortKey, sortConfig, requestSort }) => {
+  const isSorted = sortConfig.key === sortKey;
+  return (
+    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50" onClick={() => requestSort(sortKey)}>
+      <div className="flex items-center gap-2">
+        {children}
+        {isSorted ? (
+          <ArrowDownUp size={14} className={`transform transition-transform ${sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+        ) : (
+          <ArrowDownUp size={14} className="text-gray-400" />
+        )}
+      </div>
+    </th>
+  );
+};
+
+// Lógica de Status (sem alterações)
+const STATUS_STYLES = { 'Pendente': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', 'Atrasado': 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300', 'Cancelado': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300', 'Com Problema': 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300', 'Default': 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
 const STATUS_TRANSLATIONS = { 'PENDING': 'Pendente', 'OVERDUE': 'Atrasado', 'AWAITING_RISK_ANALYSIS': 'Pendente', 'REFUNDED': 'Cancelado', 'CHARGEBACK': 'Com Problema', 'CANCELLED': 'Cancelado' };
 const getStatusInfo = (status) => { const translated = STATUS_TRANSLATIONS[status] || 'Outro'; return { translated, style: STATUS_STYLES[translated] || STATUS_STYLES.Default }; };
 
@@ -18,6 +64,7 @@ export default function OportunidadesPage() {
   const { user } = useOutletContext(); 
   const { loading, error, vendas } = usePartnerData(user?.id);
 
+  // Lógica de estado e filtros (sem alterações)
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,58 +96,55 @@ export default function OportunidadesPage() {
   if (loading) return <div className="p-8"><p className="text-gray-700 dark:text-gray-300">Carregando suas oportunidades...</p></div>;
   if (error) return <div className="p-8"><p className="text-red-500">{error}</p></div>;
 
-  const Th = ({ children, sortKey }) => ( <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600" onClick={() => requestSort(sortKey)}>{children} {sortConfig.key === sortKey && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th> );
-
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <title>Oportunidades | Portal do Parceiro MedSinai</title>
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Oportunidades</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Oportunidades</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        <StatCard title="Total de Oportunidades" value={oportunidadesProcessadas.length} icon="🎯" />
-        <StatCard title="Comissão 'Congelada'" value={formatCurrency(kpis.comissaoTotal)} icon="❄️" />
+      {/* ==> ATUALIZAÇÃO 5: KPIs com novo design e ícones <== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <KpiCard title="Total de Oportunidades" value={oportunidadesProcessadas.length} icon={<Target size={24} />} colorClass="text-blue-500" />
+        <KpiCard title="Comissão 'Congelada'" value={formatCurrency(kpis.comissaoTotal)} icon={<Hourglass size={24} />} colorClass="text-yellow-500" />
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Leads para Remarketing</h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1 mb-6">Clientes que tentaram comprar mas não concluíram o pagamento. Entre em contato para recuperar a venda!</p>
-        
-        <div className="flex flex-wrap gap-3 my-4">
-          <button onClick={() => setFiltroStatus('todos')} className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${filtroStatus === 'todos' ? 'bg-blue-500 text-white border-blue-400' : 'bg-transparent dark:bg-gray-700'}`}>Todos</button>
-          <button onClick={() => setFiltroStatus('pendente')} className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${filtroStatus === 'pendente' ? 'bg-yellow-500 text-white border-yellow-400' : 'bg-transparent dark:bg-gray-700'}`}>Pendentes</button>
-          <button onClick={() => setFiltroStatus('atrasado')} className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${filtroStatus === 'atrasado' ? 'bg-orange-500 text-white border-orange-400' : 'bg-transparent dark:bg-gray-700'}`}>Atrasados</button>
-          <button onClick={() => setFiltroStatus('cancelado')} className={`px-4 py-2 rounded-full text-xs font-medium border transition-colors ${filtroStatus === 'cancelado' ? 'bg-red-500 text-white border-red-400' : 'bg-transparent dark:bg-gray-700'}`}>Cancelados</button>
+      {/* ==> ATUALIZAÇÃO 6: Card principal com novo estilo e borda reforçada <== */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm">
+        <div className="p-6 border-b border-gray-300 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Leads para Remarketing</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Clientes que tentaram comprar mas não concluíram o pagamento. Entre em contato para recuperar a venda!</p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <FilterButton label="Todos" onClick={() => setFiltroStatus('todos')} isActive={filtroStatus === 'todos'} />
+            <FilterButton label="Pendentes" onClick={() => setFiltroStatus('pendente')} isActive={filtroStatus === 'pendente'} />
+            <FilterButton label="Atrasados" onClick={() => setFiltroStatus('atrasado')} isActive={filtroStatus === 'atrasado'} />
+            <FilterButton label="Cancelados" onClick={() => setFiltroStatus('cancelado')} isActive={filtroStatus === 'cancelado'} />
+          </div>
         </div>
-
-        {/* =================================================================== */}
-        {/* ==> A MÁGICA DA RESPONSIVIDADE ACONTECE AQUI <== */}
-        {/* =================================================================== */}
+        
         <div className="overflow-x-auto">
-          {/* Tabela para Desktop */}
           <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 hidden md:table">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-300 dark:bg-gray-700 dark:text-gray-300">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-300">
               <tr>
-                <Th sortKey="created_at">Data</Th>
-                <Th sortKey="nome_cliente">Cliente</Th>
-                <th scope="col" className="px-6 py-3">Contato</th>
-                <Th sortKey="nome_plano">Plano Desejado</Th>
-                <th scope="col" className="px-6 py-3 font-bold text-yellow-600 dark:text-yellow-400">Comissão</th>
-                <Th sortKey="data_vencimento">Vencimento</Th>
-                <Th sortKey="status_pagamento">Status</Th>
+                <SortableHeader sortKey="created_at" sortConfig={sortConfig} requestSort={requestSort}>Data</SortableHeader>
+                <SortableHeader sortKey="nome_cliente" sortConfig={sortConfig} requestSort={requestSort}>Cliente</SortableHeader>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contato</th>
+                <SortableHeader sortKey="nome_plano" sortConfig={sortConfig} requestSort={requestSort}>Plano Desejado</SortableHeader>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-yellow-600 dark:text-yellow-400 uppercase tracking-wider">Comissão</th>
+                <SortableHeader sortKey="data_vencimento" sortConfig={sortConfig} requestSort={requestSort}>Vencimento</SortableHeader>
+                <SortableHeader sortKey="status_pagamento" sortConfig={sortConfig} requestSort={requestSort}>Status</SortableHeader>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-300 dark:divide-gray-700">
               {oportunidadesPaginadas.length > 0 ? ( 
                 oportunidadesPaginadas.map((venda) => {
                   const statusInfo = getStatusInfo(venda.status_pagamento);
                   return (
-                    <tr key={venda.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                    <tr key={venda.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">{formatSimpleDate(venda.created_at)}</td>
-                      <td className="px-6 py-4 font-medium text-black dark:text-white">{venda.nome_cliente}</td>
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{venda.nome_cliente}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="font-semibold">{venda.email_cliente || 'Não informado'}</span>
-                          <span className="text-xs text-black">{venda.telefone_cliente || ''}</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">{venda.telefone_cliente || ''}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">{venda.nome_plano}</td>
@@ -111,28 +155,27 @@ export default function OportunidadesPage() {
                   );
                 }) 
               ) : ( 
-                <tr><td colSpan="7" className="text-center py-10 px-6">Nenhuma oportunidade encontrada. Parabéns, todas as suas vendas foram pagas!</td></tr> 
+                <tr><td colSpan="7" className="text-center py-16 px-6 text-gray-500">Nenhuma oportunidade encontrada. Parabéns, todas as suas vendas foram pagas!</td></tr> 
               )}
             </tbody>
           </table>
 
-          {/* Lista de Cartões para Mobile */}
-          <div className="divide-y divide-gray-200 dark:divide-gray-700 md:hidden">
+          <div className="divide-y divide-gray-300 dark:divide-gray-700 md:hidden">
             {oportunidadesPaginadas.length > 0 ? (
               oportunidadesPaginadas.map(venda => {
                 const statusInfo = getStatusInfo(venda.status_pagamento);
                 return (
-                  <div key={venda.id} className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <p className="font-bold text-lg text-gray-900 dark:text-white">{venda.nome_cliente}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{venda.nome_plano}</p>
+                  <div key={venda.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold text-gray-900 dark:text-white">{venda.nome_cliente}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{venda.nome_plano}</p>
                       </div>
                        <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${statusInfo.style}`}>
                         {statusInfo.translated}
                       </span>
                     </div>
-                    <div className="text-sm space-y-2 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div className="space-y-2 text-sm bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
                       <div className="flex justify-between">
                         <span className="text-gray-500 dark:text-gray-400">Contato:</span>
                         <span className="font-medium text-gray-800 dark:text-gray-200 text-right">{venda.email_cliente || venda.telefone_cliente || 'N/A'}</span>
@@ -150,17 +193,17 @@ export default function OportunidadesPage() {
                 );
               })
             ) : (
-              <div className="text-center py-10 px-6">Nenhuma oportunidade encontrada. Parabéns, todas as suas vendas foram pagas!</div>
+              <div className="text-center py-16 px-6 text-gray-500">Nenhuma oportunidade encontrada.</div>
             )}
           </div>
         </div>
         
         {totalPages > 1 && (
           <div className="flex justify-between items-center p-4 border-t border-gray-300 dark:border-gray-700">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Página {currentPage} de {totalPages}</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Página {currentPage} de {totalPages}</span>
             <div className="flex gap-2">
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-sm disabled:opacity-50">Anterior</button>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-sm disabled:opacity-50">Próxima</button>
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50">Anterior</button>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50">Próxima</button>
             </div>
           </div>
         )}

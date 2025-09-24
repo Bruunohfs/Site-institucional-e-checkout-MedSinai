@@ -1,20 +1,64 @@
-// src/pages/admin/VisaoGeralVendas.jsx
+// src/pages/admin/VisaoGeralVendas.jsx - ATUALIZADO COM DESIGN PROFISSIONAL
 
 import React, { useState, useMemo } from 'react';
 import { useVendasData } from '@/hooks/useVendasData';
+// ==> ATUALIZAÇÃO 1: Importando os ícones da Lucide <==
+import { DollarSign, Handshake, ShoppingCart, ArrowDownUp } from 'lucide-react';
 
-// --- Componentes e Funções Auxiliares (sem alterações) ---
-const KpiCard = ({ title, value, icon }) => ( <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center gap-4 shadow-sm"><div className="text-2xl md:text-3xl text-blue-500 dark:text-blue-400">{icon}</div><div className="flex-1 overflow-hidden"><h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</h3><p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">{value}</p></div></div> );
-const FilterButton = ({ label, value, activeFilter, setFilter }) => ( <button onClick={() => setFilter(value)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ${ activeFilter === value ? 'bg-gradient-to-r from-green-400 to-blue-400 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-000 dark:hover:bg-gray-600 border border-gray-400 dark:border-gray-600' }`}>{label}</button> );
+// ==> ATUALIZAÇÃO 2: Componente KpiCard com novo design <==
+const KpiCard = ({ title, value, icon, colorClass }) => (
+  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm flex items-center gap-4">
+    <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full ${colorClass} bg-opacity-10`}>
+      {icon}
+    </div>
+    <div className="flex-1 overflow-hidden">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">{value}</p>
+    </div>
+  </div>
+);
+
+// ==> ATUALIZAÇÃO 3: Componente FilterButton com novo design <==
+const FilterButton = ({ label, value, activeFilter, setFilter }) => (
+  <button
+    onClick={() => setFilter(value)}
+    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-blue-500
+      ${activeFilter === value
+        ? 'bg-blue-600 text-white shadow-sm'
+        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
+      }`}
+  >
+    {label}
+  </button>
+);
+
+// Funções auxiliares (sem alterações visuais diretas)
 const formatCurrency = (value) => { if (typeof value !== 'number') return 'R$ 0,00'; return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
 const formatDate = (dateString) => { if (!dateString) return 'N/A'; const date = new Date(dateString); const userTimezoneOffset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR'); };
-const STATUS_STYLES = { RECEBIDO: 'bg-green-500/20 text-green-700 dark:text-green-300', PREVISTO: 'bg-blue-500/20 text-blue-700 dark:text-blue-300', PENDENTE: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300', ATRASADO: 'bg-orange-500/20 text-orange-700 dark:text-orange-300', PROBLEMA: 'bg-red-500/20 text-red-700 dark:text-red-300', DEFAULT: 'bg-gray-300 text-gray-800 dark:bg-gray-600 dark:text-gray-300' };
+const STATUS_STYLES = { RECEBIDO: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', PREVISTO: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', PENDENTE: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', ATRASADO: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300', PROBLEMA: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300', DEFAULT: 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
 const getStatusBadge = (venda) => { const agora = new Date(); const dataCompetencia = new Date(venda.data_competencia); if (['CANCELLED', 'REFUNDED', 'CHARGEBACK'].includes(venda.status_pagamento)) { return { label: 'Problema', className: STATUS_STYLES.PROBLEMA }; } if (['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(venda.status_pagamento)) { return { label: 'Pendente', className: STATUS_STYLES.PENDENTE }; } if (venda.status_pagamento === 'CONFIRMED' || venda.status_pagamento === 'RECEIVED') { if (dataCompetencia > agora) { return { label: 'Previsto', className: STATUS_STYLES.PREVISTO }; } if (dataCompetencia <= agora) { return { label: 'Recebido', className: STATUS_STYLES.RECEBIDO }; } } if (venda.status_pagamento === 'OVERDUE') { return { label: 'Atrasado', className: STATUS_STYLES.ATRASADO }; } return { label: venda.status_pagamento, className: STATUS_STYLES.DEFAULT }; };
-const SortableHeader = ({ children, sortKey, sortConfig, requestSort }) => { const isSorted = sortConfig.key === sortKey; const directionIcon = sortConfig.direction === 'asc' ? '▲' : '▼'; return ( <th className="p-4 text-sm font-semibold text-gray-900 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => requestSort(sortKey)}> <div className="flex items-center gap-2"> {children} {isSorted && <span className="text-xs">{directionIcon}</span>} </div> </th> ); };
+
+// ==> ATUALIZAÇÃO 4: Componente SortableHeader com ícone melhor <==
+const SortableHeader = ({ children, sortKey, sortConfig, requestSort }) => {
+  const isSorted = sortConfig.key === sortKey;
+  return (
+    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors" onClick={() => requestSort(sortKey)}>
+      <div className="flex items-center gap-2">
+        {children}
+        {isSorted ? (
+          <ArrowDownUp size={14} className={`transform transition-transform ${sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+        ) : (
+          <ArrowDownUp size={14} className="text-gray-400" />
+        )}
+      </div>
+    </th>
+  );
+};
 
 export default function VisaoGeralVendas() {
   const { loading, error, vendasComNomes } = useVendasData();
   
+  // Lógica de estado e filtros (sem alterações)
   const [filtroPeriodo, setFiltroPeriodo] = useState('month');
   const [mesCustomizado, setMesCustomizado] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
@@ -47,26 +91,31 @@ export default function VisaoGeralVendas() {
   const handleStatusChange = (status) => { setFiltroStatus(status); setCurrentPage(1); };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <title>Visão Geral Vendas | Painel Admin MedSinai</title>
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Visão Geral de Vendas</h1>
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Visão Geral de Vendas</h1>
         <div className="flex flex-wrap items-center gap-2">
           <FilterButton label="Hoje" value="today" activeFilter={filtroPeriodo} setFilter={handlePeriodoChange} />
           <FilterButton label="Mês Atual" value="month" activeFilter={filtroPeriodo} setFilter={handlePeriodoChange} />
           <FilterButton label="Todo o Período" value="all" activeFilter={filtroPeriodo} setFilter={handlePeriodoChange} />
-          <input type="month" value={mesCustomizado} onChange={handleMesCustomizadoChange} className={`bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border rounded-lg p-2 text-sm shadow-sm focus:ring-2 focus:border-green-500 ${filtroPeriodo === 'custom' ? 'border-green-500 ring-2 ring-green-400' : 'border-gray-300 dark:border-gray-600'}`} />
+          <input type="month" value={mesCustomizado} onChange={handleMesCustomizadoChange} className={`bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border rounded-lg p-1.5 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 ${filtroPeriodo === 'custom' ? 'border-blue-500 ring-2 ring-blue-500/50' : 'border-gray-300 dark:border-gray-600'}`} />
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 ">
-        <KpiCard title="Faturamento" value={formatCurrency(dadosFiltrados.kpis.faturamento)} icon="💰" />
-        <KpiCard title="Comissão a Pagar" value={formatCurrency(dadosFiltrados.kpis.comissaoAPagar)} icon="🏆" />
-        <KpiCard title="Nº de Vendas Únicas" value={dadosFiltrados.kpis.vendasConfirmadas.toString()} icon="✅" />
+
+      {/* ==> ATUALIZAÇÃO 5: KPIs com novo design e ícones <== */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <KpiCard title="Faturamento" value={formatCurrency(dadosFiltrados.kpis.faturamento)} icon={<DollarSign size={24} />} colorClass="text-green-500" />
+        <KpiCard title="Comissão a Pagar" value={formatCurrency(dadosFiltrados.kpis.comissaoAPagar)} icon={<Handshake size={24} />} colorClass="text-orange-500" />
+        <KpiCard title="Nº de Vendas Únicas" value={dadosFiltrados.kpis.vendasConfirmadas.toString()} icon={<ShoppingCart size={24} />} colorClass="text-blue-500" />
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-400 dark:border-gray-700 overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-gray-400 dark:border-gray-700">
+
+      {/* ==> ATUALIZAÇÃO 6: Card principal com novo estilo <== */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Filtrar tabela por:</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Filtrar tabela por:</span>
             <FilterButton label="Todos" value="todos" activeFilter={filtroStatus} setFilter={handleStatusChange} />
             <FilterButton label="Pagos" value="pagos" activeFilter={filtroStatus} setFilter={handleStatusChange} />
             <FilterButton label="Pendentes" value="pendentes" activeFilter={filtroStatus} setFilter={handleStatusChange} />
@@ -81,13 +130,10 @@ export default function VisaoGeralVendas() {
         {!loading && !error && (
           dadosFiltrados.vendas.length > 0 ? (
             <>
-              {/* =================================================================== */}
-              {/* ==> A MÁGICA DA RESPONSIVIDADE ACONTECE AQUI <== */}
-              {/* =================================================================== */}
               <div className="overflow-x-auto">
                 {/* Tabela para Desktop */}
                 <table className="w-full text-left min-w-[1200px] hidden md:table">
-                  <thead className="bg-gray-300 dark:bg-gray-700/50 border-b border-gray-400 dark:border-gray-600">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
                     <tr>
                       <SortableHeader sortKey="created_at" sortConfig={sortConfig} requestSort={requestSort}>Contratação</SortableHeader>
                       <SortableHeader sortKey="nome_cliente" sortConfig={sortConfig} requestSort={requestSort}>Cliente</SortableHeader>
@@ -98,17 +144,17 @@ export default function VisaoGeralVendas() {
                       <SortableHeader sortKey="status_pagamento" sortConfig={sortConfig} requestSort={requestSort}>Status</SortableHeader>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {vendasPaginadas.map(venda => {
                       const badge = getStatusBadge(venda);
                       return (
-                        <tr key={venda.id} className="border-b border-gray-300 dark:border-gray-700 last:border-b-0 hover:bg-gray-300 dark:hover:bg-gray-700/50 transition-colors">
-                          <td className="p-4 text-gray-700 dark:text-gray-300">{formatDate(venda.created_at)}</td>
-                          <td className="p-4 text-gray-700 dark:text-gray-300">{venda.nome_cliente}</td>
-                          <td className="p-4 font-medium text-gray-800 dark:text-white">{venda.nome_plano}</td>
-                          <td className="p-4 font-semibold text-green-600 dark:text-green-400">{formatCurrency(venda.valor)}</td>
-                          <td className="p-4 text-gray-700 dark:text-gray-300">{venda.nome_parceiro}</td>
-                          <td className="p-4 font-medium text-gray-800 dark:text-white">{formatDate(venda.data_competencia)}</td>
+                        <tr key={venda.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                          <td className="p-4 text-sm text-gray-700 dark:text-gray-300">{formatDate(venda.created_at)}</td>
+                          <td className="p-4 text-sm text-gray-700 dark:text-gray-300">{venda.nome_cliente}</td>
+                          <td className="p-4 text-sm font-medium text-gray-800 dark:text-white">{venda.nome_plano}</td>
+                          <td className="p-4 text-sm font-semibold text-green-600 dark:text-green-400">{formatCurrency(venda.valor)}</td>
+                          <td className="p-4 text-sm text-gray-700 dark:text-gray-300">{venda.nome_parceiro || 'N/A'}</td>
+                          <td className="p-4 text-sm font-medium text-gray-800 dark:text-white">{formatDate(venda.data_competencia)}</td>
                           <td className="p-4"> <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${badge.className}`}> {badge.label} </span> </td>
                         </tr>
                       );
@@ -121,26 +167,23 @@ export default function VisaoGeralVendas() {
                   {vendasPaginadas.map(venda => {
                     const badge = getStatusBadge(venda);
                     return (
-                      <div key={venda.id} className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1">
-                            <p className="font-bold text-lg text-gray-900 dark:text-white">{venda.nome_cliente}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">{venda.nome_plano}</p>
+                      <div key={venda.id} className="p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-bold text-gray-900 dark:text-white">{venda.nome_cliente}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{venda.nome_plano}</p>
                           </div>
                           <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${badge.className}`}>
                             {badge.label}
                           </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
                           <div className="text-gray-500 dark:text-gray-400">Valor:</div>
                           <div className="font-semibold text-green-600 dark:text-green-400 text-right">{formatCurrency(venda.valor)}</div>
-                          
                           <div className="text-gray-500 dark:text-gray-400">Competência:</div>
                           <div className="text-gray-700 dark:text-gray-300 text-right">{formatDate(venda.data_competencia)}</div>
-
                           <div className="text-gray-500 dark:text-gray-400">Parceiro:</div>
                           <div className="text-gray-700 dark:text-gray-300 text-right">{venda.nome_parceiro || 'N/A'}</div>
-                          
                           <div className="text-gray-500 dark:text-gray-400">Contratação:</div>
                           <div className="text-gray-700 dark:text-gray-300 text-right">{formatDate(venda.created_at)}</div>
                         </div>
@@ -150,9 +193,9 @@ export default function VisaoGeralVendas() {
                 </div>
               </div>
               
-              {totalPages > 1 && ( <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700"> <span>Página {currentPage} de {totalPages}</span> <div className="flex gap-2"> <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Anterior</button> <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Próxima</button> </div> </div> )}
+              {totalPages > 1 && ( <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700"> <span className="text-sm text-gray-600 dark:text-gray-400">Página {currentPage} de {totalPages}</span> <div className="flex gap-2"> <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50">Anterior</button> <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50">Próxima</button> </div> </div> )}
             </>
-          ) : ( <div className="text-center py-10 text-gray-500 dark:text-gray-400">Nenhuma venda encontrada para os filtros selecionados.</div> )
+          ) : ( <div className="text-center py-16 text-gray-500 dark:text-gray-400">Nenhuma venda encontrada para os filtros selecionados.</div> )
         )}
       </div>
     </div>

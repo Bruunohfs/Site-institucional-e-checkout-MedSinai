@@ -1,20 +1,87 @@
-// src/pages/partner/DashboardPage.jsx
+// src/pages/parceiros/DashboardPage.jsx - ATUALIZADO COM DESIGN PROFISSIONAL
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { usePartnerData } from '@/hooks/usePartnerData';
+// ==> ATUALIZAÇÃO 1: Importando os ícones da Lucide <==
+import { DollarSign, ShoppingCart, Link, Ticket, Copy, Check, ArrowDownUp } from 'lucide-react';
 
-// --- Componentes de UI e Funções Auxiliares ---
+// --- Constantes e Funções Auxiliares ---
 const TAXA_COMISSAO = 0.4;
-const StatCard = ({ title, value, icon }) => ( <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border border-gray-300 dark:border-gray-600 flex items-center gap-4"><div className="text-3xl">{icon}</div><div><h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h3><p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p></div></div> );
-const CopyableInput = ({ textToCopy }) => { const [copied, setCopied] = useState(false); const handleCopy = () => { if (!textToCopy || copied) return; navigator.clipboard.writeText(textToCopy).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(err => console.error('Falha ao copiar texto: ', err)); }; const CopyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zM5 1.5A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5v1A1.5 1.5 0 0 1 9.5 4h-3A1.5 1.5 0 0 1 5 2.5v-1z"/></svg>; const CheckIcon = (      ) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>; return ( <div className="relative flex items-center w-full"><input type="text" readOnly value={textToCopy || 'Não definido'} className="w-full p-2 pr-24 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-700 dark:text-gray-200" /><button onClick={handleCopy} disabled={!textToCopy} className={`absolute right-1.5 px-3 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${ copied ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50' }`}>{copied ? <CheckIcon /> : <CopyIcon />}{copied ? 'Copiado!' : 'Copiar'}</button></div>      ); };
-const formatSimpleDate = (dateString) => { if (!dateString) return 'Pendente'; const date = new Date(dateString); const userTimezoneOffset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR'); };
 const formatCurrency = (value) => { if (typeof value !== 'number') return 'R$ 0,00'; return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+const formatSimpleDate = (dateString) => { if (!dateString) return 'Pendente'; const date = new Date(dateString); const userTimezoneOffset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() + userTimezoneOffset).toLocaleDateString('pt-BR'); };
+
+// ==> ATUALIZAÇÃO 2: Componente KpiCard com novo design <==
+const KpiCard = ({ title, value, icon, colorClass }) => (
+  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-300 dark:border-gray-700 shadow-sm flex items-center gap-4">
+    <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full ${colorClass} bg-opacity-10`}>
+      {icon}
+    </div>
+    <div className="flex-1 overflow-hidden">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white whitespace-nowrap truncate">{value}</p>
+    </div>
+  </div>
+);
+
+// ==> ATUALIZAÇÃO 3: Componente CopyableInput com novo design <==
+const CopyableInput = ({ textToCopy }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    if (!textToCopy || copied) return;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(err => console.error('Falha ao copiar texto: ', err));
+  };
+  return (
+    <div className="relative flex items-center w-full mt-2">
+      <input type="text" readOnly value={textToCopy || 'Não definido'} className="w-full p-2 pr-24 border border-gray-600 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/50 rounded-md text-sm text-gray-700 dark:text-gray-200" />
+      <button onClick={handleCopy} disabled={!textToCopy} className={`absolute right-1.5 px-3 py-1 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${copied ? 'bg-green-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50'}`}>
+        {copied ? <Check size={14} /> : <Copy size={14} />}
+        {copied ? 'Copiado!' : 'Copiar'}
+      </button>
+    </div>
+  );
+};
+
+// ==> ATUALIZAÇÃO 4: Componente FilterButton com novo design <==
+const FilterButton = ({ label, onClick, isActive }) => (
+  <button
+    onClick={onClick}
+    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-blue-500
+      ${isActive
+        ? 'bg-blue-600 text-white shadow-sm'
+        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
+      }`}
+  >
+    {label}
+  </button>
+);
+
+// ==> ATUALIZAÇÃO 5: Componente SortableHeader com ícone melhor <==
+const SortableHeader = ({ children, sortKey, sortConfig, requestSort }) => {
+  const isSorted = sortConfig.key === sortKey;
+  return (
+    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-200/50 dark:hover:bg-gray-700/50" onClick={() => requestSort(sortKey)}>
+      <div className="flex items-center gap-2">
+        {children}
+        {isSorted ? (
+          <ArrowDownUp size={14} className={`transform transition-transform ${sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+        ) : (
+          <ArrowDownUp size={14} className="text-gray-400" />
+        )}
+      </div>
+    </th>
+  );
+};
+
 
 export default function DashboardPage() {
   const { user } = useOutletContext(); 
   const { loading, error, vendas } = usePartnerData(user?.id);
 
+  // Lógica de estado e filtros (sem alterações)
   const [sortConfig, setSortConfig] = useState({ key: 'data_competencia', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
   const ITENS_POR_PAGINA = 15;
@@ -34,106 +101,101 @@ export default function DashboardPage() {
   if (loading) return <div className="p-8"><p className="text-gray-700 dark:text-gray-300">Carregando seus dados...</p></div>;
   if (error) return <div className="p-8"><p className="text-red-500">{error}</p></div>;
 
-  const Th = ({ children, sortKey }) => ( <th scope="col" className="px-6 py-3 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600" onClick={() => requestSort(sortKey)}>{children} {sortConfig.key === sortKey && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th> );
-
   return (
-    <div className="notranslate">
+    <div className="notranslate p-4 sm:p-6 lg:p-8 space-y-6">
       <title>Dashboard | Portal do Parceiro MedSinai</title>
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-wrap justify-between items-center gap-4 mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Minhas Comissões Aprovadas</h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => handlePeriodoClick('today')} className={`px-3 py-1.5 text-sm rounded-md ${filtroPeriodo === 'today' ? 'bg-green-500 text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>Hoje</button>
-            <button onClick={() => handlePeriodoClick('month')} className={`px-3 py-1.5 text-sm rounded-md ${filtroPeriodo === 'month' ? 'bg-green-500 text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>Mês Atual</button>
-            <button onClick={() => handlePeriodoClick('all')} className={`px-3 py-1.5 text-sm rounded-md ${filtroPeriodo === 'all' ? 'bg-green-500 text-white' : 'bg-gray-300 dark:bg-gray-700'}`}>Todo o Período</button>
-            <select id="month-selector" value={filtroPeriodo.match(/^\d{4}-\d{2}$/) ? filtroPeriodo : 'default'} onChange={(e) => setFiltroPeriodo(e.target.value)} className="px-3 py-1.5 text-sm rounded-md bg-gray-300 dark:bg-gray-700 border-gray-300 dark:border-gray-600">
-              <option value="default" disabled>Selecione um Mês</option>
-              {mesesDisponiveis.map(mes => ( <option key={mes} value={mes}> {new Date(mes + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })} </option> ))}
-            </select>
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100">Minhas Comissões Aprovadas</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterButton label="Hoje" onClick={() => handlePeriodoClick('today')} isActive={filtroPeriodo === 'today'} />
+          <FilterButton label="Mês Atual" onClick={() => handlePeriodoClick('month')} isActive={filtroPeriodo === 'month'} />
+          <FilterButton label="Todo o Período" onClick={() => handlePeriodoClick('all')} isActive={filtroPeriodo === 'all'} />
+          <select id="month-selector" value={filtroPeriodo.match(/^\d{4}-\d{2}$/) ? filtroPeriodo : 'default'} onChange={(e) => setFiltroPeriodo(e.target.value)} className="px-3 py-1.5 text-sm rounded-md bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500">
+            <option value="default" disabled>Selecione um Mês</option>
+            {mesesDisponiveis.map(mes => ( <option key={mes} value={mes}> {new Date(mes + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })} </option> ))}
+          </select>
+        </div>
+      </div>
+      
+      {/* ==> ATUALIZAÇÃO 6: KPIs com novo design e ícones <== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <KpiCard title="Vendas Pagas (Período)" value={kpis.vendasPagasPeriodo} icon={<ShoppingCart size={24} />} colorClass="text-blue-500" />
+        <KpiCard title="Comissão Aprovada (Período)" value={formatCurrency(kpis.comissaoAprovadaPeriodo)} icon={<DollarSign size={24} />} colorClass="text-green-500" />
+      </div>
+
+      {/* ==> ATUALIZAÇÃO 7: Card principal com novo estilo <== */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-400 dark:border-gray-700 shadow-sm">
+        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-300 dark:border-gray-700"><div className="flex items-center gap-2 mb-1"><Link size={16} className="text-gray-600 dark:text-gray-400" /><h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">Seu Link de Parceiro</h2></div><p className="text-xs text-gray-600 dark:text-gray-400">Compartilhe para rastrear suas vendas.</p><CopyableInput textToCopy={`https://www.medsinai.com.br/?pid=${user?.id}`} /></div>
+          <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-300 dark:border-gray-700"><div className="flex items-center gap-2 mb-1"><Ticket size={16} className="text-gray-600 dark:text-gray-400" /><h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">Seu Cupom de Desconto</h2></div><p className="text-xs text-gray-600 dark:text-gray-400">Ofereça aos seus clientes no checkout.</p><CopyableInput textToCopy={user?.user_metadata?.cupom} /></div>
+        </div>
+        
+        <div className="px-6 pb-2">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Detalhes das Comissões Aprovadas</h2>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 hidden md:table">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-300 dark:bg-gray-700/50 dark:text-gray-300">
+              <tr>
+                <SortableHeader sortKey="data_competencia" sortConfig={sortConfig} requestSort={requestSort}>Data de Competência</SortableHeader>
+                <SortableHeader sortKey="nome_cliente" sortConfig={sortConfig} requestSort={requestSort}>Cliente</SortableHeader>
+                <SortableHeader sortKey="nome_plano" sortConfig={sortConfig} requestSort={requestSort}>Plano</SortableHeader>
+                <SortableHeader sortKey="valor" sortConfig={sortConfig} requestSort={requestSort}>Valor da Venda</SortableHeader>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wider">Sua Comissão</th>
+                <SortableHeader sortKey="created_at" sortConfig={sortConfig} requestSort={requestSort}>Data da Contratação</SortableHeader>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-300 dark:divide-gray-700">
+              {vendasPaginadas.length > 0 ? ( 
+                vendasPaginadas.map((venda ) => (
+                  <tr key={venda.id} className="hover:bg-gray-200 dark:hover:bg-gray-700/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">{formatSimpleDate(venda.data_competencia)}</td>
+                    <td className="px-6 py-4">{venda.nome_cliente}</td>
+                    <td className="px-6 py-4">{venda.nome_plano}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(venda.valor)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-bold text-green-600 dark:text-green-400">{formatCurrency(venda.valor * TAXA_COMISSAO)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{formatSimpleDate(venda.created_at)}</td>
+                  </tr> 
+                )) 
+              ) : ( 
+                <tr><td colSpan="6" className="text-center py-16 px-6 text-gray-500">Nenhuma comissão aprovada encontrada para o período selecionado.</td></tr> 
+              )}
+            </tbody>
+          </table>
+
+          <div className="divide-y divide-gray-200 dark:divide-gray-700 md:hidden">
+            {vendasPaginadas.length > 0 ? (
+              vendasPaginadas.map(venda => (
+                <div key={venda.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white">{venda.nome_cliente}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{venda.nome_plano}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="font-bold text-green-600 dark:text-green-400">{formatCurrency(venda.valor * TAXA_COMISSAO)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Comissão</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
+                    <div className="text-gray-500 dark:text-gray-400">Competência:</div>
+                    <div className="font-medium text-gray-700 dark:text-gray-300 text-right">{formatSimpleDate(venda.data_competencia)}</div>
+                    <div className="text-gray-500 dark:text-gray-400">Valor da Venda:</div>
+                    <div className="text-gray-700 dark:text-gray-300 text-right">{formatCurrency(venda.valor)}</div>
+                    <div className="text-gray-500 dark:text-gray-400">Contratação:</div>
+                    <div className="text-gray-700 dark:text-gray-300 text-right">{formatSimpleDate(venda.created_at)}</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-16 px-6 text-gray-500">Nenhuma comissão aprovada encontrada.</div>
+            )}
           </div>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10 ">
-          <StatCard title="Vendas Pagas (Período)" value={kpis.vendasPagasPeriodo} icon="✅" />
-          <StatCard title="Comissão Aprovada (Período)" value={formatCurrency(kpis.comissaoAprovadaPeriodo)} icon="💰" />
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="p-5 bg-green-50 dark:bg-gray-700/50 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600"><h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Seu Link de Parceiro</h2><p className="text-sm text-gray-600 dark:text-gray-300 mt-1 mb-2">Compartilhe para rastrear suas vendas.</p><CopyableInput textToCopy={`https://www.medsinai.com.br/?pid=${user?.id}`} /></div>
-            <div className="p-5 bg-green-50 dark:bg-gray-700/50 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600"><h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Seu Cupom de Desconto</h2><p className="text-sm text-gray-600 dark:text-gray-300 mt-1 mb-2">Ofereça aos seus clientes no checkout.</p><CopyableInput textToCopy={user?.user_metadata?.cupom} /></div>
-          </div>
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Detalhes das Comissões Aprovadas</h2>
-          
-          {/* =================================================================== */}
-          {/* ==> A MÁGICA DA RESPONSIVIDADE ACONTECE AQUI <== */}
-          {/* =================================================================== */}
-          <div className="overflow-x-auto">
-            {/* Tabela para Desktop */}
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 hidden md:table">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-300 dark:bg-gray-700 dark:text-gray-300">
-                <tr>
-                  <Th sortKey="data_competencia">Data de Competência</Th>
-                  <Th sortKey="nome_cliente">Cliente</Th>
-                  <Th sortKey="nome_plano">Plano</Th>
-                  <Th sortKey="valor">Valor da Venda</Th>
-                  <th scope="col" className="px-6 py-3 font-bold text-green-600 dark:text-green-400">Sua Comissão</th>
-                  <Th sortKey="created_at">Data da Contratação</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {vendasPaginadas.length > 0 ? ( 
-                  vendasPaginadas.map((venda ) => (
-                    <tr key={venda.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">{formatSimpleDate(venda.data_competencia)}</td>
-                      <td className="px-6 py-4">{venda.nome_cliente}</td>
-                      <td className="px-6 py-4">{venda.nome_plano}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(venda.valor)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap font-bold text-green-600 dark:text-green-400">{formatCurrency(venda.valor * TAXA_COMISSAO)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{formatSimpleDate(venda.created_at)}</td>
-                    </tr> 
-                  )) 
-                ) : ( 
-                  <tr><td colSpan="6" className="text-center py-10 px-6">Nenhuma comissão aprovada encontrada para o período selecionado.</td></tr> 
-                )}
-              </tbody>
-            </table>
-
-            {/* Lista de Cartões para Mobile */}
-            <div className="divide-y divide-gray-200 dark:divide-gray-700 md:hidden">
-              {vendasPaginadas.length > 0 ? (
-                vendasPaginadas.map(venda => (
-                  <div key={venda.id} className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <p className="font-bold text-lg text-gray-900 dark:text-white">{venda.nome_cliente}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{venda.nome_plano}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-green-600 dark:text-green-400">{formatCurrency(venda.valor * TAXA_COMISSAO)}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Comissão</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <div className="text-gray-500 dark:text-gray-400">Competência:</div>
-                      <div className="font-medium text-gray-700 dark:text-gray-300 text-right">{formatSimpleDate(venda.data_competencia)}</div>
-                      
-                      <div className="text-gray-500 dark:text-gray-400">Valor da Venda:</div>
-                      <div className="text-gray-700 dark:text-gray-300 text-right">{formatCurrency(venda.valor)}</div>
-
-                      <div className="text-gray-500 dark:text-gray-400">Contratação:</div>
-                      <div className="text-gray-700 dark:text-gray-300 text-right">{formatSimpleDate(venda.created_at)}</div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-10 px-6">Nenhuma comissão aprovada encontrada para o período selecionado.</div>
-              )}
-            </div>
-          </div>
-          
-          {totalPages > 1 && ( <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700"> <span className="text-sm text-gray-500 dark:text-gray-400"> Página {currentPage} de {totalPages} </span> <div className="flex gap-2"> <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-sm disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600">Anterior</button> <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-sm disabled:opacity-50 hover:bg-gray-300 dark:hover:bg-gray-600">Próxima</button> </div> </div> )}
-        </div>
+        {totalPages > 1 && ( <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700"> <span className="text-sm text-gray-600 dark:text-gray-400"> Página {currentPage} de {totalPages} </span> <div className="flex gap-2"> <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50">Anterior</button> <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50">Próxima</button> </div> </div> )}
       </div>
     </div>
   );
