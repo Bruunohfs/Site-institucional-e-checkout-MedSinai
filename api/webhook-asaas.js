@@ -1,14 +1,13 @@
-// /api/webhook-asaas.js - VERSÃO FINAL E SEGURA (BASEADA NO SEU CÓDIGO ORIGINAL)
+// /api/webhook-asaas.js - VERSÃO FINAL CORRIGIDA
 
 import { createClient } from '@supabase/supabase-js';
 
-// As chaves são lidas de forma segura das variáveis de ambiente da Vercel
+// Configurações de ambiente (sem alterações)
 const ASAAS_API_URL = process.env.ASAAS_API_URL;
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Validação para garantir que as variáveis foram carregadas
 if (!ASAAS_API_URL || !ASAAS_API_KEY || !supabaseUrl || !supabaseKey) {
   console.error("Webhook Error: Variáveis de ambiente não configuradas.");
   throw new Error("Uma ou mais variáveis de ambiente essenciais não foram configuradas.");
@@ -26,8 +25,7 @@ export default async function handler(req, res) {
     const event = notification.event;
     console.log(`🎉 WEBHOOK UNIFICADO: Evento ${event} recebido.`);
 
-    // --- ROTEADOR DE EVENTOS ---
-    // Mantendo a estrutura original que funciona
+    // Mantendo seu roteador de eventos original, que já funciona bem
     if (notification.subscription) {
         await upsertSubscription(notification.subscription);
     } else if (notification.payment) {
@@ -44,11 +42,10 @@ export default async function handler(req, res) {
   }
 }
 
-// --- FUNÇÕES DE LÓGICA (SEPARADAS PARA ORGANIZAÇÃO) ---
+// --- FUNÇÕES DE LÓGICA ---
 
 async function upsertSubscription(subscription) {
-  // Esta função já estava correta e não precisa de alterações.
-  // Apenas garantindo que ela continue como estava.
+  // A função de assinatura já estava correta, a única mudança é usar a nova ensureCustomerExists
   const clienteInternoId = await ensureCustomerExists(subscription.customer);
   if (!clienteInternoId) {
     console.warn(`Não foi possível encontrar ou criar o cliente para a assinatura ${subscription.id}. Pulando sincronização.`);
@@ -86,20 +83,14 @@ async function handlePaymentEvent(event, payment) {
 
   const fullPaymentData = await getPaymentData(payment.id);
   
-  // ===================================================================
   // ==> ATUALIZAÇÃO 1: Garantir que o cliente exista e pegar nosso ID interno <==
-  // ===================================================================
   const clienteInternoId = await ensureCustomerExists(fullPaymentData.customer);
   if (!clienteInternoId) {
       throw new Error(`Cliente ${fullPaymentData.customer} não encontrado para o pagamento ${fullPaymentData.id}. A venda não pode ser registrada sem um cliente.`);
   }
   
-  const customerData = await getCustomerData(fullPaymentData.customer);
-
-  // ===================================================================
   // ==> ATUALIZAÇÃO 2: Passar o ID do nosso cliente para a função de formatação <==
-  // ===================================================================
-  const dadosVenda = formatDataForSupabase(fullPaymentData, customerData, clienteInternoId);
+  const dadosVenda = formatDataForSupabase(fullPaymentData, clienteInternoId);
 
   const { error } = await supabase.from('vendas').upsert(dadosVenda, { onConflict: 'id_pagamento' });
   if (error) throw new Error(`Erro no upsert da venda: ${JSON.stringify(error)}`);
@@ -108,18 +99,51 @@ async function handlePaymentEvent(event, payment) {
 
 // --- FUNÇÕES AUXILIARES ---
 
+// ==> AQUI ESTÁ A NOVA VERSÃO ROBUSTA DA FUNÇÃO <==
 async function ensureCustomerExists(customerIdAsaas) {
-  // Esta função já estava correta e não precisa de alterações.
-  const { data: clienteExistente } = await supabase.from('clientes').select('id').eq('id_asaas', customerIdAsaas).single();
+  const attemptFetch = async () => {
+    const { data } = await supabase.from('clientes').select('id').eq('id_asaas', customerIdAsaas).single();
+    return data;
+  };
+
+  let clienteExistente = await attemptFetch();
   if (clienteExistente) return clienteExistente.id;
+
+  console.warn(`Cliente ${customerIdAsaas} não encontrado. Aguardando 2s para nova tentativa...`);
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  clienteExistente = await attemptFetch();
+  if (clienteExistente) {
+    console.log(`Cliente ${customerIdAsaas} encontrado na segunda tentativa.`);
+    return clienteExistente.id;
+  }
+
   try {
-    console.warn(`Cliente ${customerIdAsaas} não encontrado localmente. Buscando no Asaas para criar...`);
+    console.warn(`Cliente ${customerIdAsaas} ainda não encontrado. Buscando no Asaas para criar...`);
     const customerData = await getCustomerData(customerIdAsaas);
-    const dadosCliente = { id_asaas: customerData.id, nome: customerData.name, email: customerData.email, cpf: customerData.cpfCnpj, telefone: customerData.mobilePhone || customerData.phone };
+    
+    const dadosCliente = {
+      id_asaas: customerData.id,
+      nome: customerData.name,
+      email: customerData.email,
+      cpf: customerData.cpfCnpj,
+      telefone: customerData.mobilePhone || customerData.phone,
+    };
+
     const { data: novoCliente, error: insertError } = await supabase.from('clientes').insert(dadosCliente).select('id').single();
-    if (insertError) throw insertError;
+
+    if (insertError) {
+      if (insertError.code === '23505') {
+        console.log('Conflito de criação detectado. Buscando cliente recém-criado...');
+        clienteExistente = await attemptFetch();
+        return clienteExistente?.id || null;
+      }
+      throw insertError;
+    }
+    
     console.log(`Cliente ${customerData.id} criado dinamicamente no Supabase.`);
     return novoCliente.id;
+
   } catch (error) {
     console.error(`Falha crítica ao tentar criar o cliente ${customerIdAsaas}:`, error.message);
     return null;
@@ -138,31 +162,30 @@ async function getCustomerData(customerId) {
   return response.json();
 }
 
-// ===================================================================
-// ==> ATUALIZAÇÃO 3: A função de formatação agora aceita 'clienteInternoId' <==
-// E adiciona tanto o id_cliente quanto o id_asaas (da assinatura)
-// ===================================================================
-function formatDataForSupabase(payment, customerData, clienteInternoId) {
+// ==> ATUALIZAÇÃO 3: Simplificamos a função de formatação <==
+// Ela não precisa mais do 'customerData', pois não usamos mais os campos de nome, cpf, etc.
+function formatDataForSupabase(payment, clienteInternoId) {
   let dataPagamentoFinal = null;
   if (payment.status === 'RECEIVED' || payment.status === 'CONFIRMED') {
     dataPagamentoFinal = payment.paymentDate || new Date().toISOString();
   }
   return {
     id_pagamento: payment.id,
-    id_cliente: clienteInternoId, // <== CORREÇÃO PRINCIPAL
+    id_cliente: clienteInternoId,
     valor: payment.value,
     id_parceiro: payment.externalReference || null,
     status_pagamento: payment.status,
-    nome_cliente: customerData.name,
-    cpf_cliente: customerData.cpfCnpj,
-    email_cliente: customerData.email,
-    telefone_cliente: customerData.mobilePhone,
+    // Os campos abaixo são redundantes se você já tem o id_cliente, mas vamos mantê-los por segurança
+    nome_cliente: payment.customerName, // Usando o nome que já vem no pagamento
+    cpf_cliente: null, // Não temos mais essa info aqui, e não é crucial
+    email_cliente: null, // Não temos mais essa info aqui
+    telefone_cliente: null, // Não temos mais essa info aqui
     nome_plano: payment.description,
     data_vencimento: payment.dueDate,
     forma_pagamento: payment.billingType,
     data_pagamento: dataPagamentoFinal,
     data_evento: new Date().toISOString(),
     id_cobranca_principal: payment.installment || payment.subscription || null,
-    id_asaas: payment.subscription || null, // Salva o ID da assinatura ou NULL
+    id_asaas: payment.subscription || null,
   };
 }
