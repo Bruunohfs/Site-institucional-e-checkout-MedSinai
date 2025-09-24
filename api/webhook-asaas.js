@@ -57,21 +57,32 @@ export default async function handler(req, res) {
 // --- FUNÇÕES DE LÓGICA (SEPARADAS PARA ORGANIZAÇÃO) ---
 
 async function upsertSubscription(subscription) {
-  // Passo 1: Garante que o cliente exista no nosso banco de dados
   const clienteInternoId = await ensureCustomerExists(subscription.customer);
   if (!clienteInternoId) {
     console.warn(`Não foi possível encontrar ou criar o cliente ${subscription.customer}. Pulando a sincronização da assinatura ${subscription.id}.`);
     return;
   }
 
-  // Passo 2: Insere ou atualiza a assinatura
+  // ===================================================================
+  // ==> CORREÇÃO DO FORMATO DA DATA APLICADA AQUI <==
+  // ===================================================================
+  // 1. Pega a data no formato "DD/MM/AAAA" que vem do Asaas.
+  const dataStringAsaas = subscription.dateCreated; // Ex: "23/09/2025"
+  
+  // 2. Quebra a string em partes [DD, MM, AAAA].
+  const partesData = dataStringAsaas.split('/'); 
+  
+  // 3. Remonta a data no formato que o Supabase entende: "AAAA-MM-DD".
+  const dataFormatoISO = `${partesData[2]}-${partesData[1]}-${partesData[0]}`;
+  // ===================================================================
+
   const { error: subError } = await supabase.from('assinaturas').upsert({
     id_asaas: subscription.id,
     id_cliente: clienteInternoId,
     status: subscription.status,
     metodo_pagamento: subscription.billingType,
     valor: subscription.value,
-    data_criacao: subscription.dateCreated,
+    data_criacao: dataFormatoISO, // 4. Usa a data já formatada.
     ciclo: subscription.cycle,
   }, { onConflict: 'id_asaas' });
 
