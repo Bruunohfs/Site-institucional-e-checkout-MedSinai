@@ -44,6 +44,7 @@ import GerenciarDepoimentos from './pages/admin/GerenciarDepoimentos';
 import GerenciarLeadsEmpresas from './pages/admin/GerenciarLeadsEmpresas';
 import GerenciarLeadsParceiros from './pages/admin/GerenciarLeadsParceiros';
 import FinanceiroAdminPage from './pages/admin/FinanceiroAdminPage';
+import GerenciarClientes from './pages/admin/GerenciarClientes';
 
 const GA_MEASUREMENT_ID = "G-Z1SN0XKENK";
 ReactGA.initialize(GA_MEASUREMENT_ID);
@@ -101,6 +102,7 @@ const router = createBrowserRouter([
       { path: "depoimentos", element: <GerenciarDepoimentos /> },
       { path: "leads-empresas", element: <GerenciarLeadsEmpresas /> },
       { path: "leads-parceiros", element: <GerenciarLeadsParceiros /> },
+      { path: "clientes", element: <GerenciarClientes /> },
     ]
   }
 ]);
