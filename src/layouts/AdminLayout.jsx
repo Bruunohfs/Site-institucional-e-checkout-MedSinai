@@ -1,21 +1,13 @@
-// src/layouts/AdminLayout.jsx
+// src/layouts/AdminLayout.jsx - VERSÃO FINAL ATUALIZADA
 
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient.js';
 import AdminSidebar from '../pages/admin/AdminSidebar';
 import useTracker from '@/hooks/useTracker';
-
-// =====> NOVAS IMPORTAÇÕES <=====
 import { NotificationProvider } from '../components/notifications/NotificationContext';
 import NotificationContainer from '../components/notifications/NotificationContainer';
-
-// Ícone do menu hambúrguer
-const MenuIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
-  </svg>
-);
+import { Menu } from 'lucide-react'; // Usando o ícone da Lucide para consistência
 
 export default function AdminLayout() {
   useTracker();
@@ -24,6 +16,9 @@ export default function AdminLayout() {
   const [loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+  // ==> ATUALIZAÇÃO 1: Novo estado para controlar o sidebar no desktop <==
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -66,11 +61,10 @@ export default function AdminLayout() {
   }
 
   return (
-    // =====> ENVOLVA TUDO COM O PROVIDER <=====
     <NotificationProvider>
-      <div className="flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+      {/* ==> ATUALIZAÇÃO 2: Adicionando 'relative' ao container principal <== */}
+      <div className="relative flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
         
-        {/* =====> ADICIONE O CONTAINER AQUI, LOGO NO INÍCIO <===== */}
         <NotificationContainer />
 
         <AdminSidebar 
@@ -80,6 +74,9 @@ export default function AdminLayout() {
           onThemeSwitch={handleThemeSwitch}
           isOpen={isMobileMenuOpen}
           setIsOpen={setIsMobileMenuOpen}
+          // ==> ATUALIZAÇÃO 3: Passando o estado e a função para o sidebar <==
+          isCollapsed={isSidebarCollapsed}
+          setIsCollapsed={setIsSidebarCollapsed}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -89,12 +86,11 @@ export default function AdminLayout() {
               <p className="text-xs font-semibold text-blue-400">PAINEL ADMIN</p>
             </div>
             <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-md text-gray-500 dark:text-gray-400">
-              <MenuIcon />
+              <Menu size={24} />
             </button>
           </header>
 
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            {/* O Outlet agora está dentro do Provider, então todas as páginas filhas terão acesso ao contexto */}
             <Outlet context={{ user }} />
           </main>
         </div>

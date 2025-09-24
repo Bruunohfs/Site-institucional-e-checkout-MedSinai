@@ -1,16 +1,11 @@
-// src/layouts/DashboardLayout.jsx
+// src/layouts/DashboardLayout.jsx - ATUALIZADO
 
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import Sidebar from "../pages/parceiros/Sidebar.jsx";
 import useTracker from '@/hooks/useTracker';
-
-const MenuIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
-  </svg>
-);
+import { Menu } from 'lucide-react'; // Usando o ícone da Lucide
 
 export default function DashboardLayout() {
   useTracker();
@@ -19,6 +14,9 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+  // ==> ATUALIZAÇÃO 1: Novo estado para controlar o sidebar no desktop <==
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const userRole = user?.user_metadata?.role;
 
@@ -48,11 +46,9 @@ export default function DashboardLayout() {
     return <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900">Carregando...</div>;
   }
 
-  // ===================================================================
-  // ==> CORREÇÃO AQUI <==
-  // ===================================================================
   return (
-    <div className="flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-x-hidden">
+    // ==> ATUALIZAÇÃO 2: Adicionando 'relative' ao container principal <==
+    <div className="relative flex h-screen bg-gray-300 dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-x-hidden">
       <Sidebar 
         user={user} 
         onLogout={handleLogout} 
@@ -60,6 +56,9 @@ export default function DashboardLayout() {
         onThemeSwitch={handleThemeSwitch}
         isOpen={isMobileMenuOpen}
         setIsOpen={setIsMobileMenuOpen}
+        // ==> ATUALIZAÇÃO 3: Passando o estado e a função para o sidebar <==
+        isCollapsed={isSidebarCollapsed}
+        setIsCollapsed={setIsSidebarCollapsed}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -73,7 +72,7 @@ export default function DashboardLayout() {
               </span>
             )}
             <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 rounded-md text-gray-500 dark:text-gray-400">
-              <MenuIcon />
+              <Menu size={24} />
             </button>
           </div>
         </header>
