@@ -87,28 +87,32 @@ async function upsertSubscription(subscription) {
 }
 
 async function ensureCustomerExists(customerIdAsaas) {
-  // 1. Tenta encontrar o cliente APENAS pelo seu ID único do Asaas.
+  // A busca continua igual
   const { data: clienteExistente } = await supabase
     .from('clientes')
     .select('id')
-    .eq('id_asaas', customerIdAsaas) // A busca agora é simples e direta.
+    .eq('id_asaas', customerIdAsaas)
     .single();
 
   if (clienteExistente) {
     return clienteExistente.id;
   }
 
-  // 2. Se não encontrou, busca no Asaas e cria localmente.
   try {
     console.warn(`Cliente ${customerIdAsaas} não encontrado localmente. Buscando no Asaas para criar...`);
     const customerData = await getCustomerData(customerIdAsaas);
     
+    // ===================================================================
+    // ==> ALTERAÇÃO APLICADA AQUI <==
+    // ===================================================================
     const dadosCliente = {
       id_asaas: customerData.id,
       nome: customerData.name,
       email: customerData.email,
       cpf: customerData.cpfCnpj,
+      telefone: customerData.mobilePhone || customerData.phone, // Adicionamos o telefone
     };
+    // ===================================================================
 
     const { data: novoCliente, error: insertError } = await supabase
       .from('clientes')
