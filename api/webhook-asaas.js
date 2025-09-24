@@ -88,32 +88,42 @@ async function ensureCustomerExists(customerIdAsaas) {
     .single();
 
   if (clienteExistente) {
-    return clienteExistente.id; // Retorna o ID que já temos
+    return clienteExistente.id;
   }
 
-  // Se não encontrou, busca no Asaas e cria localmente
   try {
     console.warn(`Cliente ${customerIdAsaas} não encontrado localmente. Buscando no Asaas para criar...`);
     const customerData = await getCustomerData(customerIdAsaas);
     
+    // ===================================================================
+    // ==> CORREÇÃO APLICADA AQUI <==
+    // ===================================================================
+    // O objeto de inserção agora contém apenas os campos que estamos preenchendo.
+    // O Supabase/Postgres irá gerar o 'id' (uuid) automaticamente.
+    const dadosCliente = {
+      id_asaas: customerData.id,
+      nome: customerData.name,
+      email: customerData.email,
+      cpf: customerData.cpfCnpj,
+    };
+
     const { data: novoCliente, error: insertError } = await supabase
       .from('clientes')
-      .insert({
-        id_asaas: customerData.id,
-        nome: customerData.name,
-        email: customerData.email,
-        cpf: customerData.cpfCnpj,
-      })
+      .insert(dadosCliente) // Usamos o novo objeto
       .select('id')
       .single();
+    // ===================================================================
 
     if (insertError) throw insertError;
     
     console.log(`Cliente ${customerData.id} criado dinamicamente no Supabase.`);
     return novoCliente.id;
   } catch (error) {
+    // Sua pergunta: "pode ter dado esse erro pq o cliente nao esta mais la?"
+    // Resposta: Sim! Se você deletou o cliente no Asaas, a chamada getCustomerData(customerIdAsaas) vai falhar.
+    // Este 'catch' vai pegar esse erro e impedir que o webhook quebre. A mensagem de erro será útil.
     console.error(`Falha crítica ao tentar criar o cliente ${customerIdAsaas}:`, error.message);
-    return null; // Retorna null se falhar
+    return null;
   }
 }
 
