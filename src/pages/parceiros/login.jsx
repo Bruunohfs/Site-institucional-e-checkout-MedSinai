@@ -44,44 +44,59 @@ const handleLogin = async (e) => {
   setLoading(true);
   setError('');
 
-  // 1. Faz o login
-  const { data, error } = await supabase.auth.signInWithPassword({
+  // ETAPA 1: Autenticar o usuário com email e senha
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  // 2. Se houver erro no login, mostra a mensagem
-  if (error) {
+  // Se houver erro na autenticação (email/senha errados), para aqui.
+  if (authError) {
     setError('E-mail ou senha inválidos. Por favor, tente novamente.');
     setLoading(false);
-    return; // Para a execução aqui
+    return;
   }
 
-  // 3. Se o login for bem-sucedido, verifica o 'role'
-  if (data.user) {
-    const userRole = data.user.user_metadata?.role;
-    const userStatus = data.user.user_metadata?.status;
+  // Se o login foi bem-sucedido, temos o ID do usuário
+  const userId = authData.user.id;
 
-    if (userStatus === 'inativo') {
-      setError('Sua conta de parceiro está desativada. Entre em contato com o suporte.');
-      await supabase.auth.signOut(); // Desloga o usuário imediatamente
-      setLoading(false);
-      return;
-    }
+  // ETAPA 2: Buscar o perfil do usuário na tabela 'profiles' para pegar a 'role' e o 'status'
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('role, status') // Pega a 'role' e o 'status'
+    .eq('id', userId)
+    .single();
 
-    // 4. Redireciona com base no 'role'
-    if (userRole === 'admin') {
-      console.log('Admin detectado. Redirecionando para /admin...');
-      navigate('/admin');
-    } else {
-      console.log('Parceiro detectado. Redirecionando para /parceiros/dashboard...');
-      navigate('/parceiros/dashboard');
-    }
-  } else {
-    // Fallback, caso algo muito estranho aconteça
-    setError('Não foi possível verificar os dados do usuário.');
+  // Se não encontrar um perfil, é um erro grave, mas tratamos com segurança.
+  if (profileError) {
+    setError('Não foi possível encontrar o perfil do usuário. Contate o suporte.');
+    await supabase.auth.signOut(); // Desloga por segurança
     setLoading(false);
+    return;
   }
+
+  // ETAPA 3: Usar os dados do PERFIL para as verificações
+  const userRole = profileData.role;
+  const userStatus = profileData.status;
+
+  // Verifica se a conta está inativa
+  if (userStatus === 'inativo') {
+    setError('Sua conta de parceiro está desativada. Entre em contato com o suporte.');
+    await supabase.auth.signOut(); // Desloga o usuário imediatamente
+    setLoading(false);
+    return;
+  }
+
+  // ETAPA 4: Redirecionar com base na 'role' encontrada no perfil
+  if (userRole === 'admin') {
+    console.log(`Admin ${email} detectado. Redirecionando para /admin...`);
+    navigate('/admin');
+  } else {
+    console.log(`Parceiro ${email} detectado. Redirecionando para /parceiros/dashboard...`);
+    navigate('/parceiros/dashboard');
+  }
+
+  // setLoading(false) não é estritamente necessário aqui, pois a página vai mudar.
 };
 
   return (
