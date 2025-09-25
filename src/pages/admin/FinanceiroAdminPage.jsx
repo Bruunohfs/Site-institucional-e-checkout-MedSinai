@@ -206,7 +206,12 @@ export default function FinanceiroAdminPage() {
     setLoading(true);
     addNotification("Gerando fechamento, por favor aguarde...", "info");
     try {
-      const { data, error } = await supabase.functions.invoke('gerar-fechamentos', { body: { mes: mesParaGerar } });
+      const { data, error } = await supabase.functions.invoke('gerar-fechamentos', {
+        body: { mes: mesParaGerar },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session.access_token}`,
+        }
+      });
       if (error) throw error;
       addNotification(data.message || 'Operação concluída!', 'success');
       await fetchData();

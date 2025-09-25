@@ -44,43 +44,51 @@ const handleLogin = async (e) => {
   setLoading(true);
   setError('');
 
-  // 1. Faz o login
-  const { data, error } = await supabase.auth.signInWithPassword({
+  // ETAPA 1: Autentica o usuário
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  // 2. Se houver erro no login, mostra a mensagem
-  if (error) {
-    setError('E-mail ou senha inválidos. Por favor, tente novamente.');
+  if (authError) {
+    setError('E-mail ou senha inválidos.');
     setLoading(false);
-    return; // Para a execução aqui
+    return;
   }
 
-  // 3. Se o login for bem-sucedido, verifica o 'role'
-  if (data.user) {
-    const userRole = data.user.user_metadata?.role;
-    const userStatus = data.user.user_metadata?.status;
+  // ETAPA 2: Busca a 'role' E o 'status' na tabela 'profiles'
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('role, status') // <-- MUDANÇA AQUI: Pedimos o status também
+    .eq('id', authData.user.id)
+    .single();
 
-    if (userStatus === 'inativo') {
-      setError('Sua conta de parceiro está desativada. Entre em contato com o suporte.');
-      await supabase.auth.signOut(); // Desloga o usuário imediatamente
-      setLoading(false);
-      return;
-    }
-
-    // 4. Redireciona com base no 'role'
-    if (userRole === 'admin') {
-      console.log('Admin detectado. Redirecionando para /admin...');
-      navigate('/admin');
-    } else {
-      console.log('Parceiro detectado. Redirecionando para /parceiros/dashboard...');
-      navigate('/parceiros/dashboard');
-    }
-  } else {
-    // Fallback, caso algo muito estranho aconteça
-    setError('Não foi possível verificar os dados do usuário.');
+  if (profileError) {
+    console.error("Erro ao buscar perfil:", profileError);
+    setError('Não foi possível verificar as permissões do usuário.');
+    await supabase.auth.signOut();
     setLoading(false);
+    return;
+  }
+
+  // ETAPA 3: Usa os dados do perfil para as verificações
+  const userRole = profileData.role;
+  const userStatus = profileData.status;
+
+  // ==> NOVA VERIFICAÇÃO DE STATUS <==
+  // Se o status for 'inativo', bloqueia o login.
+  if (userStatus === 'inativo') {
+    setError('Sua conta está desativada. Entre em contato com o suporte.');
+    await supabase.auth.signOut(); // Desloga o usuário imediatamente
+    setLoading(false);
+    return;
+  }
+
+  // ETAPA 4: Redireciona com base na 'role'
+  if (userRole === 'admin') {
+    navigate('/admin');
+  } else {
+    navigate('/parceiros/dashboard');
   }
 };
 

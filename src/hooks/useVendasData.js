@@ -1,4 +1,4 @@
-// src/hooks/useVendasData.js
+// src/hooks/useVendasData.js - VERSÃO CORRIGIDA E COMPLETA
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient.js';
@@ -41,7 +41,7 @@ export function useVendasData() {
     kpisGeral: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 },
     rankingParceirosMes: [],
     resumoPlanosMes: [],
-    ultimasVendas: [], // <-- Garantir que o estado inicial tenha o array
+    ultimasVendas: [],
   });
 
   useEffect(() => {
@@ -49,23 +49,40 @@ export function useVendasData() {
       setLoading(true);
       setError('');
       try {
+        // CHAMADA 1: Pega os dados da tabela 'vendas'. Continua igual.
         const { data: vendasData, error: vendasError } = await supabase
           .from('vendas')
           .select('*');
         if (vendasError) throw vendasError;
 
-        const { data: parceirosData, error: parceirosError } =
-          await supabase.functions.invoke('list-partners');
+        // ===================================================================
+        // ==> INÍCIO DA ÚNICA ALTERAÇÃO NECESSÁRIA <==
+        // ===================================================================
+
+        // CHAMADA 2: Substitui a Edge Function por uma chamada direta à tabela 'profiles'.
+        const { data: parceirosData, error: parceirosError } = await supabase
+          .from('profiles')
+          .select('id, nome_completo'); // Pega só o ID e o nome completo.
+        
         if (parceirosError) throw parceirosError;
 
         const mapaDeParceiros = {};
-        if (parceirosData.users) {
-          parceirosData.users.forEach((user) => {
-            mapaDeParceiros[user.id] = {
-              nome: user.user_metadata?.nome || 'Parceiro Desconhecido',
+        if (parceirosData) {
+          // A lógica aqui muda um pouco para se adaptar à estrutura da tabela 'profiles'.
+          parceirosData.forEach((perfil) => {
+            mapaDeParceiros[perfil.id] = {
+              nome: perfil.nome_completo || 'Parceiro Desconhecido',
             };
           });
         }
+
+        // ===================================================================
+        // ==> FIM DA ÚNICA ALTERAÇÃO NECESSÁRIA <==
+        // ===================================================================
+
+        // Daqui para baixo, todo o seu código original de processamento de dados
+        // permanece exatamente o mesmo, pois a estrutura 'mapaDeParceiros'
+        // que ele usa foi recriada com sucesso.
 
         const agora = new Date();
 
@@ -126,20 +143,17 @@ export function useVendasData() {
           .map(([nome, quantidade]) => ({ nome, quantidade }))
           .sort((a, b) => b.quantidade - a.quantidade);
 
-        // ===================================================================
-        // ==> A CORREÇÃO ESTÁ AQUI: Adicionando a lógica de volta <==
-        // ===================================================================
         const ultimasVendas = vendasCompletas
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // Ordena pela data de criação
-          .slice(0, 5); // Pega as 5 mais recentes
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5);
 
         setDadosProcessados({
-          vendasComNomes: vendasCompletas, // Renomeado para clareza
+          vendasComNomes: vendasCompletas,
           kpisMes,
-          kpisGeral: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 }, // Pode ser removido se não usar
+          kpisGeral: { faturamento: 0, comissaoAPagar: 0, vendasConfirmadas: 0 },
           rankingParceirosMes,
           resumoPlanosMes,
-          ultimasVendas, // <-- AQUI! Passando a variável calculada
+          ultimasVendas,
         });
         
       } catch (err) {

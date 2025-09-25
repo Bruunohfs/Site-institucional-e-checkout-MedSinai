@@ -207,9 +207,12 @@ function GerenciarLeadsParceiros() {
 
     (async () => {
       try {
-        const { error } = await supabase.functions.invoke('promote-lead-to-partner', {
-          body: { leadId },
-        });
+       const { error } = await supabase.functions.invoke('promote-lead-to-partner', {
+        body: { leadId },
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session.access_token}`,
+        }
+      });
 
         if (error) {
           throw new Error(error.message);

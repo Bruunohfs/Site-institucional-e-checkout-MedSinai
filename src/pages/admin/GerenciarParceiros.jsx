@@ -41,67 +41,126 @@ export default function GerenciarParceiros() {
 
   useEffect(() => { fetchParceiros(); }, []);
 
-  const fetchParceiros = async () => {
-    setLoading(true);
-    setError('');
-    const { data, error: functionError } = await supabase.functions.invoke('list-partners');
-    if (functionError) {
-      setError('Falha ao carregar os parceiros.');
-      addNotification('Falha ao carregar os parceiros.', 'error');
-    } else {
-      const filteredParceiros = data.users.filter(user => user.user_metadata?.role !== 'admin');
-      setParceiros(filteredParceiros);
-    }
-    setLoading(false);
-  };
+const fetchParceiros = async () => {
+  setLoading(true);
+  setError(''); // Limpa erros antigos
+
+  // Faz uma chamada direta à tabela 'profiles', confiando na RLS
+ const { data, error } = await supabase
+  .from('vw_parceiros') // <== MUDANÇA AQUI
+  .select('*')
+  .eq('role', 'parceiro');
+
+
+  if (error) {
+    setError('Falha ao carregar os parceiros. Verifique suas permissões (RLS).');
+    addNotification('Falha ao carregar os parceiros.', 'error');
+    console.error("Erro ao buscar parceiros:", error);
+  } else {
+    setParceiros(data);
+  }
+  setLoading(false);
+};
 
   const handleOpenEditModal = (parceiro) => { setSelectedParceiro(parceiro); setIsEditModalOpen(true); };
   const handleCloseEditModal = () => { setIsEditModalOpen(false); setSelectedParceiro(null); };
   
-  const handleSaveChanges = async (partnerId, updatedData) => {
-    const { data, error } = await supabase.functions.invoke('admin-update-partner', {
-      body: {
-        action: 'update_data',
-        partnerId,
-        updatedData,
-      },
-    });
+const handleSaveChanges = async (partnerId, updatedData) => {
+  // A política 'Admins podem gerenciar tudo' permitirá esta chamada
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      nome_completo: updatedData.nome,
+      email: updatedData.email, // Se você permite editar o email
+      telefone: updatedData.telefone,
+      cupom: updatedData.cupom,
+    })
+    .eq('id', partnerId);
 
-    if (error) {
-      addNotification(`Falha ao salvar: ${error.message}`, 'error');
-    } else {
-      addNotification('Parceiro atualizado com sucesso!', 'success');
-      setParceiros(parceiros.map(p => (p.id === partnerId ? data.user : p)));
-      handleCloseEditModal();
-    }
-  };
+  if (error) {
+    addNotification(`Falha ao salvar: ${error.message}`, 'error');
+  } else {
+    addNotification('Parceiro atualizado com sucesso!', 'success');
+    // Atualiza o estado local para refletir a mudança imediatamente
+    fetchParceiros(); // A forma mais simples de recarregar os dados
+    handleCloseEditModal();
+  }
+};
 
   const handleOpenAddModal = () => setIsAddModalOpen(true);
   const handleCloseAddModal = () => setIsAddModalOpen(false);
   
-  const handleCreatePartner = async (newPartnerData) => {
-    const { data: createdUser, error: functionError } = await supabase.functions.invoke('create-partner', { body: newPartnerData });
-    if (functionError) {
-      addNotification(`Falha ao criar parceiro: ${functionError.message}`, 'error');
-      return false;
-    } else {
-      addNotification('Parceiro criado com sucesso!', 'success');
-      setParceiros(prevParceiros => [createdUser.user, ...prevParceiros].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-      return true;
+const handleCreatePartner = async (newPartnerData) => {
+  // 1. Chama a nova Edge Function segura
+const { data: createdUserResponse, error: functionError } = await supabase.functions.invoke('admin-create-user', {
+  body: {
+    email: newPartnerData.email,
+    password: newPartnerData.password,
+    user_metadata: {
+      cupom: newPartnerData.cupom
     }
-  };
+  },
+  // Esta é a forma correta de pegar o token da sessão atual e enviá-lo.
+  headers: {
+    Authorization: `Bearer ${(await supabase.auth.getSession()).data.session.access_token}`,
+  }
+});
 
-  const handleStatusChange = async (parceiro, newStatus) => {
-    setUpdatingStatusId(parceiro.id);
-    const { error } = await supabase.functions.invoke('update-partner-status', { body: { partnerId: parceiro.id, status: newStatus } });
-    if (error) {
-      addNotification(`Falha ao atualizar status: ${error.message}`, 'error');
-    } else {
-      addNotification(`Status do parceiro atualizado para "${newStatus}".`, 'success');
-      setParceiros(parceiros.map(p => p.id === parceiro.id ? { ...p, user_metadata: { ...p.user_metadata, status: newStatus } } : p));
-    }
-    setUpdatingStatusId(null);
-  };
+  if (functionError) {
+    addNotification(`Falha ao criar parceiro: ${functionError.message}`, 'error');
+    return false;
+  }
+
+  // O resto do código permanece o mesmo!
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({
+      nome_completo: newPartnerData.nome,
+      role: 'parceiro',
+      status: 'ativo',
+      cupom: newPartnerData.cupom
+    })
+    .eq('id', createdUserResponse.user.id);
+
+  if (profileError) {
+    addNotification(`Usuário criado, mas falha ao atualizar perfil: ${profileError.message}`, 'warning');
+  } else {
+    addNotification('Parceiro criado com sucesso!', 'success');
+  }
+
+  const { data: novoParceiroCompleto } = await supabase
+    .from('vw_parceiros')
+    .select('*')
+    .eq('id', createdUserResponse.user.id)
+    .single();
+
+  if (novoParceiroCompleto) {
+    setParceiros(prevParceiros => [novoParceiroCompleto, ...prevParceiros]);
+  }
+
+  return true;
+};
+
+ const handleStatusChange = async (parceiro, newStatus) => {
+  setUpdatingStatusId(parceiro.id);
+
+  // Faz o update diretamente na coluna 'status' da tabela 'profiles'
+  const { error } = await supabase
+    .from('profiles')
+    .update({ status: newStatus }) // Atualiza a coluna 'status'
+    .eq('id', parceiro.id);       // Para o parceiro específico
+
+  if (error) {
+    addNotification(`Falha ao atualizar status: ${error.message}`, 'error');
+  } else {
+    addNotification(`Status do parceiro atualizado para "${newStatus}".`, 'success');
+    // Atualiza o estado local para o switch mudar visualmente
+    setParceiros(parceiros.map(p => 
+      p.id === parceiro.id ? { ...p, status: newStatus } : p
+    ));
+  }
+  setUpdatingStatusId(null);
+};
 
   const renderContent = () => {
     if (loading) return <div className="text-center py-10 text-gray-500 dark:text-gray-400">Carregando...</div>;
@@ -129,15 +188,15 @@ export default function GerenciarParceiros() {
           <tbody className="divide-y divide-gray-300 dark:divide-gray-700">
             {parceiros.map(parceiro => (
               <tr key={parceiro.id} className="hover:bg-gray-200 dark:hover:bg-gray-700/50 transition-colors">
-                <td className="p-4 font-medium text-gray-900 dark:text-white">{parceiro.user_metadata?.nome || '-'}</td>
+                <td className="p-4 font-medium text-gray-900 dark:text-white">{parceiro.nome_completo || '-'}</td>
                 <td className="p-4 text-gray-600 dark:text-gray-400">{parceiro.email}</td>
-                <td className="p-4 font-mono text-gray-600 dark:text-gray-300">{parceiro.user_metadata?.cupom || '-'}</td>
+                <td className="p-4 font-mono text-gray-600 dark:text-gray-300">{parceiro.cupom || '-'}</td>
                 <td className="p-4">
                   <StatusSwitch 
-                    isChecked={parceiro.user_metadata?.status === 'ativo' || parceiro.user_metadata?.status === undefined}
+                    isChecked={parceiro.status === 'ativo'}
                     isLoading={updatingStatusId === parceiro.id}
                     onChange={() => {
-                      const newStatus = (parceiro.user_metadata?.status === 'ativo' || parceiro.user_metadata?.status === undefined) ? 'inativo' : 'ativo';
+                      const newStatus = parceiro.status === 'ativo' ? 'inativo' : 'ativo';
                       handleStatusChange(parceiro, newStatus);
                     }}
                   />
