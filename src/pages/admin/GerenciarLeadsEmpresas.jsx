@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { format } from 'date-fns';
 import { useNotification } from '../../components/notifications/NotificationContext';
 
-// Componente LeadRow (sem alterações desta vez)
+// Componente LeadRow (permanece inalterado)
 function LeadRow({ lead, onUpdate, userEmail, renderAs }) {
   const { addNotification } = useNotification();
   const [editableLead, setEditableLead] = useState({ ...lead });
@@ -111,13 +111,14 @@ function GerenciarLeadsEmpresas() {
   const [user, setUser] = useState(null);
   const [filter, setFilter] = useState('todos');
 
+  // ===================================================================
+  // ==> INÍCIO DA ALTERAÇÃO: LÓGICA DE BUSCA DE DADOS CORRIGIDA <==
+  // ===================================================================
   useEffect(() => {
-    const fetchSessionAndLeads = async () => {
+    // Esta função só será chamada quando a sessão do Supabase for confirmada.
+    const fetchLeads = async () => {
       setLoading(true);
-      if (!user) {
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-      }
+      setError(null);
 
       let query = supabase.from('leads_empresas').select('*').order('created_at', { ascending: false });
 
@@ -128,15 +129,39 @@ function GerenciarLeadsEmpresas() {
       const { data, error } = await query;
       
       if (error) {
-        setError('Não foi possível carregar os leads.');
-        addNotification('Não foi possível carregar os leads.', 'error');
+        console.error("Erro ao buscar leads (verifique a RLS):", error);
+        setError('Não foi possível carregar os leads. Verifique as permissões.');
+        addNotification('Não foi possível carregar os leads devido a permissões.', 'error');
+        setLeads([]);
       } else {
         setLeads(data);
       }
       setLoading(false);
     };
-    fetchSessionAndLeads();
-  }, [filter, user]);
+
+    // Ouve as mudanças de autenticação. Este é o gatilho principal.
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        // Se há uma sessão (login, refresh), define o usuário e busca os dados.
+        setUser(session.user);
+        console.log("Sessão do Supabase confirmada. Buscando leads...");
+        fetchLeads();
+      } else {
+        // Se não há sessão (logout), limpa os dados.
+        setUser(null);
+        setLeads([]);
+        setLoading(false);
+      }
+    });
+
+    // Função de limpeza para parar de ouvir os eventos quando o componente sair da tela.
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [filter]); // A dependência é o 'filter'. A mudança de filtro irá re-executar a busca.
+  // ===================================================================
+  // ==> FIM DA ALTERAÇÃO <==
+  // ===================================================================
 
   const handleLeadUpdate = (updatedLead) => {
     setLeads(prevLeads => prevLeads.map(lead => (lead.id === updatedLead.id ? { ...lead, ...updatedLead } : lead)));
@@ -171,9 +196,6 @@ function GerenciarLeadsEmpresas() {
               {/* TABELA PARA DESKTOP */}
               <div className="overflow-x-auto hidden md:block">
                 <table className="min-w-full">
-                  {/* =================================================================== */}
-                  {/* ==> ALTERAÇÃO FINAL APLICADA AQUI <== */}
-                  {/* =================================================================== */}
                   <thead className="bg-gray-300 dark:bg-gray-700/50 border-b-2 border-gray-300 dark:border-gray-600">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-900 dark:text-gray-300 uppercase tracking-wider w-1/4">Lead</th>
