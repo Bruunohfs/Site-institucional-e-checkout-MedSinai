@@ -4,6 +4,10 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import './index.css';
 import AnalyticsWrapper from './components/AnalyticsWrapper.jsx';
 
+// IMPORTAÇÕES GLOBAIS
+import { NotificationProvider } from './components/notifications/NotificationContext';
+import NotificationContainer from './components/notifications/NotificationContainer';
+
 // Layouts
 import MainLayout from './layouts/MainLayout.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx'; 
@@ -35,7 +39,7 @@ import CalculadoraPage from './pages/parceiros/CalculadoraPage';
 
 // Páginas de Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
-import GerenciarParceiros from './pages/admin/GerenciarParceiros';
+import GerenciarContas from './pages/admin/GerenciarContas.jsx';
 import GerenciarConteudo from './pages/admin/GerenciarConteudo';
 import VisaoGeralVendas from './pages/admin/VisaoGeralVendas';
 import GerenciarDepoimentos from './pages/admin/GerenciarDepoimentos';
@@ -43,6 +47,7 @@ import GerenciarLeadsEmpresas from './pages/admin/GerenciarLeadsEmpresas';
 import GerenciarLeadsParceiros from './pages/admin/GerenciarLeadsParceiros';
 import FinanceiroAdminPage from './pages/admin/FinanceiroAdminPage';
 import GerenciarClientes from './pages/admin/GerenciarClientes';
+import MinhaContaAdmin from './pages/admin/MinhaContaAdmin';
 
 const router = createBrowserRouter([
   // --- ROTAS COM O LAYOUT PRINCIPAL (CABEÇALHO E RODAPÉ) ---
@@ -90,7 +95,7 @@ const router = createBrowserRouter([
     element: <AdminLayout />,
     children: [
       { index: true, element: <AdminDashboard /> },
-      { path: "parceiros", element: <GerenciarParceiros /> },
+      { path: "contas", element: <GerenciarContas /> },
       { path: "conteudo", element: <GerenciarConteudo /> },
       { path: "vendas", element: <VisaoGeralVendas /> },
       { path: "financeiro", element: <FinanceiroAdminPage /> },
@@ -98,13 +103,17 @@ const router = createBrowserRouter([
       { path: "leads-empresas", element: <GerenciarLeadsEmpresas /> },
       { path: "leads-parceiros", element: <GerenciarLeadsParceiros /> },
       { path: "clientes", element: <GerenciarClientes /> },
+      { path: "minha-conta", element: <MinhaContaAdmin /> },
     ]
   }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
-    <AnalyticsWrapper />
+    <NotificationProvider>
+      <RouterProvider router={router} />
+      <AnalyticsWrapper />
+      <NotificationContainer />
+    </NotificationProvider>
   </React.StrictMode>,
 );
