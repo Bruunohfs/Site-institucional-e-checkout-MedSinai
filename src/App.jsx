@@ -86,11 +86,6 @@ function App() {
   // Dispara o evento no Pixel (Client-Side)
   ReactPixel.track('InitiateCheckout', eventData);
 
-  // ===================================================================
-  // ==> ADICIONANDO O CÓDIGO DE TESTE QUE FALTAVA <==
-  // ===================================================================
-  const testEventCode = 'TEST10770'; // Use o código da sua tela de teste do Facebook
-
   // Envia o evento para a API de Conversões (Server-Side)
   try {
     await fetch('/api/send-facebook-event', {
@@ -101,8 +96,6 @@ function App() {
       body: JSON.stringify({
         eventName: 'InitiateCheckout',
         eventData: eventData,
-        test_event_code: testEventCode, // Adicionando o código de teste
-        // Não enviamos userData aqui, pois ainda não temos os dados do cliente
       }),
     });
   } catch (error) {

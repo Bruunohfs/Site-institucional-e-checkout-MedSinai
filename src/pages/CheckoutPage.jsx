@@ -156,7 +156,6 @@ const handlePurchaseSuccess = (method, purchaseDetails, formData) => {
         eventName: 'Purchase',
         eventData: eventData,
         userData: userData,
-        test_event_code: testEventCode, // Adicionando o código de teste
       }),
     })
     .then(response => {

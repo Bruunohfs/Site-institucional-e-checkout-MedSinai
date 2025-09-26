@@ -7,7 +7,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { eventName, eventData, userData, test_event_code } = req.body; // <-- 1. Capturamos o test_event_code aqui
+  // Apenas capturamos os dados essenciais do frontend
+  const { eventName, eventData, userData } = req.body;
 
   if (!eventName || !eventData) {
     return res.status(400).json({ error: 'eventName and eventData are required' });
@@ -17,13 +18,11 @@ export default async function handler(req, res) {
   const pixelId = process.env.FACEBOOK_PIXEL_ID;
 
   if (!accessToken || !pixelId) {
-    console.error('Variáveis de ambiente do Facebook não configuradas.');
     return res.status(500).json({ error: 'Server configuration error.' });
   }
 
   const apiUrl = `https://graph.facebook.com/v18.0/${pixelId}/events`;
 
-  // --- Prepara os dados do usuário com HASH ---
   const hashedUserData = {};
   if (userData ) {
     for (const key in userData) {
@@ -33,7 +32,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // --- Monta o payload do evento ---
   const payload = {
     data: [
       {
@@ -44,21 +42,16 @@ export default async function handler(req, res) {
         custom_data: eventData,
       },
     ],
+    // ===================================================================
+    // ==> A CORREÇÃO FINAL: CÓDIGO DE TESTE FIXO AQUI <==
+    // ===================================================================
+    test_event_code: 'TEST10770', // Coloque seu código de teste aqui
   };
-
-  // --- 2. ADICIONA O CÓDIGO DE TESTE NO NÍVEL CORRETO DO PAYLOAD ---
-  // Esta é a correção crucial.
-  if (test_event_code) {
-    payload.test_event_code = test_event_code;
-    console.log(`Enviando evento para o Facebook com test_event_code: ${test_event_code}`);
-  }
 
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...payload, access_token: accessToken }),
     });
 
@@ -66,14 +59,12 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       console.error('Erro da API do Facebook:', responseData);
-      return res.status(response.status).json({ error: 'Failed to send event to Facebook', details: responseData });
+      return res.status(response.status).json({ error: 'Failed to send event', details: responseData });
     }
 
-    console.log('Evento enviado com sucesso para a API do Facebook:', responseData);
     res.status(200).json({ success: true, facebookResponse: responseData });
 
   } catch (error) {
-    console.error('Erro de rede ou de fetch ao contatar a API do Facebook:', error);
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 }
