@@ -49,8 +49,7 @@ export default async function handler(req, res ) {
           },
         },
       ],
-      // Opcional: Para testes. Envie o 'test_event_code' para ver os eventos no Gerenciador
-      // test_event_code: 'TEST_YOUR_CODE' 
+      test_event_code: 'TEST63505'
     };
 
     // 6. Envia a requisição para a API de Conversões do Facebook
