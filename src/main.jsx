@@ -1,23 +1,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import './index.css';
-import AnalyticsWrapper from './components/AnalyticsWrapper.jsx';
+
+// IMPORTAÇÕES PARA O PIXEL
+import PixelTracker from './components/PixelTracker'; // Importa o novo componente de rastreamento
 
 // IMPORTAÇÕES GLOBAIS
 import { NotificationProvider } from './components/notifications/NotificationContext';
 import NotificationContainer from './components/notifications/NotificationContainer';
+import AnalyticsWrapper from './components/AnalyticsWrapper.jsx';
 
 // Layouts
 import MainLayout from './layouts/MainLayout.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx'; 
 import BlankLayout from './layouts/BlankLayout.jsx';
 import AdminLayout from './layouts/AdminLayout';
-
-// Landing Pages
-import LandingPageEsc from './pages/Landingpages/LandingPageEscritorio.jsx';
-import LandingPageCom from './pages/Landingpages/LandingPageComercio.jsx';
-import LandingPageInd from './pages/Landingpages/LandingPageIndustria.jsx';
 
 // Páginas Principais
 import App from './App.jsx';
@@ -26,6 +24,11 @@ import CheckoutPage from './pages/CheckoutPage.jsx';
 import ParceirosPage from './pages/ParceirosPage';
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade.jsx';
 import TermosDeUso from './pages/TermosDeUso.jsx';
+
+// Landing Pages
+import LandingPageEsc from './pages/Landingpages/LandingPageEscritorio.jsx';
+import LandingPageCom from './pages/Landingpages/LandingPageComercio.jsx';
+import LandingPageInd from './pages/Landingpages/LandingPageIndustria.jsx';
 
 // Páginas de Parceiros
 import LoginPage from './pages/parceiros/login.jsx';
@@ -49,61 +52,76 @@ import FinanceiroAdminPage from './pages/admin/FinanceiroAdminPage';
 import GerenciarClientes from './pages/admin/GerenciarClientes';
 import MinhaContaAdmin from './pages/admin/MinhaContaAdmin';
 
+// Componente de Layout Raiz que inclui o PixelTracker
+const RootLayout = () => {
+  return (
+    <>
+      <PixelTracker /> {/* O rastreador do Pixel é renderizado aqui, em todas as rotas */}
+      <Outlet />       {/* O Outlet renderiza o layout e a página da rota atual */}
+    </>
+  );
+};
+
 const router = createBrowserRouter([
-  // --- ROTAS COM O LAYOUT PRINCIPAL (CABEÇALHO E RODAPÉ) ---
   {
-    element: <MainLayout />,
+    element: <RootLayout />, // O RootLayout agora é o pai de todas as rotas
     children: [
-      { path: "/", element: <App /> },
-      { path: "empresas", element: <EmpresasPage /> },
-      { path: "sejaparceiro", element: <ParceirosPage /> },
-      { path: "termos-de-uso", element: <TermosDeUso /> },
-      { path: "politica-de-privacidade", element: <PoliticaDePrivacidade /> },
-    ],
-  },
-  
-  // --- ROTAS DE PÁGINA INTEIRA (AGRUPADAS COM LAYOUT VAZIO) ---
-  {
-    element: <BlankLayout />, // O pai é o layout vazio
-    children: [
-      { path: "/escritorio", element: <LandingPageEsc /> },
-      { path: "/comercio", element: <LandingPageCom /> },
-      { path: "/industria", element: <LandingPageInd /> },
-      { path: "/parceiros/login", element: <LoginPage /> },
-      { path: "/pagamento/:tipoPlano/:idDoPlano", element: <CheckoutPage /> },
-    ]
-  },
+      // --- ROTAS COM O LAYOUT PRINCIPAL (CABEÇALHO E RODAPÉ) ---
+      {
+        element: <MainLayout />,
+        children: [
+          { path: "/", element: <App /> },
+          { path: "empresas", element: <EmpresasPage /> },
+          { path: "sejaparceiro", element: <ParceirosPage /> },
+          { path: "termos-de-uso", element: <TermosDeUso /> },
+          { path: "politica-de-privacidade", element: <PoliticaDePrivacidade /> },
+        ],
+      },
+      
+      // --- ROTAS DE PÁGINA INTEIRA (AGRUPADAS COM LAYOUT VAZIO) ---
+      {
+        element: <BlankLayout />,
+        children: [
+          { path: "/escritorio", element: <LandingPageEsc /> },
+          { path: "/comercio", element: <LandingPageCom /> },
+          { path: "/industria", element: <LandingPageInd /> },
+          { path: "/parceiros/login", element: <LoginPage /> },
+          { path: "/pagamento/:tipoPlano/:idDoPlano", element: <CheckoutPage /> },
+        ]
+      },
 
-  // --- ROTAS DO DASHBOARD DO PARCEIRO ---
-  {
-    path: "/parceiros",
-    element: <DashboardLayout />,
-    children: [
-      { path: "dashboard", element: <DashboardPage /> },
-      { path: 'analytics', element: <AnalyticsPage /> },
-      { path: 'materiais', element: <SupportMaterialPage /> },
-      { path: 'minha-conta', element: <MinhaContaPage /> },
-      { path: 'financeiro', element: <FinanceiroParceiroPage /> },
-      { path: 'oportunidades', element: <OportunidadesPage /> },
-      { path: 'calculadora', element: <CalculadoraPage /> },
-    ],
-  },
+      // --- ROTAS DO DASHBOARD DO PARCEIRO ---
+      {
+        path: "/parceiros",
+        element: <DashboardLayout />,
+        children: [
+          { path: "dashboard", element: <DashboardPage /> },
+          { path: 'analytics', element: <AnalyticsPage /> },
+          { path: 'materiais', element: <SupportMaterialPage /> },
+          { path: 'minha-conta', element: <MinhaContaPage /> },
+          { path: 'financeiro', element: <FinanceiroParceiroPage /> },
+          { path: 'oportunidades', element: <OportunidadesPage /> },
+          { path: 'calculadora', element: <CalculadoraPage /> },
+        ],
+      },
 
-  // --- ROTAS DO DASHBOARD DO ADMIN ---
-  {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      { index: true, element: <AdminDashboard /> },
-      { path: "contas", element: <GerenciarContas /> },
-      { path: "conteudo", element: <GerenciarConteudo /> },
-      { path: "vendas", element: <VisaoGeralVendas /> },
-      { path: "financeiro", element: <FinanceiroAdminPage /> },
-      { path: "depoimentos", element: <GerenciarDepoimentos /> },
-      { path: "leads-empresas", element: <GerenciarLeadsEmpresas /> },
-      { path: "leads-parceiros", element: <GerenciarLeadsParceiros /> },
-      { path: "clientes", element: <GerenciarClientes /> },
-      { path: "minha-conta", element: <MinhaContaAdmin /> },
+      // --- ROTAS DO DASHBOARD DO ADMIN ---
+      {
+        path: "/admin",
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <AdminDashboard /> },
+          { path: "contas", element: <GerenciarContas /> },
+          { path: "conteudo", element: <GerenciarConteudo /> },
+          { path: "vendas", element: <VisaoGeralVendas /> },
+          { path: "financeiro", element: <FinanceiroAdminPage /> },
+          { path: "depoimentos", element: <GerenciarDepoimentos /> },
+          { path: "leads-empresas", element: <GerenciarLeadsEmpresas /> },
+          { path: "leads-parceiros", element: <GerenciarLeadsParceiros /> },
+          { path: "clientes", element: <GerenciarClientes /> },
+          { path: "minha-conta", element: <MinhaContaAdmin /> },
+        ]
+      }
     ]
   }
 ]);
