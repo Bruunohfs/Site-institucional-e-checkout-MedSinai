@@ -30,7 +30,7 @@ function App() {
   const [dynamicTestimonials, setDynamicTestimonials] = useState([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(true);
 
-  useEffect(() => {
+ useEffect(( ) => {
     const fetchApprovedTestimonials = async () => {
       const { data, error } = await supabase
         .from('testimonials')
@@ -42,13 +42,21 @@ function App() {
         console.error("Erro ao buscar depoimentos:", error);
         setDynamicTestimonials([]); 
       } else {
+        // ==================================================
+        // A MUDANÇA ESTÁ AQUI
+        // ==================================================
         const formattedData = data.map(item => ({
+          id: item.id, // Passando o ID para a key funcionar
           name: item.name,
-          role: item.occupation || 'Cliente MedSinai',
-          avatar: item.image_url || 'https://i.pravatar.cc/150', // Fallback genérico
+          // A propriedade 'role' no card espera 'occupation' ou 'role'
+          occupation: item.occupation || 'Cliente MedSinai', 
+          // A propriedade 'avatar' no card espera 'image_url' ou 'avatar'
+          image_url: item.image_url, // Apenas passe o valor do banco (pode ser null)
           stars: item.stars,
-          text: item.body,
-        } ));
+          // A propriedade de texto no card espera 'body' ou 'text'
+          body: item.body, 
+        }));
+        // ==================================================
         setDynamicTestimonials(formattedData);
       }
       setLoadingTestimonials(false);
@@ -439,9 +447,9 @@ const comoFuncionaSteps = [
         breakpoints={{ 640: { slidesPerView: 2, spaceBetween: 20 }, 1024: { slidesPerView: 3, spaceBetween: 30 } }}
         className="pb-10"
       >
-        {dynamicTestimonials.map((testimonial, index) => (
-          <SwiperSlide key={index} className="h-auto">
-            {/* Usando o novo componente aqui */}
+        {dynamicTestimonials.map((testimonial) => (
+          // A ÚNICA MUDANÇA É AQUI: de key={index} para key={testimonial.id}
+          <SwiperSlide key={testimonial.id} className="h-auto">
             <TestimonialCard testimonial={testimonial} />
           </SwiperSlide>
         ))}

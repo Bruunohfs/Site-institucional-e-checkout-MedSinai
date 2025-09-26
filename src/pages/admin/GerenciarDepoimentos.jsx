@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useNotification } from '../../components/notifications/NotificationContext';
 import ConfirmationModal from '../../components/modals/ConfirmationModal'; // 1. IMPORTAR O MODAL
+import { UserAvatarIcon } from '../../components/ui/UserAvatarIcon';
 
 // --- ÍCONES ---
 const CheckIcon = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>;
@@ -150,8 +151,14 @@ function GerenciarDepoimentos() {
                     <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          {testimonial.image_url && <img className="h-10 w-10 rounded-full object-cover" src={testimonial.image_url} alt={testimonial.name} />}
-                          <div className={testimonial.image_url ? "ml-4" : ""}>
+                          <div className="flex-shrink-0 h-10 w-10">
+                            {testimonial.image_url ? (
+                              <img className="h-10 w-10 rounded-full object-cover" src={testimonial.image_url} alt={testimonial.name} />
+                            ) : (
+                              <UserAvatarIcon className="h-10 w-10" />
+                            )}
+                          </div>
+                          <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">{testimonial.name}</div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">{testimonial.occupation || 'Não informado'}</div>
                           </div>
