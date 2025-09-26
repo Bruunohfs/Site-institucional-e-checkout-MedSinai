@@ -16,6 +16,7 @@ import TestimonialModal from './components/TestimonialModal';
 import { supabase } from '@/lib/supabaseClient';
 import TestimonialCard from './components/TestimonialCard';
 import ReactPixel from 'react-facebook-pixel';
+import { getCookie } from '@/utils/cookieHelper';
 
 
 function App() {
@@ -86,6 +87,9 @@ function App() {
   // Dispara o evento no Pixel (Client-Side)
   ReactPixel.track('InitiateCheckout', eventData);
 
+  const fbc = getCookie('_fbc');
+  const fbp = getCookie('_fbp');
+
   // Envia o evento para a API de Conversões (Server-Side)
   try {
     await fetch('/api/send-facebook-event', {
@@ -96,6 +100,7 @@ function App() {
       body: JSON.stringify({
         eventName: 'InitiateCheckout',
         eventData: eventData,
+        browserData: { fbc, fbp } 
       }),
     });
   } catch (error) {

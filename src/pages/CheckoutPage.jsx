@@ -4,10 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { planosAnuais, planosMensais } from '@/data/planos';
 import { useForm, Controller } from 'react-hook-form';
 import IMask from 'imask';
-
-// --- IMPORTAÇÕES PARA O RASTREAMENTO E MODAL ---
 import ReactPixel from 'react-facebook-pixel';
 import PurchaseSuccessModal from '@/components/modals/PurchaseSuccessModal';
+import { getCookie } from '@/utils/cookieHelper';
 
 // Ícone de cadeado
 const LockIcon = () => (
@@ -91,6 +90,50 @@ function CheckoutPage() {
   const cepValue = tipoPlano === 'anual' ? watch("postalCode") : null;
 
   useEffect(() => {
+  // Pega os valores atuais dos campos do formulário
+  const nome = watch('nomeCompleto');
+  const email = watch('email');
+  const telefone = watch('telefone');
+  const cpf = watch('cpf');
+
+  // Verifica se os campos essenciais estão preenchidos e válidos
+  // A validação do react-hook-form (errors) garante que não dispare com dados inválidos
+  if (nome && !errors.nomeCompleto && email && !errors.email && telefone && !errors.telefone && cpf && !errors.cpf) {
+    
+    console.log("Disparando evento AddPaymentInfo");
+
+    const eventData = {
+      content_name: planoSelecionado.nome,
+      content_ids: [idDoPlano],
+      currency: 'BRL',
+      value: parseFloat(planoSelecionado.preco.replace(',', '.')),
+    };
+
+    const userData = {
+      em: email,
+      ph: telefone,
+      fn: nome.split(' ')[0],
+      ln: nome.split(' ').slice(1).join(' '),
+    };
+
+    // Dispara no Pixel do Navegador
+    ReactPixel.track('AddPaymentInfo', eventData);
+
+    // Envia para a API de Conversões (Servidor)
+    fetch('/api/send-facebook-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventName: 'AddPaymentInfo',
+        eventData: eventData,
+        userData: userData,
+      }),
+    }).catch(error => console.error('Falha ao enviar AddPaymentInfo para API:', error));
+  }
+  // A dependência `isValid` garante que o efeito rode sempre que a validade do formulário mudar
+}, [isValid, watch, errors]);
+
+  useEffect(() => {
     if (tipoPlano === 'anual' && cepValue?.length === 9) {
       fetch(`https://viacep.com.br/ws/${cepValue.replace('-', '' )}/json/`)
         .then(res => res.json())
@@ -142,13 +185,9 @@ const handlePurchaseSuccess = (method, purchaseDetails, formData) => {
 
     // Dispara o evento de compra no Pixel (Client-Side)
     ReactPixel.track('Purchase', eventData);
+    const fbc = getCookie('_fbc');
+    const fbp = getCookie('_fbp');
 
-    // ===================================================================
-    // ==> A LINHA QUE FALTAVA ESTÁ AQUI <==
-    // ===================================================================
-    const testEventCode = 'TEST10770'; // Use o código da sua tela de teste do Facebook
-
-    // Envia o evento de compra para a API de Conversões (Server-Side)
     fetch('/api/send-facebook-event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -156,6 +195,7 @@ const handlePurchaseSuccess = (method, purchaseDetails, formData) => {
         eventName: 'Purchase',
         eventData: eventData,
         userData: userData,
+        browserData: { fbc, fbp }
       }),
     })
     .then(response => {
