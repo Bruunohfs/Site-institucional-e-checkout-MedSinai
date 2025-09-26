@@ -69,22 +69,29 @@ function App() {
   const whatsappNumber = "16992291295";
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
   const planosAtivos = isAnual ? planosAnuais : planosMensais;
- const handleAssinarAgora = async (plano) => { // Transforme a função em 'async'
+
+  
+ const handleAssinarAgora = async (plano) => {
   const tipoPlano = isAnual ? 'anual' : 'mensal';
   const idDoPlano = plano.nome.toLowerCase().replace(/ /g, '-');
 
   const eventData = {
-    content_name: plano.nome,       // Nome do plano (ex: "Individual", "Familiar Plus")
-    content_ids: [idDoPlano],       // ID do plano (ex: "individual", "familiar-plus")
-    content_type: 'product',        // Tipo de conteúdo
-    value: parseFloat(plano.preco), // Valor do plano
-    currency: 'BRL',                // Moeda
+    content_name: plano.nome,
+    content_ids: [idDoPlano],
+    content_type: 'product',
+    value: parseFloat(plano.preco.replace(',', '.')), // Corrigido para usar replace
+    currency: 'BRL',
   };
 
-  // 2. Dispara o evento no Pixel (Client-Side)
+  // Dispara o evento no Pixel (Client-Side)
   ReactPixel.track('InitiateCheckout', eventData);
 
-  // 3. Envia o evento para a API de Conversões (Server-Side)
+  // ===================================================================
+  // ==> ADICIONANDO O CÓDIGO DE TESTE QUE FALTAVA <==
+  // ===================================================================
+  const testEventCode = 'TEST10770'; // Use o código da sua tela de teste do Facebook
+
+  // Envia o evento para a API de Conversões (Server-Side)
   try {
     await fetch('/api/send-facebook-event', {
       method: 'POST',
@@ -94,17 +101,16 @@ function App() {
       body: JSON.stringify({
         eventName: 'InitiateCheckout',
         eventData: eventData,
-        // userData: {} // Opcional: Se você tiver dados do usuário (email, nome), pode enviar aqui.
+        test_event_code: testEventCode, // Adicionando o código de teste
+        // Não enviamos userData aqui, pois ainda não temos os dados do cliente
       }),
     });
   } catch (error) {
-    console.error('Falha ao enviar evento para a API de Conversões:', error);
+    console.error('Falha ao enviar evento InitiateCheckout para a API de Conversões:', error);
   }
   
-  // Constrói a URL base
+  // Constrói a URL de destino
   let urlDestino = `/pagamento/${tipoPlano}/${idDoPlano}`;
-
-  // Se houver um ID de parceiro na URL, anexe-o
   if (partnerIdFromUrl) {
     urlDestino += `?pid=${partnerIdFromUrl}`;
   }

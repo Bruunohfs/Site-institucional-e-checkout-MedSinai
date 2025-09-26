@@ -122,7 +122,8 @@ function CheckoutPage() {
   }, [isValid, metodoPagamento, isProcessing]);
 
   // --- NOVA FUNÇÃO CENTRALIZADA PARA SUCESSO E RASTREAMENTO ---
-  const handlePurchaseSuccess = (method, purchaseDetails, formData) => {
+const handlePurchaseSuccess = (method, purchaseDetails, formData) => {
+    
     const eventData = {
       value: parseFloat(planoSelecionado.preco.replace(',', '.')),
       currency: 'BRL',
@@ -132,8 +133,20 @@ function CheckoutPage() {
       num_items: 1,
     };
 
+    const userData = {
+      em: formData?.email || '',
+      ph: formData?.telefone || '',
+      fn: formData?.nomeCompleto?.split(' ')[0] || '',
+      ln: formData?.nomeCompleto?.split(' ').slice(1).join(' ') || '',
+    };
+
     // Dispara o evento de compra no Pixel (Client-Side)
     ReactPixel.track('Purchase', eventData);
+
+    // ===================================================================
+    // ==> A LINHA QUE FALTAVA ESTÁ AQUI <==
+    // ===================================================================
+    const testEventCode = 'TEST10770'; // Use o código da sua tela de teste do Facebook
 
     // Envia o evento de compra para a API de Conversões (Server-Side)
     fetch('/api/send-facebook-event', {
@@ -142,14 +155,20 @@ function CheckoutPage() {
       body: JSON.stringify({
         eventName: 'Purchase',
         eventData: eventData,
-        userData: {
-          em: formData.email,
-          ph: formData.telefone,
-          fn: formData.nomeCompleto.split(' ')[0],
-          ln: formData.nomeCompleto.split(' ').slice(1).join(' '),
-        }
+        userData: userData,
+        test_event_code: testEventCode, // Adicionando o código de teste
       }),
-    }).catch(error => console.error('Falha ao enviar evento de Purchase para API:', error));
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('Evento de Purchase enviado para a API de Conversões com sucesso.');
+        } else {
+            console.error('API de Conversões respondeu com erro:', response.status);
+        }
+    })
+    .catch(error => {
+        console.error('Falha grave ao enviar evento de Purchase para API:', error);
+    });
 
     // Configura o conteúdo e abre o modal
     setModalContent({
