@@ -15,6 +15,7 @@ import ServicesSection from './components/ServicesSection';
 import TestimonialModal from './components/TestimonialModal';
 import { supabase } from '@/lib/supabaseClient';
 import TestimonialCard from './components/TestimonialCard';
+import ReactPixel from 'react-facebook-pixel';
 
 
 function App() {
@@ -68,9 +69,37 @@ function App() {
   const whatsappNumber = "16992291295";
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
   const planosAtivos = isAnual ? planosAnuais : planosMensais;
-  const handleAssinarAgora = (plano) => {
+ const handleAssinarAgora = async (plano) => { // Transforme a função em 'async'
   const tipoPlano = isAnual ? 'anual' : 'mensal';
   const idDoPlano = plano.nome.toLowerCase().replace(/ /g, '-');
+
+  const eventData = {
+    content_name: plano.nome,       // Nome do plano (ex: "Individual", "Familiar Plus")
+    content_ids: [idDoPlano],       // ID do plano (ex: "individual", "familiar-plus")
+    content_type: 'product',        // Tipo de conteúdo
+    value: parseFloat(plano.preco), // Valor do plano
+    currency: 'BRL',                // Moeda
+  };
+
+  // 2. Dispara o evento no Pixel (Client-Side)
+  ReactPixel.track('InitiateCheckout', eventData);
+
+  // 3. Envia o evento para a API de Conversões (Server-Side)
+  try {
+    await fetch('/api/send-facebook-event', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        eventName: 'InitiateCheckout',
+        eventData: eventData,
+        // userData: {} // Opcional: Se você tiver dados do usuário (email, nome), pode enviar aqui.
+      }),
+    });
+  } catch (error) {
+    console.error('Falha ao enviar evento para a API de Conversões:', error);
+  }
   
   // Constrói a URL base
   let urlDestino = `/pagamento/${tipoPlano}/${idDoPlano}`;
