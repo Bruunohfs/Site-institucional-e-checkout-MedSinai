@@ -45,7 +45,7 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
   const isDarkTheme = currentTheme === 'dark';
 
   // --- COMPONENTE DE BOTÕES DE DOWNLOAD SIMPLIFICADO ---
-  const DownloadButtons = () => (
+const DownloadButtons = () => (
     <div className={`mt-8 pt-6 border-t ${isDarkTheme ? 'border-gray-700' : 'border-gray-200'}`}>
       <p className={`text-center ${isDarkTheme ? 'text-gray-300' : 'text-gray-600'} mb-4`}>
         Seu acesso está liberado! Baixe nosso app e entre com o CPF utilizado na compra.
@@ -53,30 +53,30 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         
         {/* =================================================================== */}
-        {/* ==> A CORREÇÃO FINALÍSSIMA (DE VERDADE) ESTÁ AQUI <== */}
+        {/* ==> CÓDIGO FINAL E MAIS SIMPLES <== */}
         {/* =================================================================== */}
         <a 
           href={appStoreUrl} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="transition-transform hover:scale-105"
+          className="transition-transform hover:scale-105" // Apenas efeito de hover
         >
           <img 
             src={appStoreBadge} 
             alt="Disponível na App Store" 
-            className="h-12" // ALTURA FIXA AQUI (48px). Ajuste se necessário.
+            // Nenhuma classe de tamanho necessária
           />
         </a>
         <a 
           href={playStoreUrl} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="transition-transform hover:scale-105"
+          className="transition-transform hover:scale-105" // Apenas efeito de hover
         >
           <img 
             src={googlePlayBadge} 
             alt="Disponível no Google Play" 
-            className="h-12" // MESMA ALTURA FIXA AQUI.
+            // Nenhuma classe de tamanho necessária
           />
         </a>
         {/* =================================================================== */}
@@ -84,7 +84,6 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
       </div>
     </div>
   );
-
 
   // --- RENDER CONTENT (sem alterações na lógica) ---
   const renderContent = () => {
