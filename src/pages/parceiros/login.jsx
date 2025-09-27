@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient.js';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/logo.webp';
 
 
 // --- 2. ÍCONES PARA O BOTÃO DE TEMA ---
