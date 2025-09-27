@@ -2,61 +2,31 @@ import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 
 // ===================================================================
-// ==> NOVOS COMPONENTES SVG PARA OS BADGES DAS LOJAS <==
+// ==> IMPORTANDO APENAS AS 2 IMAGENS DE FUNDO PRETO <==
+// ===================================================================
+import appStoreBadge from '@/assets/app-store-badge.webp';
+import googlePlayBadge from '@/assets/google-play-badge.webp';
 // ===================================================================
 
-// --- Badge da App Store (Light e Dark) ---
-const AppStoreBadge = ({ theme = 'light' }) => (
-  <svg width="150" height="50" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="120" height="40" rx="5" fill={theme === 'dark' ? 'white' : 'black'} />
-    <path d="M17.53 20.58c-.01 2.33 1.88 4.21 4.2 4.21 2.33 0 4.22-1.88 4.21-4.21 0-2.33-1.88-4.21-4.21-4.21-2.32 0-4.2 1.88-4.2 4.21zm1.63 0c0-1.43 1.16-2.58 2.57-2.58s2.57 1.15 2.57 2.58c0 1.43-1.16 2.58-2.57 2.58s-2.57-1.15-2.57-2.58zM14.98 14.12c.98-1.18 1.54-2.6 1.43-4.01-.9.07-1.86.55-2.6 1.33-.7.73-1.25 1.86-1.13 3.05.87-.06 1.81-.54 2.3-1.37z" fill={theme === 'dark' ? 'black' : 'white'} />
-    <text x="35" y="17" fontFamily="Arial, sans-serif" fontSize="8" fill={theme === 'dark' ? 'black' : 'white'}>Download on the</text>
-    <text x="35" y="31" fontFamily="Arial, sans-serif" fontSize="14" fontWeight="bold" fill={theme === 'dark' ? 'black' : 'white'}>App Store</text>
-  </svg>
- );
-
-// --- Badge do Google Play (Light e Dark) ---
-const GooglePlayBadge = ({ theme = 'light' }) => (
-  <svg width="150" height="50" viewBox="0 0 125 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="125" height="40" rx="5" fill={theme === 'dark' ? 'white' : 'black'} />
-    <path d="M11.5 12.87l6.53 3.77-6.53 3.77V12.87z" fill="#FFD042"/>
-    <path d="M11.5 27.13V12.87L4 20l7.5 7.13z" fill="#FF3D00"/>
-    <path d="M24.03 20l-5.99 6.01-6.54-3.78 6.54-3.77 5.99 1.54z" fill="#4CAF50"/>
-    <path d="M4 20l7.5-7.13 6.53 3.77-5.98 1.82L4 20z" fill="#1976D2"/>
-    <text x="32" y="17" fontFamily="Arial, sans-serif" fontSize="8" fill={theme === 'dark' ? 'black' : 'white'}>GET IT ON</text>
-    <text x="32" y="31" fontFamily="Arial, sans-serif" fontSize="14" fontWeight="bold" fill={theme === 'dark' ? 'black' : 'white'}>Google Play</text>
-  </svg>
- );
-// ===================================================================
-
-// --- FUNÇÃO QUE GERA ESTILOS DINÂMICOS PARA LIGHT E DARK MODE ---
+// --- FUNÇÃO QUE GERA ESTILOS DINÂMICOS (sem alterações) ---
 const getModalStyles = (theme) => {
   const isDark = theme === 'dark';
   return {
     content: {
-      top: '50%',
-      left: '50%',
-      right: 'auto',
-      bottom: 'auto',
-      marginRight: '-50%',
-      transform: 'translate(-50%, -50%)',
+      top: '50%', left: '50%', right: 'auto', bottom: 'auto',
+      marginRight: '-50%', transform: 'translate(-50%, -50%)',
       backgroundColor: isDark ? '#1a202c' : '#ffffff',
       color: isDark ? '#e2e8f0' : '#1a202c',
-      borderRadius: '12px',
-      width: '90%',
-      maxWidth: '550px',
-      padding: '40px',
-      border: `1px solid ${isDark ? '#4a5568' : '#e2e8f0'}`,
+      borderRadius: '12px', width: '90%', maxWidth: '550px',
+      padding: '40px', border: `1px solid ${isDark ? '#4a5568' : '#e2e8f0'}`,
       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
     },
     overlay: {
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      zIndex: 1000,
+      backgroundColor: 'rgba(0, 0, 0, 0.8)', zIndex: 1000,
     },
   };
 };
 
-// Vincula o modal ao elemento raiz do app para acessibilidade
 Modal.setAppElement('#root');
 
 const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
@@ -74,7 +44,7 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
 
   const isDarkTheme = currentTheme === 'dark';
 
-  // --- COMPONENTE DE BOTÕES DE DOWNLOAD ATUALIZADO ---
+  // --- COMPONENTE DE BOTÕES DE DOWNLOAD SIMPLIFICADO ---
   const DownloadButtons = ( ) => (
     <div className={`mt-8 pt-6 border-t ${isDarkTheme ? 'border-gray-700' : 'border-gray-200'}`}>
       <p className={`text-center ${isDarkTheme ? 'text-gray-300' : 'text-gray-600'} mb-4`}>
@@ -82,16 +52,24 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         <a href={appStoreUrl} target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105">
-          <AppStoreBadge theme={currentTheme} />
+          <img 
+            src={appStoreBadge} // Usa sempre a mesma imagem
+            alt="Disponível na App Store" 
+            className="h-12" // Ajuste a altura conforme necessário
+          />
         </a>
         <a href={playStoreUrl} target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105">
-          <GooglePlayBadge theme={currentTheme} />
+          <img 
+            src={googlePlayBadge} // Usa sempre a mesma imagem
+            alt="Disponível no Google Play" 
+            className="h-12" // Ajuste a altura conforme necessário
+          />
         </a>
       </div>
     </div>
   );
 
-  // --- FUNÇÃO QUE RENDERIZA O CONTEÚDO PRINCIPAL DO MODAL ---
+  // --- RENDER CONTENT (sem alterações na lógica) ---
   const renderContent = () => {
     const textColor = isDarkTheme ? 'text-gray-300' : 'text-gray-600';
     const inputBg = isDarkTheme ? 'bg-gray-800 border-gray-600' : 'bg-gray-100 border-gray-300';
@@ -138,14 +116,9 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
     }
   };
 
-  // --- RENDERIZAÇÃO FINAL DO MODAL ---
+  // --- RENDERIZAÇÃO FINAL DO MODAL (sem alterações) ---
   return (
-    <Modal
-      isOpen={isOpen}
-      onRequestClose={onClose}
-      style={getModalStyles(currentTheme)}
-      contentLabel="Confirmação de Pagamento"
-    >
+    <Modal isOpen={isOpen} onRequestClose={onClose} style={getModalStyles(currentTheme)} contentLabel="Confirmação de Pagamento">
       <div className="text-center">
         {renderContent()}
         <button onClick={onClose} className={`mt-8 ${isDarkTheme ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-black'} transition-colors text-sm`}>
