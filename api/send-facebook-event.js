@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   const pixelId = process.env.FACEBOOK_PIXEL_ID;
 
   if (!accessToken || !pixelId) {
-    console.error('Variáveis de ambiente do Facebook não configuradas na Vercel.');
+    console.error('CRITICAL: Variáveis de ambiente do Facebook não configuradas na Vercel.');
     return res.status(500).json({ error: 'Server configuration error.' });
   }
 
@@ -27,14 +27,11 @@ export default async function handler(req, res) {
   // Objeto que conterá todos os dados de identificação do cliente
   const finalUserData = {};
 
-  // 1. Processa os dados do formulário (email, telefone, etc. ), se existirem
+  // 1. Processa os dados do formulário (email, telefone, etc.  ), se existirem
   if (userData && Object.keys(userData).length > 0) {
     for (const key in userData) {
       if (Object.prototype.hasOwnProperty.call(userData, key) && userData[key]) {
-        // Converte as chaves para o formato snake_case esperado pelo Facebook (ex: nomeCompleto -> fn)
-        const facebookKey = {
-          em: 'em', ph: 'ph', fn: 'fn', ln: 'ln'
-        }[key] || key;
+        const facebookKey = { em: 'em', ph: 'ph', fn: 'fn', ln: 'ln' }[key] || key;
         finalUserData[facebookKey] = crypto.createHash('sha256').update(userData[key]).digest('hex');
       }
     }
@@ -68,7 +65,7 @@ export default async function handler(req, res) {
         event_name: eventName,
         event_time: Math.floor(Date.now() / 1000),
         action_source: 'website',
-        user_data: finalUserData, // Objeto com todos os dados do cliente
+        user_data: finalUserData,
         custom_data: eventData,
       },
     ],
@@ -78,24 +75,22 @@ export default async function handler(req, res) {
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...payload, access_token: accessToken }),
     });
 
-    const responseData = await response.json();
-
     if (!response.ok) {
-      console.error('Erro da API do Facebook:', responseData);
+      const responseData = await response.json();
+      console.error('Erro da API do Facebook:', responseData); // Mantemos o log de ERRO
       return res.status(response.status).json({ error: 'Failed to send event to Facebook', details: responseData });
     }
 
-    console.log(`Evento '${eventName}' enviado com sucesso para a API do Facebook:`, responseData);
+    // A linha de console.log de sucesso foi removida daqui.
+    const responseData = await response.json(); // Ainda precisamos ler a resposta para enviar de volta
     res.status(200).json({ success: true, facebookResponse: responseData });
 
   } catch (error) {
-    console.error(`Erro de rede ao contatar a API do Facebook para o evento '${eventName}':`, error);
+    console.error(`Erro de rede ao contatar a API do Facebook para o evento '${eventName}':`, error); // Mantemos o log de ERRO
     res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 }
