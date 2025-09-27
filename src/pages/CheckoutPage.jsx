@@ -217,51 +217,94 @@ const handlePurchaseSuccess = (method, purchaseDetails, formData) => {
     setIsModalOpen(true);
   };
 
-  const handleFormSubmit = async (data) => {
-    setIsProcessing(true);
-    setPaymentError(null);
-    const partnerIdFromStorage = localStorage.getItem('medsinai_affiliate_id');
+const handleFormSubmit = async (data) => {
+  setIsProcessing(true);
+  setPaymentError(null);
+  const partnerIdFromStorage = localStorage.getItem('medsinai_affiliate_id');
 
-    const dadosCompletos = {
-      plano: { nome: planoSelecionado.nome, preco: planoSelecionado.preco, tipo: tipoPlano },
-      cliente: data,
-      referenciaParceiro: partnerIdFromStorage || null
-    };
+  const dadosCompletos = {
+    plano: { nome: planoSelecionado.nome, preco: planoSelecionado.preco, tipo: tipoPlano },
+    cliente: data,
+    referenciaParceiro: partnerIdFromStorage || null
+  };
 
-    try {
-      const endpoint =
-        metodoPagamento === 'boleto' ? '/api/gerar-boleto' :
-        metodoPagamento === 'pix' ? '/api/gerar-pix' :
-        '/api/pagar-com-cartao';
+  try {
+    const endpoint =
+      metodoPagamento === 'boleto' ? '/api/gerar-boleto' :
+      metodoPagamento === 'pix' ? '/api/gerar-pix' :
+      '/api/pagar-com-cartao';
 
-      const response = await fetch(endpoint, {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dadosCompletos),
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.details || result.error);
+
+    // Lógica de sucesso (chama handlePurchaseSuccess)
+    if (metodoPagamento === 'boleto') {
+      handlePurchaseSuccess('boleto', { boletoUrl: result.boletoUrl }, data);
+    } else if (metodoPagamento === 'pix') {
+      const purchaseDetails = {
+        qrCodeUrl: `data:image/png;base64,${result.encodedImage}`,
+        pixCopiaECola: result.payload
+      };
+      handlePurchaseSuccess('pix', purchaseDetails, data);
+    } else if (metodoPagamento === 'cartao') {
+      handlePurchaseSuccess('cartao', {}, data);
+    }
+
+  } catch (error) {
+    console.error(`Erro ao processar pagamento:`, error);
+    setPaymentError(error.message || 'Ocorreu um erro inesperado.');
+
+    // ===================================================================
+    // ==> RASTREAMENTO DO PAGAMENTO RECUSADO <==
+    // ===================================================================
+    // Só dispara se o erro foi no cartão, que é o único que pode ser "recusado"
+    if (metodoPagamento === 'cartao') {
+      console.log("Disparando evento customizado PaymentDeclined");
+
+      const eventData = {
+        content_name: planoSelecionado.nome,
+        currency: 'BRL',
+        value: parseFloat(planoSelecionado.preco.replace(',', '.')),
+        error_message: error.message, // Captura a mensagem de erro da Asaas!
+      };
+
+      const userData = {
+        em: data.email,
+        ph: data.telefone,
+        fn: data.nomeCompleto.split(' ')[0],
+        ln: data.nomeCompleto.split(' ').slice(1).join(' '),
+      };
+
+      const fbc = getCookie('_fbc');
+      const fbp = getCookie('_fbp');
+
+      // Dispara o evento customizado no Pixel
+      ReactPixel.trackCustom('PaymentDeclined', eventData);
+
+      // Envia para a API de Conversões
+      fetch('/api/send-facebook-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosCompletos),
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.details || result.error);
-
-      if (metodoPagamento === 'boleto') {
-        handlePurchaseSuccess('boleto', { boletoUrl: result.boletoUrl }, data);
-      } else if (metodoPagamento === 'pix') {
-        const purchaseDetails = {
-          qrCodeUrl: `data:image/png;base64,${result.encodedImage}`,
-          pixCopiaECola: result.payload
-        };
-        handlePurchaseSuccess('pix', purchaseDetails, data);
-      } else if (metodoPagamento === 'cartao') {
-        handlePurchaseSuccess('cartao', {}, data);
-      }
-
-    } catch (error) {
-      console.error(`Erro ao processar pagamento:`, error);
-      setPaymentError(error.message || 'Ocorreu um erro inesperado.');
-    } finally {
-      setIsProcessing(false);
+        body: JSON.stringify({
+          eventName: 'PaymentDeclined',
+          eventData: eventData,
+          userData: userData,
+          browserData: { fbc, fbp }
+        }),
+      }).catch(err => console.error('Falha ao enviar PaymentDeclined para API:', err));
     }
-  };
+    // ===================================================================
+
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const closeModalAndRedirect = () => {
     setIsModalOpen(false);
