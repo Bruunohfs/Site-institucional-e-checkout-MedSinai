@@ -53,30 +53,30 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         
         {/* =================================================================== */}
-        {/* ==> A CORREÇÃO FINAL ESTÁ AQUI <== */}
+        {/* ==> A CORREÇÃO FINALÍSSIMA (DE VERDADE) ESTÁ AQUI <== */}
         {/* =================================================================== */}
         <a 
           href={appStoreUrl} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="transition-transform hover:scale-105 w-40" // LARGURA FIXA AQUI
+          className="transition-transform hover:scale-105"
         >
           <img 
             src={appStoreBadge} 
             alt="Disponível na App Store" 
-            className="w-full h-auto" // Imagem preenche a largura do link
+            className="h-12" // ALTURA FIXA AQUI (48px). Ajuste se necessário.
           />
         </a>
         <a 
           href={playStoreUrl} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="transition-transform hover:scale-105 w-40" // LARGURA FIXA AQUI
+          className="transition-transform hover:scale-105"
         >
           <img 
             src={googlePlayBadge} 
             alt="Disponível no Google Play" 
-            className="w-full h-auto" // Imagem preenche a largura do link
+            className="h-12" // MESMA ALTURA FIXA AQUI.
           />
         </a>
         {/* =================================================================== */}
