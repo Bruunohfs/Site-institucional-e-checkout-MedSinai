@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient'; // Verifique se o caminho para seu cliente supabase está correto
+import { supabase } from '@/lib/supabaseClient';
+import { trackLeadEvent } from '@/utils/trackingHelper'; // Verifique se o caminho para seu cliente supabase está correto
 
 // Imagens (mantive as que você já usava)
 import empresa1 from '../assets/empresa1.jpg';
@@ -49,10 +50,14 @@ function EmpresasPage() {
       setFormMessage({ type: 'error', text: 'Houve um erro ao enviar sua mensagem. Por favor, tente novamente.' });
     } else {
       setFormMessage({ type: 'success', text: 'Obrigado! Sua mensagem foi enviada com sucesso. Em breve nossa equipe entrará em contato.' });
-      // Limpa o formulário após o envio bem-sucedido
+      trackLeadEvent(
+        { nome: formData.nome, email: formData.email, telefone: formData.telefone },
+        'Lead Empresa'
+      );
       setFormData({ nome: '', email: '', telefone: '', nome_empresa: '' });
     }
   };
+  
   // ===================================================================
   // ==> FIM DA NOVA LÓGICA <==
   // ===================================================================

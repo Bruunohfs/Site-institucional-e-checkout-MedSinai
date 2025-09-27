@@ -82,7 +82,7 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
         return (
           <>
             <h2 className="text-2xl font-bold text-green-500 mb-4">Boleto Gerado com Sucesso!</h2>
-            <p className={`mb-6 ${textColor}`}>O boleto foi enviado para o seu e-mail. Após o pagamento, seu acesso será liberado.</p>
+            <p className={`mb-6 ${textColor}`}>O boleto tambem foi enviado para o seu e-mail. Após o pagamento, seu acesso será liberado.</p>
             <a href={data.boletoUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
               Visualizar Boleto
             </a>

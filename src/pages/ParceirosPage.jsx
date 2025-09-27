@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient'; // Verifique se o caminho está correto
 import { IMaskInput } from 'react-imask';
+import { trackLeadEvent } from '@/utils/trackingHelper';
 
 // Imagens e Ícones (mantidos como no seu código original)
 import parceiroHeroImg from '../assets/parceiro-hero.webp';
@@ -58,6 +59,10 @@ function ParceirosPage() {
       setFormMessage({ type: 'error', text: 'Houve um erro ao enviar seu cadastro. Tente novamente.' });
     } else {
       setFormMessage({ type: 'success', text: 'Cadastro enviado com sucesso! Nossa equipe analisará seu perfil e entrará em contato em breve.' });
+      trackLeadEvent(
+        { nome: formData.nome, email: formData.email, telefone: formData.telefone },
+        'Lead Parceiro'
+      );
       setFormData({ nome: '', email: '', telefone: '', experiencia: '' });
     }
   };
