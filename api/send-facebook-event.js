@@ -72,8 +72,6 @@ export default async function handler(req, res) {
         custom_data: eventData,
       },
     ],
-    // Mantemos o código de teste fixo aqui para validação
-    test_event_code: 'TEST10770', 
   };
 
   // Envia os dados para a API de Conversões do Facebook
