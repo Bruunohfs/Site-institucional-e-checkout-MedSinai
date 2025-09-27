@@ -45,26 +45,42 @@ const PurchaseSuccessModal = ({ isOpen, onClose, paymentMethod, data }) => {
   const isDarkTheme = currentTheme === 'dark';
 
   // --- COMPONENTE DE BOTÕES DE DOWNLOAD SIMPLIFICADO ---
-  const DownloadButtons = ( ) => (
+ const DownloadButtons = () => (
     <div className={`mt-8 pt-6 border-t ${isDarkTheme ? 'border-gray-700' : 'border-gray-200'}`}>
       <p className={`text-center ${isDarkTheme ? 'text-gray-300' : 'text-gray-600'} mb-4`}>
         Seu acesso está liberado! Baixe nosso app e entre com o CPF utilizado na compra.
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href={appStoreUrl} target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105">
+        
+        {/* =================================================================== */}
+        {/* ==> A MUDANÇA ESTÁ AQUI <== */}
+        {/* =================================================================== */}
+        <a 
+          href={appStoreUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="transition-transform hover:scale-105 h-12 flex items-center" // Altura e flex no link
+        >
           <img 
-            src={appStoreBadge} // Usa sempre a mesma imagem
+            src={appStoreBadge} 
             alt="Disponível na App Store" 
-            className="h-12" // Ajuste a altura conforme necessário
+            className="h-full w-auto" // Imagem ocupa a altura total do link
           />
         </a>
-        <a href={playStoreUrl} target="_blank" rel="noopener noreferrer" className="transition-transform hover:scale-105">
+        <a 
+          href={playStoreUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="transition-transform hover:scale-105 h-12 flex items-center" // Altura e flex no link
+        >
           <img 
-            src={googlePlayBadge} // Usa sempre a mesma imagem
+            src={googlePlayBadge} 
             alt="Disponível no Google Play" 
-            className="h-12" // Ajuste a altura conforme necessário
+            className="h-full w-auto" // Imagem ocupa a altura total do link
           />
         </a>
+        {/* =================================================================== */}
+
       </div>
     </div>
   );
